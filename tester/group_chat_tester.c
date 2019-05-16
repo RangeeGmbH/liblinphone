@@ -5434,6 +5434,89 @@ end:
 	linphone_core_manager_destroy(laure);
 }
 
+static void group_chat_room_device_unregistered() {
+	LinphoneCoreManager *marie = linphone_core_manager_create("marie_rc");
+	LinphoneCoreManager *pauline = linphone_core_manager_create("pauline_rc");
+	LinphoneCoreManager *laure = linphone_core_manager_create("laure_tcp_rc");
+	bctbx_list_t *coresManagerList = NULL;
+	bctbx_list_t *participantsAddresses = NULL;
+	coresManagerList = bctbx_list_append(coresManagerList, marie);
+	coresManagerList = bctbx_list_append(coresManagerList, pauline);
+	coresManagerList = bctbx_list_append(coresManagerList, laure);
+	bctbx_list_t *coresList = init_core_for_conference(coresManagerList);
+	start_core_for_conference(coresManagerList);
+	participantsAddresses = bctbx_list_append(participantsAddresses, linphone_address_new(linphone_core_get_identity(pauline->lc)));
+	participantsAddresses = bctbx_list_append(participantsAddresses, linphone_address_new(linphone_core_get_identity(laure->lc)));
+	stats initialMarieStats = marie->stat;
+	stats initialPaulineStats = pauline->stat;
+	stats initialLaureStats = laure->stat;
+	
+	
+	// Marie creates a new group chat room
+	const char *initialSubject = "Colleagues";
+	LinphoneChatRoom *marieCr = create_chat_room_client_side(coresList, marie, &initialMarieStats, participantsAddresses, initialSubject, FALSE);
+	participantsAddresses = NULL;
+	const LinphoneAddress *confAddr = linphone_chat_room_get_conference_address(marieCr);
+	
+	// Check that the chat room is correctly created on Pauline's side and that the participants are added
+	LinphoneChatRoom *paulineCr = check_creation_chat_room_client_side(coresList, pauline, &initialPaulineStats, confAddr, initialSubject, 2, FALSE);
+	
+	// Check that the chat room is correctly created on Laure's side and that the participants are added
+	LinphoneChatRoom *laureCr = check_creation_chat_room_client_side(coresList, laure, &initialLaureStats, confAddr, initialSubject, 2, FALSE);
+	
+	LinphoneProxyConfig *proxyConfig = linphone_core_get_default_proxy_config(laure->lc);
+	linphone_proxy_config_edit(proxyConfig);
+	linphone_proxy_config_enable_register(proxyConfig, FALSE);
+	linphone_proxy_config_done(proxyConfig);
+	
+	BC_ASSERT_TRUE(wait_for_list(coresList, &laure->stat.number_of_LinphoneRegistrationCleared, initialMarieStats.number_of_LinphoneRegistrationCleared + 1, 3000));
+	
+	//Current expected behavior is to have participant devices removed
+	BC_ASSERT_TRUE(wait_for_list(coresList, &marie->stat.number_of_participant_devices_removed, initialMarieStats.number_of_participant_devices_removed + 1, 3000));
+	BC_ASSERT_TRUE(wait_for_list(coresList, &pauline->stat.number_of_participant_devices_removed, initialPaulineStats.number_of_participant_devices_removed + 1, 3000));
+	BC_ASSERT_FALSE(wait_for_list(coresList, &marie->stat.number_of_participants_removed, initialMarieStats.number_of_participants_removed + 1, 5000));
+	BC_ASSERT_FALSE(wait_for_list(coresList, &pauline->stat.number_of_participants_removed, initialPaulineStats.number_of_participants_removed + 1, 5000));
+
+	proxyConfig = linphone_core_get_default_proxy_config(laure->lc);
+	linphone_proxy_config_edit(proxyConfig);
+	linphone_proxy_config_enable_register(proxyConfig, TRUE);
+	linphone_proxy_config_done(proxyConfig);
+
+	BC_ASSERT_TRUE(wait_for_list(coresList, &laure->stat.number_of_LinphoneRegistrationOk, initialMarieStats.number_of_LinphoneRegistrationOk + 1, 3000));
+
+	// Laure adds a new device without group chat enabled
+	initialMarieStats = marie->stat;
+	initialPaulineStats = pauline->stat;
+	initialLaureStats = laure->stat;
+	LinphoneCoreManager *laure2 = linphone_core_manager_new("laure_tcp_rc");
+	coresManagerList = bctbx_list_append(coresManagerList, laure2);
+	
+	proxyConfig = linphone_core_get_default_proxy_config(laure->lc);
+	linphone_proxy_config_edit(proxyConfig);
+	linphone_proxy_config_enable_register(proxyConfig, FALSE);
+	linphone_proxy_config_done(proxyConfig);
+	
+	BC_ASSERT_TRUE(wait_for_list(coresList, &laure->stat.number_of_LinphoneRegistrationCleared, initialMarieStats.number_of_LinphoneRegistrationCleared + 1, 3000));
+	
+	//Current expected behavior is to have participant devices removed
+	BC_ASSERT_TRUE(wait_for_list(coresList, &marie->stat.number_of_participant_devices_removed, initialMarieStats.number_of_participant_devices_removed + 1, 3000));
+	BC_ASSERT_TRUE(wait_for_list(coresList, &pauline->stat.number_of_participant_devices_removed, initialPaulineStats.number_of_participant_devices_removed + 1, 3000));
+	BC_ASSERT_FALSE(wait_for_list(coresList, &marie->stat.number_of_participants_removed, initialMarieStats.number_of_participants_removed + 1, 5000));
+	BC_ASSERT_FALSE(wait_for_list(coresList, &pauline->stat.number_of_participants_removed, initialPaulineStats.number_of_participants_removed + 1, 5000));
+	
+	// Clean db from chat room
+	linphone_core_manager_delete_chat_room(marie, marieCr, coresList);
+	linphone_core_manager_delete_chat_room(laure, laureCr, coresList);
+	linphone_core_manager_delete_chat_room(pauline, paulineCr, coresList);
+	
+	bctbx_list_free(coresList);
+	bctbx_list_free(coresManagerList);
+	linphone_core_manager_destroy(marie);
+	linphone_core_manager_destroy(pauline);
+	linphone_core_manager_destroy(laure);
+}
+
+
 test_t group_chat_tests[] = {
 	TEST_NO_TAG("Chat room params", group_chat_room_params),
 	TEST_NO_TAG("Chat room with forced local identity", group_chat_room_creation_with_given_identity),
@@ -5496,7 +5579,8 @@ test_t group_chat_tests[] = {
 	TEST_ONE_TAG("Client loose context of a chatroom", group_chat_loss_of_client_context, "LeaksMemory"),
 	TEST_ONE_TAG("Participant removed then added", participant_removed_then_added, "LeaksMemory" /*due to core restart*/),
 	TEST_ONE_TAG("Check  if participant device are removed", group_chat_room_join_one_to_one_chat_room_with_a_new_device_not_notified, "LeaksMemory" /*due to core restart*/),
-	TEST_ONE_TAG("Subscribe successfull after set chat database path", subscribe_test_after_set_chat_database_path, "LeaksMemory" /*due to core restart*/)
+	TEST_ONE_TAG("Subscribe successfull after set chat database path", subscribe_test_after_set_chat_database_path, "LeaksMemory" /*due to core restart*/),
+	TEST_NO_TAG("Make sure device unregistration does not triger user to be removed from a group", group_chat_room_device_unregistered)
 };
 
 test_suite_t group_chat_test_suite = {
