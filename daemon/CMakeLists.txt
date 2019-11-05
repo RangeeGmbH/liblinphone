@@ -106,6 +106,8 @@ set(DAEMON_SOURCE_FILES
 	commands/video.h
 	commands/message.cc
 	commands/message.h
+	commands/soundcards.cc
+	commands/soundcards.h
 	daemon.cc
 	daemon.h
 )

@@ -84,6 +84,7 @@
 #include "commands/version.h"
 #include "commands/play.h"
 #include "commands/message.h"
+#include "commands/soundcards.h"
 
 #include "private.h"
 
@@ -463,6 +464,7 @@ void Daemon::initCommands() {
 	mCommands.push_back(new PlayWavCommand());
 	mCommands.push_back(new PopEventCommand());
 	mCommands.push_back(new AnswerCommand());
+    mCommands.push_back(new AnswerSoundcard());
 	mCommands.push_back(new CallStatusCommand());
 	mCommands.push_back(new CallStatsCommand());
 	mCommands.push_back(new CallPauseCommand());
