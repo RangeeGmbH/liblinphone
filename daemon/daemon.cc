@@ -609,6 +609,22 @@ void Daemon::iterate() {
 			delete r;
 		}
 	}
+    else{
+        if (!mEventQueue.empty()) {
+            Event *r = mEventQueue.front();
+            mEventQueue.pop();
+            string buf = r->toBuf();
+            if (mChildFd != (ortp_pipe_t)-1) {
+                if (ortp_pipe_write(mChildFd, (uint8_t *)buf.c_str(), (int)buf.size()) == -1) {
+            			ms_error("Fail to write to pipe: %s", strerror(errno));
+                }
+            } else {
+                cout << buf << flush;
+            }
+            fflush(stdout);
+            delete r;
+        }
+    }
 }
 
 void Daemon::execCommand(const string &command) {
