@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2019 Belledonne Communications SARL.
+ * Copyright (c) 2019-2020 Rangee GmbH.
  *
  * This file is part of Liblinphone.
  *
@@ -22,7 +23,7 @@
 using namespace std;
 
 TerminateCommand::TerminateCommand() :
-		DaemonCommand("terminate", "terminate [<call_id>]", "Terminate a call.") {
+		DaemonCommand("terminate", "terminate [all] or [<call_id>]", "Terminate a call or Terminate all calls.") {
 	addExample(new DaemonCommandExample("terminate 2",
 						"Status: Error\n"
 						"Reason: No call with such id."));
@@ -30,32 +31,41 @@ TerminateCommand::TerminateCommand() :
 						"Status: Ok\n"));
 	addExample(new DaemonCommandExample("terminate",
 						"Status: Ok\n"));
+    addExample(new DaemonCommandExample("terminate all",
+                                        "Status: Ok\n"));
 	addExample(new DaemonCommandExample("terminate",
 						"Status: Error\n"
 						"Reason: No active call."));
 }
 void TerminateCommand::exec(Daemon *app, const string& args) {
-	LinphoneCall *call = NULL;
-	int cid;
-	const MSList *elem;
-	istringstream ist(args);
-	ist >> cid;
-	if (ist.fail()) {
-		elem = linphone_core_get_calls(app->getCore());
-		if (elem != NULL && elem->next == NULL) {
-			call = (LinphoneCall*)elem->data;
-		}
-	} else {
-		call = app->findCall(cid);
-		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
-			return;
-		}
-	}
-	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
-		return;
-	}
-	linphone_call_terminate(call);
-	app->sendResponse(Response());
+    if(strcmp(args.c_str(),"all")==0){
+        LinphoneCore *lc = app->getCore();
+        linphone_core_terminate_all_calls(lc);
+        app->sendResponse(Response());
+    }
+    else{
+        LinphoneCall *call = NULL;
+        int cid;
+        const MSList *elem;
+        istringstream ist(args);
+        ist >> cid;
+        if (ist.fail()) {
+            elem = linphone_core_get_calls(app->getCore());
+            if (elem != NULL && elem->next == NULL) {
+                call = (LinphoneCall*)elem->data;
+            }
+        } else {
+            call = app->findCall(cid);
+            if (call == NULL) {
+                app->sendResponse(Response("No call with such id."));
+                return;
+            }
+        }
+        if (call == NULL) {
+            app->sendResponse(Response("No active call."));
+            return;
+        }
+        linphone_call_terminate(call);
+        app->sendResponse(Response());
+    }
 }

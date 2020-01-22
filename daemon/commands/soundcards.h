@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010-2019 Belledonne Communications SARL.
- * Copyright (c) 2019 Rangee GmbH.
+ * Copyright (c) 2019-2020 Rangee GmbH.
  *
  * This file is part of Liblinphone.
  *

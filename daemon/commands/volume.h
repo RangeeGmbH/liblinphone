@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010-2019 Belledonne Communications SARL.
- * Copyright (c) 2019-2020 Rangee GmbH.
+ * Copyright (c) 2019 Rangee GmbH.
  *
  * This file is part of Liblinphone.
  *
@@ -16,18 +16,29 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * The code of this class was inspired by
+ * https://stackoverflow.com/a/7661176
  */
 
-#ifndef LINPHONE_DAEMON_COMMAND_TERMINATE_H_
-#define LINPHONE_DAEMON_COMMAND_TERMINATE_H_
+#ifndef LINPHONE_SDK_VOLUME_H
+#define LINPHONE_SDK_VOLUME_H
 
 #include "daemon.h"
 
-class TerminateCommand: public DaemonCommand {
+class volume: public DaemonCommand  {
 public:
-	TerminateCommand();
+    volume();
 
-	void exec(Daemon *app, const std::string& args) override;
+    typedef enum {
+        AUDIO_VOLUME_SET,
+        AUDIO_VOLUME_GET,
+    } audio_volume_action;
+
+    int audio_volume(audio_volume_action action, long* outvol, Daemon *app);
+
+    void exec(Daemon *app, const std::string &args) override;
 };
 
-#endif // LINPHONE_DAEMON_COMMAND_TERMINATE_H_
+
+#endif //LINPHONE_SDK_VOLUME_H

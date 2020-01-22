@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2019 Belledonne Communications SARL.
+ * Copyright (c) 2019-2020 Rangee GmbH.
  *
  * This file is part of Liblinphone.
  *
@@ -85,6 +86,7 @@
 #include "commands/play.h"
 #include "commands/message.h"
 #include "commands/soundcards.h"
+#include "commands/volume.h"
 
 #include "private.h"
 
@@ -465,6 +467,7 @@ void Daemon::initCommands() {
 	mCommands.push_back(new PopEventCommand());
 	mCommands.push_back(new AnswerCommand());
     mCommands.push_back(new AnswerSoundcard());
+    mCommands.push_back(new volume());
 	mCommands.push_back(new CallStatusCommand());
 	mCommands.push_back(new CallStatsCommand());
 	mCommands.push_back(new CallPauseCommand());
