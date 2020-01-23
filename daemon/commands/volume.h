@@ -35,7 +35,8 @@ public:
         AUDIO_VOLUME_GET,
     } audio_volume_action;
 
-    int audio_volume(audio_volume_action action, long* outvol, Daemon *app);
+    long audioVolumeSet(audio_volume_action action, long* outvol, Daemon *app);
+    long audioVolumeGet(audio_volume_action action, Daemon *app);
 
     void exec(Daemon *app, const std::string &args) override;
 };
