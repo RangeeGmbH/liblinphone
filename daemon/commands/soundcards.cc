@@ -22,13 +22,13 @@
 
 using namespace std;
 
-AnswerSoundcard::AnswerSoundcard() :
+SoundcardCommand::SoundcardCommand() :
         DaemonCommand("soundcards", "soundcards", "list all soundcards") {
     addExample(new DaemonCommandExample("soundcards",
                                         "Status: OK\n"));
 }
 
-void AnswerSoundcard::exec(Daemon *app, const string& args) {
+void SoundcardCommand::exec(Daemon *app, const string& args) {
     LinphoneCore *lc = app->getCore();
     const char **dev;
     dev=linphone_core_get_sound_devices(lc);

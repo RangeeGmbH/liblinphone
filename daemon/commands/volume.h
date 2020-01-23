@@ -26,9 +26,9 @@
 
 #include "daemon.h"
 
-class volume: public DaemonCommand  {
+class VolumeCommand: public DaemonCommand  {
 public:
-    volume();
+    VolumeCommand();
 
     typedef enum {
         AUDIO_VOLUME_SET,

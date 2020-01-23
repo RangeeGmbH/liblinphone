@@ -466,8 +466,8 @@ void Daemon::initCommands() {
 	mCommands.push_back(new PlayWavCommand());
 	mCommands.push_back(new PopEventCommand());
 	mCommands.push_back(new AnswerCommand());
-    mCommands.push_back(new AnswerSoundcard());
-    mCommands.push_back(new volume());
+    mCommands.push_back(new SoundcardCommand());
+    mCommands.push_back(new VolumeCommand());
 	mCommands.push_back(new CallStatusCommand());
 	mCommands.push_back(new CallStatsCommand());
 	mCommands.push_back(new CallPauseCommand());

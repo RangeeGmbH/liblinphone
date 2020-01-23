@@ -24,9 +24,9 @@
 #include "daemon.h"
 
 
-class AnswerSoundcard: public DaemonCommand  {
+class SoundcardCommand: public DaemonCommand  {
 public:
-    AnswerSoundcard();
+    SoundcardCommand();
 
     void exec(Daemon *app, const std::string &args) override;
 };

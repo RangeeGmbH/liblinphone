@@ -30,7 +30,7 @@
 
 using namespace std;
 
-volume::volume() :
+VolumeCommand::VolumeCommand() :
         DaemonCommand("volume", "volume set value | volume get",
                       "set the volume around value or get the current volume") {
     addExample(new DaemonCommandExample("value set 1",
@@ -39,7 +39,7 @@ volume::volume() :
                                         "Status: OK\n"));
 }
 
-long volume::audioVolumeSet(volume::audio_volume_action action, long *outvol, Daemon *app) {
+long VolumeCommand::audioVolumeSet(audio_volume_action action, long *outvol, Daemon *app) {
     snd_mixer_t *handle;
     snd_mixer_elem_t *elem;
     snd_mixer_selem_id_t *sid;
@@ -100,7 +100,7 @@ long volume::audioVolumeSet(volume::audio_volume_action action, long *outvol, Da
     return *outvol;
 }
 
-long volume::audioVolumeGet(audio_volume_action action, Daemon *app) {
+long VolumeCommand::audioVolumeGet(audio_volume_action action, Daemon *app) {
     long outvol = 0;
     snd_mixer_t *handle;
     snd_mixer_elem_t *elem;
@@ -164,7 +164,7 @@ long volume::audioVolumeGet(audio_volume_action action, Daemon *app) {
     return -7;
 }
 
-void volume::exec(Daemon *app, const string &args) {
+void VolumeCommand::exec(Daemon *app, const string &args) {
     istringstream ist(args);
     string param;
     long value;
