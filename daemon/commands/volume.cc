@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <regex>
 #include <alsa/asoundlib.h>
+#include <math.h>
 
 using namespace std;
 
@@ -95,34 +96,12 @@ int volume::audio_volume(audio_volume_action action, long *outvol, Daemon *app) 
             snd_mixer_close(handle);
             return -6;
         }
-        float floatVolume = 0;
-        long erg;
-        floatVolume = 100 * (float) (*outvol) / (float) maxv;
-        string floatStr;
-        string floatStrErg;
-        floatStr = to_string(floatVolume);
-        std::size_t found = floatStr.find(".", 0);
-        if (found != std::string::npos) {
-            floatStrErg = floatStr.substr(found + 1, 1);
-            long floatLongErg = stol(floatStrErg);
-            if (floatLongErg >= 5) {
-                floatVolume = floatVolume + 1;
-                floatStr = to_string(floatVolume);
-                std::size_t found = floatStr.find(".", 0);
-                if (found != std::string::npos) {
-                    floatStrErg = floatStr.substr(0, found);
-                    floatVolume = (float) strtod(floatStrErg.c_str(), NULL);
-                    erg = (long) floatVolume;
-                }
-            } else {
-                erg = (long) floatVolume;
-            }
-        }
+        float floatVolume = 100 * (float) (*outvol) / (float) maxv;
+        floatVolume = round(floatVolume);
+        long erg = (long) floatVolume;
         Response resp;
-        string volume;
-        string volumeErg;
-        volume = to_string(erg);
-        volumeErg = "Current volume: ";
+        string volume = to_string(erg);
+        string volumeErg = "Current volume: ";
         volumeErg = volumeErg + volume;
         resp.setBody(volumeErg.c_str());
         app->sendResponse(resp);
@@ -151,15 +130,14 @@ int volume::audio_volume(audio_volume_action action, long *outvol, Daemon *app) 
 }
 
 void volume::exec(Daemon *app, const string &args) {
+    istringstream ist(args);
     string value;
-    std::size_t foundSet = args.find("set ", 0);
-    std::size_t foundGet = args.find("get", 0);
+    std::size_t foundSet = ist.str().find("set ", 0);
+    std::size_t foundGet = ist.str().find("get", 0);
     if (foundSet != std::string::npos) {
-        value = args.substr(4, args.length());
-        //const regex r("^([1-9][0-9]{0,999})$");
+        value = ist.str().substr(4, ist.str().length());
         const regex r("^([0-9][0-9]{0,999})$");
         smatch sm;
-
         if (regex_search(value, sm, r)) {
             long valueLong = stol(value);
             audio_volume(AUDIO_VOLUME_SET, &valueLong, app);
