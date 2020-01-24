@@ -26,13 +26,15 @@
 
 #include "daemon.h"
 
+using namespace std;
+
 class VolumeCommand: public DaemonCommand  {
 public:
     VolumeCommand();
 
     typedef enum {
-        AUDIO_VOLUME_SET,
-        AUDIO_VOLUME_GET,
+        AUDIO_VOLUME_SET_PLAYBACK_DEVICE,
+        AUDIO_VOLUME_GET_PLAYBACK_DEVICE
     } audio_volume_action;
 
     long audioVolumeSet(audio_volume_action action, long* outvol, Daemon *app);
