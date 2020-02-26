@@ -64,6 +64,9 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
         if (elem != NULL && elem->next == NULL) {
             call = (LinphoneCall*)elem->data;
         }
+        if (elem != NULL && elem->next != NULL) {
+            call = (LinphoneCall*)elem->data;
+        }
         if (call == NULL) {
             app->sendResponse(Response("No active call."));
             return;
