@@ -61,10 +61,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
     // terminate ALL
     if(param == "ALL"){
         elem = linphone_core_get_calls(app->getCore());
-        if (elem != NULL && elem->next == NULL) {
-            call = (LinphoneCall*)elem->data;
-        }
-        if (elem != NULL && elem->next != NULL) {
+        if (elem != NULL) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
