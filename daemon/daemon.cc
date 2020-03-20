@@ -848,7 +848,7 @@ static void printHelp() {
 		"\t-C                         Enable video capture." << endl <<
 		"\t-D                         Enable video display." << endl <<
 		"\t--auto-answer              Automatically answer incoming calls." << endl <<
-        "\t--soundcardlist            List all soundcards"<<endl;
+        "\t--list-soundcards          List all soundcards"<<endl;
 }
 
 void Daemon::startThread() {
@@ -1032,7 +1032,7 @@ int main(int argc, char *argv[]) {
 			lsd_enabled = true;
 		}else if (strcmp(argv[i], "--auto-answer") == 0) {
 			auto_answer = true;
-        }else if (strcmp(argv[i], "--soundcardlist") == 0) {
+        }else if (strcmp(argv[i], "--list-soundcards") == 0) {
             Daemon app(NULL, NULL, NULL, NULL, false, false, true);
             return 0;
         }
