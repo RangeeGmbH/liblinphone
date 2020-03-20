@@ -240,7 +240,7 @@ class Daemon {
 	friend class DaemonCommand;
 public:
 	typedef Response::Status Status;
-	Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video);
+	Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video, bool list_soundcards);
 	~Daemon();
 	int run();
 	void quit();
@@ -269,6 +269,8 @@ public:
 	void callPlayingComplete(int id);
 	void setAutoVideo( bool enabled ){ mAutoVideo = enabled; }
 	inline bool autoVideo(){ return mAutoVideo; }
+	void listSoundCards(LinphoneCore *lc, bool list_soundcards);
+
 
 private:
 	static void* iterateThread(void *arg);

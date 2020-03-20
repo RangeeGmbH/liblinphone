@@ -303,7 +303,20 @@ bool DaemonCommand::matches(const string& name) const {
 	return mName.compare(name) == 0;
 }
 
-Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video) :
+void Daemon::listSoundCards(LinphoneCore *lc, bool list_soundcards){
+    if(list_soundcards == true) {
+        const char **dev;
+        dev=linphone_core_get_sound_devices(mLc);
+        int i;
+        ostringstream ost;
+        for(i=0; dev[i]!=NULL; ++i){
+            ost << i << " " << dev[i] << "\n";
+        }
+        sendResponse(Response(ost.str().c_str(), Response::Ok));
+    }
+}
+
+Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video, bool list_soundcards) :
 		mLSD(0), mLogFile(NULL), mAutoVideo(0), mCallIds(0), mProxyIds(0), mAudioStreamIds(0) {
 	ms_mutex_init(&mMutex, NULL);
 	mServerFd = (ortp_pipe_t)-1;
@@ -342,6 +355,7 @@ Daemon::Daemon(const char *config_path, const char *factory_config_path, const c
 	vtable.dtmf_received = dtmfReceived;
 	vtable.message_received = messageReceived;
 	mLc = linphone_core_new(&vtable, config_path, factory_config_path, this);
+    listSoundCards(mLc, list_soundcards);
 	linphone_core_set_user_data(mLc, this);
 	linphone_core_enable_video_capture(mLc,capture_video);
 	linphone_core_enable_video_display(mLc,display_video);
@@ -833,7 +847,8 @@ static void printHelp() {
 		"\t--enable-lsd               Use the linphone sound daemon." << endl <<
 		"\t-C                         Enable video capture." << endl <<
 		"\t-D                         Enable video display." << endl <<
-		"\t--auto-answer              Automatically answer incoming calls."<<endl;
+		"\t--auto-answer              Automatically answer incoming calls." << endl <<
+        "\t--soundcardlist            List all soundcards"<<endl;
 }
 
 void Daemon::startThread() {
@@ -964,6 +979,7 @@ int main(int argc, char *argv[]) {
 	bool stats_enabled = true;
 	bool lsd_enabled = false;
 	bool auto_answer = false;
+	bool list_soundcards = false;
 	int i;
 
 	for (i = 1; i < argc; ++i) {
@@ -971,11 +987,11 @@ int main(int argc, char *argv[]) {
 			printHelp();
 			return 0;
 		} else if (strcmp(argv[i], "--dump-commands-help") == 0) {
-			Daemon app(NULL, NULL, NULL, NULL, false, false);
+			Daemon app(NULL, NULL, NULL, NULL, false, false, false);
 			app.dumpCommandsHelp();
 			return 0;
 		}else if (strcmp(argv[i], "--dump-commands-html-help") == 0) {
-			Daemon app(NULL, NULL, NULL, NULL, false, false);
+			Daemon app(NULL, NULL, NULL, NULL, false, false, false);
 			app.dumpCommandsHelpHtml();
 			return 0;
 		} else if (strcmp(argv[i], "--pipe") == 0) {
@@ -1016,12 +1032,15 @@ int main(int argc, char *argv[]) {
 			lsd_enabled = true;
 		}else if (strcmp(argv[i], "--auto-answer") == 0) {
 			auto_answer = true;
-		}
+        }else if (strcmp(argv[i], "--soundcardlist") == 0) {
+            Daemon app(NULL, NULL, NULL, NULL, false, false, true);
+            return 0;
+        }
 		else{
 			fprintf(stderr, "Unrecognized option : %s", argv[i]);
 		}
 	}
-	Daemon app(config_path, factory_config_path, log_file, pipe_name, display_video, capture_video);
+	Daemon app(config_path, factory_config_path, log_file, pipe_name, display_video, capture_video, list_soundcards);
 	
 	the_app = &app;
 	signal(SIGINT, sighandler);
