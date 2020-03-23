@@ -141,7 +141,7 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 	setBody(ostr.str());
 
 	bctbx_free(fromStr);
-	
+
 }
 
 DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("receiving-tone"){
@@ -221,7 +221,7 @@ AudioStreamStatsEvent::AudioStreamStatsEvent(Daemon* daemon, AudioStream* stream
 
 CallPlayingStatsEvent::CallPlayingStatsEvent(Daemon* daemon, int id) : Event("call-playing-complete"){
 	ostringstream ostr;
- 
+
 	ostr << "Id: " << id << "\n";
 
 	setBody(ostr.str());
@@ -303,20 +303,7 @@ bool DaemonCommand::matches(const string& name) const {
 	return mName.compare(name) == 0;
 }
 
-void Daemon::listSoundCards(LinphoneCore *lc, bool list_soundcards){
-    if(list_soundcards == true) {
-        const char **dev;
-        dev=linphone_core_get_sound_devices(mLc);
-        int i;
-        ostringstream ost;
-        for(i=0; dev[i]!=NULL; ++i){
-            ost << i << " " << dev[i] << "\n";
-        }
-        sendResponse(Response(ost.str().c_str(), Response::Ok));
-    }
-}
-
-Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video, bool list_soundcards) :
+Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video) :
 		mLSD(0), mLogFile(NULL), mAutoVideo(0), mCallIds(0), mProxyIds(0), mAudioStreamIds(0) {
 	ms_mutex_init(&mMutex, NULL);
 	mServerFd = (ortp_pipe_t)-1;
@@ -355,7 +342,6 @@ Daemon::Daemon(const char *config_path, const char *factory_config_path, const c
 	vtable.dtmf_received = dtmfReceived;
 	vtable.message_received = messageReceived;
 	mLc = linphone_core_new(&vtable, config_path, factory_config_path, this);
-    listSoundCards(mLc, list_soundcards);
 	linphone_core_set_user_data(mLc, this);
 	linphone_core_enable_video_capture(mLc,capture_video);
 	linphone_core_enable_video_display(mLc,display_video);
@@ -535,11 +521,11 @@ bool Daemon::pullEvent() {
 	bool status = false;
 	ostringstream ostr;
 	size_t size = mEventQueue.size();
-	
+
 	if (size != 0) size--;
-	
+
 	ostr << "Size: " << size << "\n"; //size is the number items remaining in the queue after popping the event.
-	
+
 	if (!mEventQueue.empty()) {
 		Event *e = mEventQueue.front();
 		mEventQueue.pop();
@@ -547,14 +533,14 @@ bool Daemon::pullEvent() {
 		delete e;
 		status = true;
 	}
-	
+
 	sendResponse(Response(ostr.str().c_str(), Response::Ok));
 	return status;
 }
 
 void Daemon::callStateChanged(LinphoneCall *call, LinphoneCallState state, const char *msg) {
 	queueEvent(new CallEvent(this, call, state));
-	
+
 	if (state == LinphoneCallIncomingReceived && mAutoAnswer){
 		linphone_call_accept(call);
 	}
@@ -848,7 +834,7 @@ static void printHelp() {
 		"\t-C                         Enable video capture." << endl <<
 		"\t-D                         Enable video display." << endl <<
 		"\t--auto-answer              Automatically answer incoming calls." << endl <<
-        "\t--list-soundcards          List all soundcards"<<endl;
+        "\t--list-soundcards          List all soundcards" << endl;
 }
 
 void Daemon::startThread() {
@@ -969,6 +955,30 @@ static void sighandler(int signum){
 	}
 }
 
+static void listSoundcards() {
+    const char **devices;
+    size_t ndev;
+    const char *msplugins_dir;
+    const char *image_resources_dir;
+
+    LinphoneFactory *lfactory = linphone_factory_get();
+    msplugins_dir = linphone_factory_get_msplugins_dir(lfactory);
+    image_resources_dir = linphone_factory_get_image_resources_dir(lfactory);
+    MSFactory *factory = ms_factory_new_with_voip_and_directories(msplugins_dir, image_resources_dir);
+
+    const bctbx_list_t *elem = ms_snd_card_manager_get_list(ms_factory_get_snd_card_manager(factory));
+    ndev = bctbx_list_size(elem);
+    devices = reinterpret_cast<const char **>(ms_malloc((ndev + 1) * sizeof(const char *)));
+    for (int i = 0; elem != NULL; elem = elem->next, i++) {
+        devices[i] = ms_snd_card_get_string_id((MSSndCard *) elem->data);
+    }
+    devices[ndev] = NULL;
+
+    for (int i = 0; devices[i] != NULL; ++i) {
+        cout << devices[i] << "\n";
+    }
+}
+
 int main(int argc, char *argv[]) {
 	const char *config_path = NULL;
 	const char *factory_config_path = NULL;
@@ -979,7 +989,6 @@ int main(int argc, char *argv[]) {
 	bool stats_enabled = true;
 	bool lsd_enabled = false;
 	bool auto_answer = false;
-	bool list_soundcards = false;
 	int i;
 
 	for (i = 1; i < argc; ++i) {
@@ -987,11 +996,11 @@ int main(int argc, char *argv[]) {
 			printHelp();
 			return 0;
 		} else if (strcmp(argv[i], "--dump-commands-help") == 0) {
-			Daemon app(NULL, NULL, NULL, NULL, false, false, false);
+			Daemon app(NULL, NULL, NULL, NULL, false, false);
 			app.dumpCommandsHelp();
 			return 0;
 		}else if (strcmp(argv[i], "--dump-commands-html-help") == 0) {
-			Daemon app(NULL, NULL, NULL, NULL, false, false, false);
+			Daemon app(NULL, NULL, NULL, NULL, false, false);
 			app.dumpCommandsHelpHtml();
 			return 0;
 		} else if (strcmp(argv[i], "--pipe") == 0) {
@@ -1033,15 +1042,15 @@ int main(int argc, char *argv[]) {
 		}else if (strcmp(argv[i], "--auto-answer") == 0) {
 			auto_answer = true;
         }else if (strcmp(argv[i], "--list-soundcards") == 0) {
-            Daemon app(NULL, NULL, NULL, NULL, false, false, true);
+            listSoundcards();
             return 0;
         }
 		else{
 			fprintf(stderr, "Unrecognized option : %s", argv[i]);
 		}
 	}
-	Daemon app(config_path, factory_config_path, log_file, pipe_name, display_video, capture_video, list_soundcards);
-	
+	Daemon app(config_path, factory_config_path, log_file, pipe_name, display_video, capture_video);
+
 	the_app = &app;
 	signal(SIGINT, sighandler);
 	app.enableStatsEvents(stats_enabled);

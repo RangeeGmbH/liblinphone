@@ -184,7 +184,7 @@ public:
 class CallPlayingStatsEvent: public Event {
 public:
 	CallPlayingStatsEvent(Daemon *daemon, int id);
-}; 
+};
 
 
 class DtmfEvent: public Event {
@@ -240,7 +240,7 @@ class Daemon {
 	friend class DaemonCommand;
 public:
 	typedef Response::Status Status;
-	Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video, bool list_soundcards);
+	Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video);
 	~Daemon();
 	int run();
 	void quit();
@@ -269,8 +269,6 @@ public:
 	void callPlayingComplete(int id);
 	void setAutoVideo( bool enabled ){ mAutoVideo = enabled; }
 	inline bool autoVideo(){ return mAutoVideo; }
-	void listSoundCards(LinphoneCore *lc, bool list_soundcards);
-
 
 private:
 	static void* iterateThread(void *arg);
@@ -282,7 +280,7 @@ private:
 	void callStatsUpdated(LinphoneCall *call, const LinphoneCallStats *stats);
 	void dtmfReceived(LinphoneCall *call, int dtmf);
 	void messageReceived(LinphoneChatRoom *cr, LinphoneChatMessage *msg);
-	
+
 	void execCommand(const std::string &command);
 	std::string readLine(const std::string&, bool*);
 	std::string readPipe();
