@@ -66,7 +66,7 @@ void IPv6Command::exec(Daemon *app, const string& args) {
 	} else if (status.compare("disable") == 0) {
 		linphone_core_enable_ipv6(app->getCore(), FALSE);
 	} else {
-		app->sendResponse(Response("Incorrect parameter.", Response::Error));
+		app->sendResponse(Response("Incorrect parameter.", "", Response::Error));
 		return;
 	}
 	app->sendResponse(IPv6Response(app->getCore()));

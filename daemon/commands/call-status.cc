@@ -45,13 +45,13 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available."));
+			app->sendResponse(Response("No current call available.", ""));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+			app->sendResponse(Response("No call with such id.", ""));
 			return;
 		}
 	}
@@ -84,5 +84,5 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
 	default:
 		break;
 	}
-	app->sendResponse(Response(ostr.str(), Response::Ok));
+	app->sendResponse(Response(ostr.str(), "", Response::Ok));
 }

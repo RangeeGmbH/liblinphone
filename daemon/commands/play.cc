@@ -59,11 +59,11 @@ void IncallPlayerStartCommand::exec(Daemon *app, const string& args) {
 
 	ist >> filename;
 	if (ist.eof() && (filename.length() == 0)) {
-		app->sendResponse(Response("Missing filename parameter.", Response::Error));
+		app->sendResponse(Response("Missing filename parameter.", "", Response::Error));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect filename parameter.", Response::Error));
+		app->sendResponse(Response("Incorrect filename parameter.", "", Response::Error));
 		return;
 	}
 	
@@ -76,12 +76,12 @@ void IncallPlayerStartCommand::exec(Daemon *app, const string& args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+			app->sendResponse(Response("No call with such id.", ""));
 			return;
 		}
 	}
 	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
+		app->sendResponse(Response("No active call.", ""));
 		return;
 	}
 	LinphonePlayer *p = linphone_call_get_player(call);
@@ -129,12 +129,12 @@ void IncallPlayerStopCommand::exec(Daemon *app, const string& args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+			app->sendResponse(Response("No call with such id.", ""));
 			return;
 		}
 	}
 	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
+		app->sendResponse(Response("No active call.", ""));
 		return;
 	}
 	
@@ -175,12 +175,12 @@ void IncallPlayerPauseCommand::exec(Daemon *app, const string& args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+			app->sendResponse(Response("No call with such id.", ""));
 			return;
 		}
 	}
 	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
+		app->sendResponse(Response("No active call.", ""));
 		return;
 	}
 	
@@ -218,12 +218,12 @@ void IncallPlayerResumeCommand::exec(Daemon *app, const string& args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+			app->sendResponse(Response("No call with such id.", ""));
 			return;
 		}
 	}
 	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
+		app->sendResponse(Response("No active call.", ""));
 		return;
 	}
 	

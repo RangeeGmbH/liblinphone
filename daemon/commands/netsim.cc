@@ -110,7 +110,7 @@ void NetsimCommand::exec(Daemon* app, const string& args) {
 		if (fmtp_get_value(parameters.c_str(), "mode",value, sizeof(value))) {
 			OrtpNetworkSimulatorMode mode = ortp_network_simulator_mode_from_string(value);
 			if (mode == OrtpNetworkSimulatorInvalid) {
-				app->sendResponse(Response("Invalid mode"));
+				app->sendResponse(Response("Invalid mode", ""));
 				return;
 			}
 			params.mode = mode;

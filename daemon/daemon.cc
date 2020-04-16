@@ -534,7 +534,7 @@ bool Daemon::pullEvent() {
 		status = true;
 	}
 
-	sendResponse(Response(ostr.str().c_str(), Response::Ok));
+	sendResponse(Response(ostr.str().c_str(), "", Response::Ok));
 	return status;
 }
 
@@ -644,7 +644,7 @@ void Daemon::execCommand(const string &command) {
 		(*it)->exec(this, args);
 		ms_mutex_unlock(&mMutex);
 	} else {
-		sendResponse(Response("Unknown command."));
+		sendResponse(Response("Unknown command.", ""));
 	}
 }
 

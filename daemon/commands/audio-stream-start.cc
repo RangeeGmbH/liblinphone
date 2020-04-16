@@ -50,7 +50,7 @@ void AudioStreamStartCommand::exec(Daemon *app, const string& args) {
 	ist >> port;
 	ist >> payload_type;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing/Incorrect parameter(s)."));
+		app->sendResponse(Response("Missing/Incorrect parameter(s).", ""));
 		return;
 	}
 
@@ -65,7 +65,7 @@ void AudioStreamStartCommand::exec(Daemon *app, const string& args) {
 	PayloadType *pt = getPayloadType(app->getCore(), linphone_core_get_audio_codecs(app->getCore()), payload_type);
 		
 	if (!pt){
-		app->sendResponse(Response("No payload type were assigned to this number."));
+		app->sendResponse(Response("No payload type were assigned to this number.", ""));
 		return;
 	}
 	AudioStream *stream = audio_stream_new(factory, local_port, local_port + 1, linphone_core_ipv6_enabled(app->getCore()));
@@ -86,11 +86,11 @@ void AudioStreamStartCommand::exec(Daemon *app, const string& args) {
 
 	int err = audio_stream_start_now(stream, prof, addr.c_str(), port, port + 1, payload_type, jitt, play_card, capture_card, echo_canceller);
 	if (err != 0) {
-		app->sendResponse(Response("Error during audio stream creation."));
+		app->sendResponse(Response("Error during audio stream creation.", ""));
 		return;
 	}
 
 	ostringstream ostr;
 	ostr << "Id: " << app->updateAudioStreamId(stream) << "\n";
-	app->sendResponse(Response(ostr.str(), Response::Ok));
+	app->sendResponse(Response(ostr.str(), "", Response::Ok));
 }

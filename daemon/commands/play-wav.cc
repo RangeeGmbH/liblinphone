@@ -36,7 +36,7 @@ void playWavFinished(LsdPlayer *p) {
 void PlayWavCommand::exec(Daemon *app, const string& args) {
 	LinphoneSoundDaemon *lsd = app->getLSD();
 	if (!lsd) {
-		app->sendResponse(Response("The linphone sound daemon (LSD) is not enabled.", Response::Error));
+		app->sendResponse(Response("The linphone sound daemon (LSD) is not enabled.", "", Response::Error));
 		return;
 	}
 
@@ -44,11 +44,11 @@ void PlayWavCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> filename;
 	if (ist.eof() && (filename.length() == 0)) {
-		app->sendResponse(Response("Missing filename parameter.", Response::Error));
+		app->sendResponse(Response("Missing filename parameter.", "", Response::Error));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect filename parameter.", Response::Error));
+		app->sendResponse(Response("Incorrect filename parameter.", "", Response::Error));
 		return;
 	}
 	LsdPlayer *p = linphone_sound_daemon_get_player(lsd);

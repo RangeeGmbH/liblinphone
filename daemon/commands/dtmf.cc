@@ -37,7 +37,7 @@ void DtmfCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> digit_str;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing digit parameter.", Response::Error));
+		app->sendResponse(Response("Missing digit parameter.", "", Response::Error));
 		return;
 	}
 
@@ -50,6 +50,6 @@ void DtmfCommand::exec(Daemon *app, const string& args) {
 		}
 		app->sendResponse(Response());
 	} else {
-		app->sendResponse(Response("Incorrect digit parameter.", Response::Error));
+		app->sendResponse(Response("Incorrect digit parameter.", "", Response::Error));
 	}
 }

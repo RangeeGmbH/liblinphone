@@ -45,7 +45,7 @@ void ConfigGetCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> section >> key;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing section and/or key names."));
+		app->sendResponse(Response("Missing section and/or key names.", ""));
 		return;
 	}
 	const char *read_value=lp_config_get_string(linphone_core_get_config(app->getCore()),section.c_str(),key.c_str(),NULL);
@@ -69,7 +69,7 @@ void ConfigSetCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> section >> key;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing section and/or key names."));
+		app->sendResponse(Response("Missing section and/or key names.", ""));
 		return;
 	}
 	ist>>value;

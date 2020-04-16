@@ -35,17 +35,17 @@ void ContactCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> username;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing/Incorrect parameter(s)."));
+		app->sendResponse(Response("Missing/Incorrect parameter(s).", ""));
 		return;
 	}
 	ist >> hostname;
 	if (ist.fail()) {
 		linphone_core_set_primary_contact(lc, username.c_str());
-		app->sendResponse(Response("", Response::Ok));
+		app->sendResponse(Response("", "", Response::Ok));
 	} else {
 		contact = ortp_strdup_printf("sip:%s@%s", username.c_str(), hostname.c_str());
 		linphone_core_set_primary_contact(lc, contact);
 		ms_free(contact);
-		app->sendResponse(Response("", Response::Ok));
+		app->sendResponse(Response("", "", Response::Ok));
 	}
 }

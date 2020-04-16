@@ -21,17 +21,6 @@
 
 using namespace std;
 
-class VersionResponse : public Response {
-public:
-	VersionResponse(LinphoneCore *core);
-};
-
-VersionResponse::VersionResponse(LinphoneCore *core) : Response() {
-	ostringstream ost;
-	ost << "Version: " << linphone_core_get_version();
-	setBody(ost.str());
-}
-
 VersionCommand::VersionCommand() :
 		DaemonCommand("version", "version", "Get the version number.") {
 	addExample(new DaemonCommandExample("version",
@@ -40,5 +29,7 @@ VersionCommand::VersionCommand() :
 }
 
 void VersionCommand::exec(Daemon *app, const string& args) {
-	app->sendResponse(VersionResponse(app->getCore()));
+    ostringstream ost;
+    ost << "Version: " << linphone_core_get_version();
+    app->sendResponse(Response(ost.str(), COMMANDNAME_VERSION, Response::Ok));
 }

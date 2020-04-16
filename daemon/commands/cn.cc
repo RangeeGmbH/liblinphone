@@ -67,7 +67,7 @@ void CNCommand::exec(Daemon *app, const string& args) {
 	} else if (status.compare("disable") == 0) {
 		linphone_core_enable_generic_comfort_noise(app->getCore(), FALSE);
 	} else {
-		app->sendResponse(Response("Incorrect parameter.", Response::Error));
+		app->sendResponse(Response("Incorrect parameter.", "", Response::Error));
 		return;
 	}
 	app->sendResponse(CNResponse(app->getCore()));

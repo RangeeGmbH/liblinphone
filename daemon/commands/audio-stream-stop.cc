@@ -35,13 +35,13 @@ void AudioStreamStopCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> id;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing/Incorrect parameter(s)."));
+		app->sendResponse(Response("Missing/Incorrect parameter(s).", ""));
 		return;
 	}
 
 	AudioStream *stream = app->findAudioStream(id);
 	if (stream == NULL) {
-		app->sendResponse(Response("No Audio Stream with such id."));
+		app->sendResponse(Response("No Audio Stream with such id.", ""));
 		return;
 	}
 	app->removeAudioStream(id);

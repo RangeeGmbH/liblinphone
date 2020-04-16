@@ -49,20 +49,20 @@ void CallResumeCommand::exec(Daemon* app, const string& args)
 		call = linphone_core_get_current_call(lc);
 		current = true;
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available."));
+			app->sendResponse(Response("No current call available.", ""));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+			app->sendResponse(Response("No call with such id.", ""));
 			return;
 		}
 	}
 
 	if (linphone_call_resume(call) == 0) {
-		app->sendResponse(Response(current ? "Current call was resumed" : "Call was resumed", Response::Ok));
+		app->sendResponse(Response(current ? "Current call was resumed" : "Call was resumed", "", Response::Ok));
 	} else {
-		app->sendResponse(Response("Error pausing call"));
+		app->sendResponse(Response("Error pausing call", ""));
 	}
 }

@@ -80,7 +80,7 @@ void FirewallPolicyCommand::exec(Daemon *app, const string& args) {
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect type parameter.", Response::Error));
+		app->sendResponse(Response("Incorrect type parameter.", "", Response::Error));
 		return;
 	}
 
@@ -102,13 +102,13 @@ void FirewallPolicyCommand::exec(Daemon *app, const string& args) {
 		policy = LinphonePolicyUseUpnp;
 		get_address = false;
 	} else {
-		app->sendResponse(Response("Incorrect type parameter.", Response::Error));
+		app->sendResponse(Response("Incorrect type parameter.", "", Response::Error));
 		return;
 	}
 	if (get_address) {
 		ist >> address;
 		if (ist.fail()) {
-			app->sendResponse(Response("Missing/Incorrect address parameter.", Response::Error));
+			app->sendResponse(Response("Missing/Incorrect address parameter.", "", Response::Error));
 			return;
 		}
 	}

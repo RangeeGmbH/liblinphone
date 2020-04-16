@@ -44,19 +44,31 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
 	int muted;
 	LinphoneCall *call = linphone_core_get_current_call(lc);
 
-	if (call == NULL) {
-		app->sendResponse(Response("No call in progress. Can't mute."));
-		return;
-	}
-
 	istringstream ist(args);
 	ist >> muted;
 	if (ist.fail() || (muted != 0)) {
 		muted = TRUE;
+        if (call == NULL) {
+            app->sendResponse(Response("No call in progress. Can't mute.", COMMANDNAME));
+            return;
+        }
 	} else {
-		muted = FALSE;
+        muted = FALSE;
+        if (call == NULL) {
+            app->sendResponse(Response("No call in progress. Can't unmute.", COMMANDNAME2));
+            return;
+        }
 	}
 	linphone_core_enable_mic(lc, !muted);
-
-	app->sendResponse(Response(muted ? "Microphone Muted" : "Microphone Unmuted", Response::Ok));
+    std::ostringstream buf;
+    string micStatus = "MicStatus: ";
+    string mutedStr = "Microphone Muted";
+    string unmutedStr = "Microphone Unmuted";
+    if(muted == TRUE) {
+        buf << micStatus << mutedStr;
+    }
+    else {
+        buf << micStatus << unmutedStr;
+    }
+	app->sendResponse(Response(buf.str(), muted ? COMMANDNAME : COMMANDNAME2 , Response::Ok));
 }

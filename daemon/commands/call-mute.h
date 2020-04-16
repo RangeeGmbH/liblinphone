@@ -22,6 +22,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME "call-mute or call-mute 1"
+#define COMMANDNAME2 "call-mute 0"
+
 class CallMuteCommand : public DaemonCommand
 {
 public:

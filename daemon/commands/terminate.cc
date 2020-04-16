@@ -51,7 +51,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            app->sendResponse(Response("No active call."));
+            app->sendResponse(Response("No active call.", ""));
             return;
         }
         linphone_call_terminate(call);
@@ -65,7 +65,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            app->sendResponse(Response("No active call."));
+            app->sendResponse(Response("No active call.", ""));
             return;
         }
         else{
@@ -80,7 +80,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
     // terminate 1
     call = app->findCall(cid);
     if (call == NULL) {
-        app->sendResponse(Response("No call with such id."));
+        app->sendResponse(Response("No call with such id.", ""));
         return;
     }
     linphone_call_terminate(call);

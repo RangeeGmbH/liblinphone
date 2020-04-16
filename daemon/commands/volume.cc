@@ -55,65 +55,46 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
     int value;
     ist >> param;
     if (ist.fail()) {
-        Response resp;
-        resp.setBody("Status: Error\nReason: Missing parameter");
-        app->sendResponse(resp);
+        app->sendResponse(Response("Missing parameter", COMMANDNAME_VOLUME, Response::Error));
     }
     if (param == "set") {
         ist >> param;
         if(ist.fail()) {
-            Response resp;
-            resp.setBody("Status: Error\nReason: Missing parameter");
-            app->sendResponse(resp);
+            app->sendResponse(Response("Missing parameter", COMMANDNAME_VOLUME, Response::Error));
         } else{
             if(param == "playback_dev"){
                 ist >> value;
                 if(ist.fail()) {
-                    Response resp;
-                    resp.setBody("Status: Error\nReason: Missing or wrong value");
-                    app->sendResponse(resp);
+                    app->sendResponse(Response("Missing or wrong value", COMMANDNAME_VOLUME, Response::Error));
                 } else{
                     MSSndCard *play_card = ms_snd_card_manager_get_playback_card(manager, linphone_core_get_playback_device(app->getCore()));
                     ms_snd_card_set_level(play_card,MS_SND_CARD_PLAYBACK,value);
                     if(value >=0) {
-                        Response resp;
-                        string respMessage = "Volume was set successfully";
-                        resp.setBody(respMessage.c_str());
-                        app->sendResponse(resp);
+                        app->sendResponse(Response("Volume was set successfully", COMMANDNAME_VOLUME, Response::Ok));
                     }
                 }
             }
             if(param == "ringer_dev"){
                 ist >> value;
                 if(ist.fail()) {
-                    Response resp;
-                    resp.setBody("Status: Error\nReason: Missing or wrong value");
-                    app->sendResponse(resp);
+                    app->sendResponse(Response("Missing or wrong value", COMMANDNAME_VOLUME, Response::Error));
                 } else{
                     MSSndCard *ring_card = ms_snd_card_manager_get_playback_card(manager, linphone_core_get_ringer_device(app->getCore()));
                     ms_snd_card_set_level(ring_card,MS_SND_CARD_PLAYBACK,value);
                     if(value >=0) {
-                        Response resp;
-                        string respMessage = "Volume was set successfully";
-                        resp.setBody(respMessage.c_str());
-                        app->sendResponse(resp);
+                        app->sendResponse(Response("Volume was set successfully", COMMANDNAME_VOLUME, Response::Ok));
                     }
                 }
             }
             if(param == "capture_dev"){
                 ist >> value;
                 if(ist.fail()) {
-                    Response resp;
-                    resp.setBody("Status: Error\nReason: Missing or wrong value");
-                    app->sendResponse(resp);
+                    app->sendResponse(Response("Missing or wrong value", COMMANDNAME_VOLUME, Response::Error));
                 } else{
                     MSSndCard *capture_card = ms_snd_card_manager_get_capture_card(manager, linphone_core_get_capture_device(app->getCore()));
                     ms_snd_card_set_level(capture_card,MS_SND_CARD_CAPTURE,value);
                     if(value >=0) {
-                        Response resp;
-                        string respMessage = "Volume was set successfully";
-                        resp.setBody(respMessage.c_str());
-                        app->sendResponse(resp);
+                        app->sendResponse(Response("Volume was set successfully", COMMANDNAME_VOLUME, Response::Ok));
                     }
                 }
             }
@@ -122,9 +103,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
     if (param == "get") {
         ist >> param;
         if(ist.fail()) {
-            Response resp;
-            resp.setBody("Status: Error\nReason: Missing parameter");
-            app->sendResponse(resp);
+            app->sendResponse(Response("Missing parameter", COMMANDNAME_VOLUME, Response::Error));
         } else{
             if(param == "playback_dev"){
                 MSSndCard *play_card = ms_snd_card_manager_get_playback_card(manager, linphone_core_get_playback_device(app->getCore()));
@@ -134,8 +113,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
                     string volume = to_string(value);
                     string volumeErg = "Current playback volume: ";
                     volumeErg = volumeErg + volume;
-                    resp.setBody(volumeErg.c_str());
-                    app->sendResponse(resp);
+                    app->sendResponse(Response(volumeErg.c_str(), COMMANDNAME_VOLUME, Response::Ok));
                 }
             }
             if(param == "ringer_dev"){
@@ -146,8 +124,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
                     string volume = to_string(value);
                     string volumeErg = "Current ring volume: ";
                     volumeErg = volumeErg + volume;
-                    resp.setBody(volumeErg.c_str());
-                    app->sendResponse(resp);
+                    app->sendResponse(Response(volumeErg.c_str(), COMMANDNAME_VOLUME, Response::Ok));
                 }
             }
             if(param == "capture_dev"){
@@ -158,15 +135,12 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
                     string volume = to_string(value);
                     string volumeErg = "Current capture volume: ";
                     volumeErg = volumeErg + volume;
-                    resp.setBody(volumeErg.c_str());
-                    app->sendResponse(resp);
+                    app->sendResponse(Response(volumeErg.c_str(), COMMANDNAME_VOLUME, Response::Ok));
                 }
             }
         }
     }
     if (param != "get" && param != "set" && param != "" && param != "playback_dev" && param != "ringer_dev" && param != "capture_dev"){
-        Response resp;
-        resp.setBody("Status: Error\nReason: Wrong parameter");
-        app->sendResponse(resp);
+        app->sendResponse(Response("Wrong parameter", COMMANDNAME_VOLUME, Response::Error));
     }
 }

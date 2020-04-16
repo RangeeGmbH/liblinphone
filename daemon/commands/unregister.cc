@@ -40,7 +40,7 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> param;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", Response::Error));
+		app->sendResponse(Response("Missing parameter.", "", Response::Error));
 		return;
 	}
 	if (param.compare("ALL") == 0) {
@@ -55,12 +55,12 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 		ist.str(param);
 		ist >> pid;
 		if (ist.fail()) {
-			app->sendResponse(Response("Incorrect parameter.", Response::Error));
+			app->sendResponse(Response("Incorrect parameter.", "", Response::Error));
 			return;
 		}
 		cfg = app->findProxy(pid);
 		if (cfg == NULL) {
-			app->sendResponse(Response("No register with such id.", Response::Error));
+			app->sendResponse(Response("No register with such id.", "", Response::Error));
 			return;
 		}
 		linphone_core_remove_proxy_config(app->getCore(), cfg);

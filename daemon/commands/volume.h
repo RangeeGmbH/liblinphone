@@ -25,6 +25,7 @@
 #define LINPHONE_SDK_VOLUME_H
 
 #include "daemon.h"
+#define COMMANDNAME_VOLUME "volume"
 
 using namespace std;
 

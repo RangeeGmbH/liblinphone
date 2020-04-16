@@ -20,6 +20,10 @@
 #ifndef LINPHONE_DAEMON_COMMAND_VIDEO_H
 #define LINPHONE_DAEMON_COMMAND_VIDEO_H
 
+#define COMMANDNAME_VIDEO "video"
+#define COMMANDNAME_VIDEOSOURCE "videosource"
+#define COMMANDNAME_AUTOVIDEO "autovideo"
+
 #include "daemon.h"
 
 class Video : public DaemonCommand

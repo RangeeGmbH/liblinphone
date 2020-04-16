@@ -79,7 +79,7 @@ void RegisterInfoCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> param;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", Response::Error));
+		app->sendResponse(Response("Missing parameter.", "", Response::Error));
 		return;
 	}
 	if (param == "ALL") {
@@ -96,15 +96,15 @@ void RegisterInfoCommand::exec(Daemon *app, const string& args) {
 		try {
 			id = atoi(param.c_str());
 		} catch (invalid_argument&) {
-			app->sendResponse(Response("Invalid ID.", Response::Error));
+			app->sendResponse(Response("Invalid ID.", "", Response::Error));
 			return;
 		} catch (out_of_range&) {
-			app->sendResponse(Response("Out of range ID.", Response::Error));
+			app->sendResponse(Response("Out of range ID.", "", Response::Error));
 			return;
 		}
 		::LinphoneProxyConfig *cfg = app->findProxy(id);
 		if (cfg == NULL) {
-			app->sendResponse(Response("No register with such id.", Response::Error));
+			app->sendResponse(Response("No register with such id.", "", Response::Error));
 			return;
 		}
 		app->sendResponse(RegisterInfoResponse(id, cfg));
