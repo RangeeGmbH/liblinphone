@@ -22,11 +22,26 @@
 
 #include "daemon.h"
 
+using namespace std;
+
+#define COMMANDNAME_PORT "port"
+
 class PortCommand: public DaemonCommand {
 public:
 	PortCommand();
+    enum PortType {
+        SIPPort,
+        AudioRTPPort,
+        VideoRTPPort,
+        AllPorts
+    };
 
 	void exec(Daemon *app, const std::string& args) override;
+private:
+    string getPortResponseStr(LinphoneCore *core, PortType portType);
+    void outputSIPPort(LinphoneCore *core, ostringstream &ost);
+    void outputAudioRTPPort(LinphoneCore *core, ostringstream &ost);
+    void outputVideoRTPPort(LinphoneCore *core, ostringstream &ost);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_PORT_H_
