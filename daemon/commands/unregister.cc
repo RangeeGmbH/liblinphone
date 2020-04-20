@@ -36,11 +36,12 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 	LinphoneProxyConfig *cfg = NULL;
 	string param;
 	int pid;
+    ostringstream ost;
 
 	istringstream ist(args);
 	ist >> param;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", "", Response::Error));
+		app->sendResponse(Response("Missing parameter.", COMMANDNAME_UNREGISTER, Response::Error));
 		return;
 	}
 	if (param.compare("ALL") == 0) {
@@ -55,15 +56,21 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 		ist.str(param);
 		ist >> pid;
 		if (ist.fail()) {
-			app->sendResponse(Response("Incorrect parameter.", "", Response::Error));
+			app->sendResponse(Response("Incorrect parameter.", COMMANDNAME_UNREGISTER, Response::Error));
 			return;
 		}
-		cfg = app->findProxy(pid);
+        cfg = app->findProxy(pid);
 		if (cfg == NULL) {
-			app->sendResponse(Response("No register with such id.", "", Response::Error));
+			app->sendResponse(Response("No register with such id.", COMMANDNAME_UNREGISTER, Response::Error));
 			return;
-		}
-		linphone_core_remove_proxy_config(app->getCore(), cfg);
+		} else {
+            cfg = app->findProxy(pid);
+            LinphoneAddress *addr = linphone_address_new(NULL);
+            addr = linphone_address_clone(linphone_proxy_config_get_identity_address(cfg));
+            ost << "ProyyId: " << pid << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_address_as_string(addr);
+            linphone_address_unref(addr);
+        }
+        linphone_core_remove_proxy_config(app->getCore(), cfg);
 	}
-	app->sendResponse(Response());
+    app->sendResponse(Response(ost.str(), COMMANDNAME_UNREGISTER, Response::Ok));
 }

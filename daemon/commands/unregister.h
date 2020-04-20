@@ -21,6 +21,7 @@
 #define LINPHONE_DAEMON_COMMAND_UNREGISTER_H_
 
 #include "daemon.h"
+#define COMMANDNAME_UNREGISTER "unregister"
 
 class UnregisterCommand: public DaemonCommand {
 public:
