@@ -43,6 +43,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
     istringstream ist(args);
     const MSList *elem;
     LinphoneCall *call = NULL;
+    ostringstream ost;
     ist >> param;
     // terminate
     if (ist.fail()) {
@@ -51,11 +52,12 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            app->sendResponse(Response("No active call.", ""));
+            app->sendResponse(Response("No active call.", COMMANDNAME_TERMINATE, Response::Error));
             return;
         }
         linphone_call_terminate(call);
-        app->sendResponse(Response());
+        ost << "CallId: " << app->updateCallId(call);
+        app->sendResponse(Response(ost.str(), COMMANDNAME_TERMINATE, Response::Ok));
         return;
     }
     // terminate ALL
@@ -65,13 +67,13 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            app->sendResponse(Response("No active call.", ""));
+            app->sendResponse(Response("No active call.", COMMANDNAME_TERMINATE, Response::Error));
             return;
         }
         else{
             LinphoneCore *lc = app->getCore();
             linphone_core_terminate_all_calls(lc);
-            app->sendResponse(Response());
+            app->sendResponse(Response("", COMMANDNAME_TERMINATE, Response::Ok));
         }
         return;
     }
@@ -80,9 +82,10 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
     // terminate 1
     call = app->findCall(cid);
     if (call == NULL) {
-        app->sendResponse(Response("No call with such id.", ""));
+        app->sendResponse(Response("No call with such id.", COMMANDNAME_TERMINATE, Response::Error));
         return;
     }
     linphone_call_terminate(call);
-    app->sendResponse(Response());
+    ost << "CallId: " << app->updateCallId(call);
+    app->sendResponse(Response(ost.str(), COMMANDNAME_TERMINATE, Response::Ok));
 }

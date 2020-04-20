@@ -23,6 +23,7 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_SOUNDCARDS "soundcards"
 
 class SoundcardCommand: public DaemonCommand  {
 public:

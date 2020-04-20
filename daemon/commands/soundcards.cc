@@ -37,7 +37,5 @@ void SoundcardCommand::exec(Daemon *app, const string& args) {
     for(i=0; dev[i]!=NULL; ++i){
         ost << i << " " << dev[i] << "\n";
     }
-    Response resp;
-    resp.setBody(ost.str().c_str());
-    app->sendResponse(resp);
+    app->sendResponse(Response(ost.str(), COMMANDNAME_SOUNDCARDS, Response::Ok));
 }

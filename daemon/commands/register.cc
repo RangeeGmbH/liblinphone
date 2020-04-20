@@ -56,7 +56,7 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	ist >> realm;
 	ist >> parameter;
 	if (proxy.empty()) {
-		app->sendResponse(Response("Missing/Incorrect parameter(s).", ""));
+		app->sendResponse(Response("Missing/Incorrect parameter(s).", COMMANDNAME_REGISTER, Response::Error));
 		return;
 	}
 	cidentity = identity.c_str();
@@ -81,5 +81,5 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	linphone_proxy_config_set_contact_parameters(cfg, cparameter);
 	ostr << "Id: " << app->updateProxyId(cfg) << "\n";
 	linphone_core_add_proxy_config(lc, cfg);
-	app->sendResponse(Response(ostr.str(), "", Response::Ok));
+	app->sendResponse(Response(ostr.str(), COMMANDNAME_REGISTER, Response::Ok));
 }

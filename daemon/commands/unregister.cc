@@ -65,10 +65,7 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 			return;
 		} else {
             cfg = app->findProxy(pid);
-            LinphoneAddress *addr = linphone_address_new(NULL);
-            addr = linphone_address_clone(linphone_proxy_config_get_identity_address(cfg));
-            ost << "ProyyId: " << pid << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_address_as_string(addr);
-            linphone_address_unref(addr);
+            ost << "ProyyId: " << pid << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg);
         }
         linphone_core_remove_proxy_config(app->getCore(), cfg);
 	}
