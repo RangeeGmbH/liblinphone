@@ -534,7 +534,7 @@ bool Daemon::pullEvent() {
 		status = true;
 	}
 
-	sendResponse(Response(ostr.str().c_str(), "", Response::Ok));
+	sendResponse(Response(ostr.str().c_str(), COMMANDNAME_POP_EVENT, Response::Ok));
 	return status;
 }
 

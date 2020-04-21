@@ -22,6 +22,11 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_INCALL_PLAYER_START "incall-player-start"
+#define COMMANDNAME_INCALL_PLAYER_STOP "incall-player-stop"
+#define COMMANDNAME_INCALL_PLAYER_PAUSE "incall-player-pause"
+#define COMMANDNAME_INCALL_PLAYER_RESUME "incall-player-resume"
+
 class IncallPlayerStartCommand: public DaemonCommand {
 public:
 	IncallPlayerStartCommand();

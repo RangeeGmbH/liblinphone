@@ -22,6 +22,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_PLAY_WAV "play-wav"
+
 class PlayWavCommand: public DaemonCommand {
 public:
 	PlayWavCommand();

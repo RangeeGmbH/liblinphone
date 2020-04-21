@@ -22,11 +22,18 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_NETSIM "netsim"
+
+using namespace std;
+
 class NetsimCommand: public DaemonCommand {
 public:
 	NetsimCommand();
 
 	void exec(Daemon *app, const std::string& args) override;
+
+private:
+    string getNetSimResponseStr(LinphoneCore *core);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_NETSIM_H_

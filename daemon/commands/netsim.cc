@@ -19,14 +19,12 @@
 
 #include "netsim.h"
 
-using namespace std;
-
 class NetsimResponse : public Response {
 public:
 	NetsimResponse(LinphoneCore *core);
 };
 
-NetsimResponse::NetsimResponse(LinphoneCore *lc) : Response() {
+string NetsimCommand::getNetSimResponseStr(LinphoneCore *lc) {
 	ostringstream ost;
 	const OrtpNetworkSimulatorParams *params=linphone_core_get_network_simulator_params(lc);
 	ost << "State: ";
@@ -43,7 +41,7 @@ NetsimResponse::NetsimResponse(LinphoneCore *lc) : Response() {
 	ost<<"jitter_burst_density: "<<params->jitter_burst_density<<endl;
 	ost<<"jitter_strength: "<<params->jitter_strength<<endl;
 	ost<<"mode: "<<ortp_network_simulator_mode_to_string(params->mode)<<endl;
-	setBody(ost.str());
+    return ost.str();
 }
 
 NetsimCommand::NetsimCommand(): DaemonCommand("netsim","netsim [enable|disable|parameters] [<parameters>]",
@@ -75,7 +73,7 @@ void NetsimCommand::exec(Daemon* app, const string& args) {
 	istringstream ist(args);
 	ist >> subcommand;
 	if (ist.fail()) {
-		app->sendResponse(NetsimResponse(app->getCore()));
+		app->sendResponse(Response(getNetSimResponseStr(app->getCore()), COMMANDNAME_NETSIM, Response::Ok));
 		return;
 	}
 	if (subcommand.compare("enable")==0){
@@ -110,14 +108,14 @@ void NetsimCommand::exec(Daemon* app, const string& args) {
 		if (fmtp_get_value(parameters.c_str(), "mode",value, sizeof(value))) {
 			OrtpNetworkSimulatorMode mode = ortp_network_simulator_mode_from_string(value);
 			if (mode == OrtpNetworkSimulatorInvalid) {
-				app->sendResponse(Response("Invalid mode", ""));
+				app->sendResponse(Response("Invalid mode", COMMANDNAME_NETSIM, Response::Error));
 				return;
 			}
 			params.mode = mode;
 		}
 	}
 	linphone_core_set_network_simulator_params(lc, &params);
-	app->sendResponse(NetsimResponse(app->getCore()));
+	app->sendResponse(Response(getNetSimResponseStr(app->getCore()), COMMANDNAME_NETSIM, Response::Ok));
 }
 
 

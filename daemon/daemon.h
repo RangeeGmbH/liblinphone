@@ -53,6 +53,7 @@
 #endif
 #endif
 
+#define COMMANDNAME_POP_EVENT "pop-event"
 
 class Daemon;
 
@@ -137,6 +138,9 @@ public:
 		}
 		if (!mBody.empty()) {
             buf << "\n" << "Command: " << this->msg2 << "\n" << mBody << "\n";
+		}
+		if(mBody.empty() && mReason.empty()){
+            buf << "Command: " << this->msg2 << "\n" << mBody << "\n";
 		}
         buf << "Status: " << status << "\n";
 		return buf.str();
