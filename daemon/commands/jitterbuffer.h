@@ -22,12 +22,18 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_JITTER_BUFFER "jitter-buffer"
+#define COMMANDNAME_JITTER_BUFFER_RESET "jitter-buffer-reset"
+
+using namespace::std;
 
 class JitterBufferCommand : public DaemonCommand{
 public:
 	JitterBufferCommand();
 
 	void exec(Daemon *app, const std::string& args) override;
+private:
+    string getJitterBufferCommandResponseStr(LinphoneCore *lc,bool audio, bool video);
 };
 
 

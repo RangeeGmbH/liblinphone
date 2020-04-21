@@ -19,14 +19,7 @@
 
 #include "media-encryption.h"
 
-using namespace std;
-
-class MediaEncryptionResponse : public Response {
-public:
-	MediaEncryptionResponse(LinphoneCore *core);
-};
-
-MediaEncryptionResponse::MediaEncryptionResponse(LinphoneCore *core) : Response() {
+string MediaEncryptionCommand::getMediaEncryptionCommandResponseStr(LinphoneCore *core) {
 	LinphoneMediaEncryption encryption = linphone_core_get_media_encryption(core);
 	ostringstream ost;
 	ost << "Encryption: ";
@@ -44,7 +37,7 @@ MediaEncryptionResponse::MediaEncryptionResponse(LinphoneCore *core) : Response(
 			ost << "DTLS\n";
 			break;
 	}
-	setBody(ost.str());
+	return ost.str();
 }
 
 MediaEncryptionCommand::MediaEncryptionCommand() :
@@ -66,11 +59,11 @@ void MediaEncryptionCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> encryption_str;
 	if (ist.eof() && (encryption_str.length() == 0)) {
-		app->sendResponse(MediaEncryptionResponse(app->getCore()));
+		app->sendResponse(Response(getMediaEncryptionCommandResponseStr(app->getCore()), COMMANDNAME_MEDIA_ENCRYPTION, Response::Ok));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect parameter.", "", Response::Error));
+		app->sendResponse(Response("Incorrect parameter.", COMMANDNAME_MEDIA_ENCRYPTION, Response::Error));
 		return;
 	}
 	LinphoneMediaEncryption encryption;
@@ -81,12 +74,12 @@ void MediaEncryptionCommand::exec(Daemon *app, const string& args) {
 	} else if (encryption_str.compare("zrtp") == 0) {
 		encryption = LinphoneMediaEncryptionZRTP;
 	} else {
-		app->sendResponse(Response("Incorrect parameter.", "", Response::Error));
+		app->sendResponse(Response("Incorrect parameter.", COMMANDNAME_MEDIA_ENCRYPTION, Response::Error));
 		return;
 	}
 	if (linphone_core_set_media_encryption(app->getCore(), encryption) == 0) {
-		app->sendResponse(MediaEncryptionResponse(app->getCore()));
+		app->sendResponse(Response(getMediaEncryptionCommandResponseStr(app->getCore()), COMMANDNAME_MEDIA_ENCRYPTION, Response::Ok));
 	}else{
-		app->sendResponse(Response("Unsupported media encryption", "", Response::Error));
+		app->sendResponse(Response("Unsupported media encryption", COMMANDNAME_MEDIA_ENCRYPTION, Response::Error));
 	}
 }

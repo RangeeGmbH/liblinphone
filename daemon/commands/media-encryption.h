@@ -22,11 +22,18 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_MEDIA_ENCRYPTION "media-encryption"
+
+using namespace std;
+
 class MediaEncryptionCommand: public DaemonCommand {
 public:
 	MediaEncryptionCommand();
 
 	void exec(Daemon *app, const std::string& args) override;
+
+private:
+    string getMediaEncryptionCommandResponseStr(LinphoneCore *core);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_MEDIA_ENCRYPTION_H_
