@@ -22,11 +22,18 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CN "cn"
+
+using namespace std;
+
 class CNCommand: public DaemonCommand {
 public:
 	CNCommand();
 
 	void exec(Daemon *app, const std::string& args) override;
+
+private:
+    string getCnResponseStr(LinphoneCore *core);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_CN_H_

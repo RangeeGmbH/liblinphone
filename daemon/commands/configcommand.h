@@ -22,11 +22,19 @@
 
 #include "daemon.h"
 
+using namespace std;
+
+#define COMMANDNAME_CONFIG_GET "config-get"
+#define COMMANDNAME_CONFIG_SET "config-set"
+
 class ConfigGetCommand: public DaemonCommand {
 public:
 	ConfigGetCommand();
 
 	void exec(Daemon *app, const std::string& args) override;
+
+private:
+    string getConfigResponseStr(const string& value);
 };
 
 class ConfigSetCommand: public DaemonCommand {
@@ -34,6 +42,9 @@ public:
 	ConfigSetCommand();
 
 	void exec(Daemon *app, const std::string& args) override;
+
+private:
+    string getConfigResponseStr(const string& value);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_CONFIG_H_

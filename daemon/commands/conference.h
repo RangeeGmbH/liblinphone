@@ -22,6 +22,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CONFERENCE "conference"
+
 class ConferenceCommand : public DaemonCommand
 {
 public:
