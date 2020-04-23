@@ -22,6 +22,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CONTACT "contact"
+
 class ContactCommand: public DaemonCommand {
 public:
 	ContactCommand();

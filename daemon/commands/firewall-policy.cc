@@ -19,38 +19,31 @@
 
 #include "firewall-policy.h"
 
-using namespace std;
-
-class FirewallPolicyResponse : public Response {
-public:
-	FirewallPolicyResponse(LinphoneCore *core);
-};
-
-FirewallPolicyResponse::FirewallPolicyResponse(LinphoneCore *core) : Response() {
-	ostringstream ost;
-	LinphoneFirewallPolicy policy = linphone_core_get_firewall_policy(core);
-	ost << "Type: ";
-	switch (policy) {
-		case LinphonePolicyNoFirewall:
-			ost << "none\n";
-			break;
-		case LinphonePolicyUseNatAddress:
-			ost << "nat\n";
-			ost << "Address: " << linphone_core_get_nat_address(core) << "\n";
-			break;
-		case LinphonePolicyUseStun:
-			ost << "stun\n";
-			ost << "Address: " << linphone_core_get_stun_server(core) << "\n";
-			break;
-		case LinphonePolicyUseIce:
-			ost << "ice\n";
-			ost << "Address: " << linphone_core_get_stun_server(core) << "\n";
-			break;
-		case LinphonePolicyUseUpnp:
-			ost << "upnp\n";
-			break;
-	}
-	setBody(ost.str());
+string FirewallPolicyCommand::getFireWallPolicyResponseStr(LinphoneCore *core) {
+    ostringstream ost;
+    LinphoneFirewallPolicy policy = linphone_core_get_firewall_policy(core);
+    ost << "Type: ";
+    switch (policy) {
+        case LinphonePolicyNoFirewall:
+            ost << "none\n";
+            break;
+        case LinphonePolicyUseNatAddress:
+            ost << "nat\n";
+            ost << "Address: " << linphone_core_get_nat_address(core) << "\n";
+            break;
+        case LinphonePolicyUseStun:
+            ost << "stun\n";
+            ost << "Address: " << linphone_core_get_stun_server(core) << "\n";
+            break;
+        case LinphonePolicyUseIce:
+            ost << "ice\n";
+            ost << "Address: " << linphone_core_get_stun_server(core) << "\n";
+            break;
+        case LinphonePolicyUseUpnp:
+            ost << "upnp\n";
+            break;
+    }
+    return ost.str();
 }
 
 FirewallPolicyCommand::FirewallPolicyCommand() :
@@ -76,11 +69,11 @@ void FirewallPolicyCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> type;
 	if (ist.eof() && (type.length() == 0)) {
-		app->sendResponse(FirewallPolicyResponse(app->getCore()));
+		app->sendResponse(Response(getFireWallPolicyResponseStr(app->getCore()), COMMANDNAME_FIREWALL_POLICY, Response::Ok));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect type parameter.", "", Response::Error));
+		app->sendResponse(Response("Incorrect type parameter.", COMMANDNAME_FIREWALL_POLICY, Response::Error));
 		return;
 	}
 
@@ -102,13 +95,13 @@ void FirewallPolicyCommand::exec(Daemon *app, const string& args) {
 		policy = LinphonePolicyUseUpnp;
 		get_address = false;
 	} else {
-		app->sendResponse(Response("Incorrect type parameter.", "", Response::Error));
+		app->sendResponse(Response("Incorrect type parameter.", COMMANDNAME_FIREWALL_POLICY, Response::Error));
 		return;
 	}
 	if (get_address) {
 		ist >> address;
 		if (ist.fail()) {
-			app->sendResponse(Response("Missing/Incorrect address parameter.", "", Response::Error));
+			app->sendResponse(Response("Missing/Incorrect address parameter.", COMMANDNAME_FIREWALL_POLICY, Response::Error));
 			return;
 		}
 	}
@@ -118,5 +111,5 @@ void FirewallPolicyCommand::exec(Daemon *app, const string& args) {
 	} else if ((policy == LinphonePolicyUseStun) || (policy == LinphonePolicyUseIce)) {
 		linphone_core_set_stun_server(app->getCore(), address.c_str());
 	}
-	app->sendResponse(FirewallPolicyResponse(app->getCore()));
+	app->sendResponse(Response(getFireWallPolicyResponseStr(app->getCore()), COMMANDNAME_FIREWALL_POLICY, Response::Ok));
 }
