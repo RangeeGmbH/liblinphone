@@ -69,7 +69,7 @@ void MessageCommand::sMsgStateChanged(LinphoneChatMessage *msg, LinphoneChatMess
 OutgoingMessageEvent::OutgoingMessageEvent(LinphoneChatMessage *msg) : Event("message-state-changed"){
 	ostringstream ostr;
 	ostr << "MessageId: "<< linphone_chat_message_get_message_id(msg) << "\n";
-	ostr << "State: " << linphone_chat_message_state_to_string(linphone_chat_message_get_state(msg)) << "\n";
+	ostr << "MessageState: " << linphone_chat_message_state_to_string(linphone_chat_message_get_state(msg)) << "\n";
 	setBody(ostr.str());
 	
 	switch(linphone_chat_message_get_state(msg)){
@@ -90,9 +90,10 @@ IncomingMessageEvent::IncomingMessageEvent(LinphoneChatMessage *msg) : Event("me
 	const LinphoneAddress *to = linphone_chat_message_get_to_address(msg);
 	char *fromstr = linphone_address_as_string(from);
 	char *tostr = linphone_address_as_string(to);
-	ostr << "From: "<< fromstr << "\n";
-	ostr << "To: "<< tostr << "\n";
-	ostr << "MessageId: "<< linphone_chat_message_get_message_id(msg) << "\n";
+    ostr << "MessageId: "<< linphone_chat_message_get_message_id(msg) << "\n";
+    ostr << "MessageState: " << linphone_chat_message_state_to_string(linphone_chat_message_get_state(msg)) << "\n";
+	ostr << "MessageFrom: "<< fromstr << "\n";
+	ostr << "MessageTo: "<< tostr << "\n";
 	ostr << "Content: \"" << linphone_chat_message_get_text(msg) << "\"\n";
 	setBody(ostr.str());
 	ms_free(fromstr);

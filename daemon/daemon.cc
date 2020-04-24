@@ -135,9 +135,9 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 	char *fromStr = linphone_address_as_string(fromAddr);
 
 	ostringstream ostr;
-	ostr << "Event: " << linphone_call_state_to_string(state) << "\n";
-	ostr << "From: " << fromStr << "\n";
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
+    ostr << "CallId: " << daemon->updateCallId(call) << "\n";
+    ostr << "CallState: " << linphone_call_state_to_string(state) << "\n";
+	ostr << "CallAddress: " << fromStr << "\n";
 	setBody(ostr.str());
 
 	bctbx_free(fromStr);
@@ -147,9 +147,9 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("receiving-tone"){
 	ostringstream ostr;
 	char *remote = linphone_call_get_remote_address_as_string(call);
+    ostr << "CallId: " << daemon->updateCallId(call) << "\n";
 	ostr << "Tone: " << (char) dtmf << "\n";
 	ostr << "From: " << remote << "\n";
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
 	setBody(ostr.str());
 	ms_free(remote);
 }
@@ -176,7 +176,7 @@ CallStatsEvent::CallStatsEvent(Daemon *daemon, LinphoneCall *call, const Linphon
 	const char *prefix = "";
 
 	ostringstream ostr;
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
+	ostr << "CallId: " << daemon->updateCallId(call) << "\n";
 	ostr << "Type: ";
 	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
 		ostr << "Audio";
@@ -205,7 +205,7 @@ AudioStreamStatsEvent::AudioStreamStatsEvent(Daemon* daemon, AudioStream* stream
 	const char *prefix = "";
 
 	ostringstream ostr;
-	ostr << "Id: " << daemon->updateAudioStreamId(stream) << "\n";
+	ostr << "AudioStreamId: " << daemon->updateAudioStreamId(stream) << "\n";
 	ostr << "Type: ";
 	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
 		ostr << "Audio";
@@ -644,7 +644,7 @@ void Daemon::execCommand(const string &command) {
 		(*it)->exec(this, args);
 		ms_mutex_unlock(&mMutex);
 	} else {
-		sendResponse(Response("Unknown command.", ""));
+		sendResponse(Response("Unknown command.", name, Response::Error));
 	}
 }
 
