@@ -61,19 +61,34 @@ void CallStatsCommand::exec(Daemon *app, const string& args) {
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available.", ""));
+			app->sendResponse(Response("No current call available.", COMMANDNAME_CALL_STATS, Response::Error));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id.", ""));
+			app->sendResponse(Response("No call with such id.", COMMANDNAME_CALL_STATS, Response::Error));
 			return;
 		}
 	}
 
 	ostringstream ostr;
-	ostr << CallStatsEvent(app, call, linphone_call_get_audio_stats(call)).getBody();
-	ostr << CallStatsEvent(app, call, linphone_call_get_video_stats(call)).getBody();
-	app->sendResponse(Response(ostr.str(), "", Response::Ok));
+    LinphoneCallStats *call_stats_audio;
+    call_stats_audio = linphone_call_get_audio_stats(call);
+    if(call_stats_audio != NULL) {
+        ostr << CallStatsEvent(app, call, linphone_call_get_audio_stats(call)).getBody();
+    }
+
+    LinphoneCallStats *call_stats_video;
+    call_stats_video = linphone_call_get_video_stats(call);
+    if(call_stats_video != NULL) {
+        ostr << CallStatsEvent(app, call, linphone_call_get_video_stats(call)).getBody();
+    }
+
+    if(call_stats_audio == NULL && call_stats_video == NULL) {
+        app->sendResponse(Response("unable to get call-stats", COMMANDNAME_CALL_STATS, Response::Error));
+        return;
+    }
+
+	app->sendResponse(Response(ostr.str(), COMMANDNAME_CALL_STATS, Response::Ok));
 }

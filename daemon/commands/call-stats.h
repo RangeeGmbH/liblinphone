@@ -22,6 +22,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CALL_STATS "call-stats"
+
 class CallStatsCommand: public DaemonCommand {
 public:
 	CallStatsCommand();

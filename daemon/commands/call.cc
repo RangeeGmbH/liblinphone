@@ -39,13 +39,12 @@ void CallCommand::exec(Daemon *app, const string& args) {
 	string address;
 	string early_media;
 	LinphoneCall *call;
-	Response resp;
 	ostringstream ostr;
 
 	istringstream ist(args);
 	ist >> address;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing address parameter.", "", Response::Error));
+		app->sendResponse(Response("Missing address parameter.", COMMANDNAME_CALL, Response::Error));
 		return;
 	}
 	ist >> early_media;
@@ -61,11 +60,10 @@ void CallCommand::exec(Daemon *app, const string& args) {
 	}
 	
 	if (call == NULL) {
-		app->sendResponse(Response("Call creation failed.", ""));
+		app->sendResponse(Response("Call creation failed.", COMMANDNAME_CALL, Response::Error));
 		return;
 	}
 
-	ostr << "Id: " << app->updateCallId(call) << "\n";
-	resp.setBody(ostr.str());
-	app->sendResponse(resp);
+	ostr << "CallId: " << app->updateCallId(call) << "\n";
+	app->sendResponse(Response(ostr.str(), COMMANDNAME_CALL, Response::Ok));
 }

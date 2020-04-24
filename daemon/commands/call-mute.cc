@@ -49,13 +49,13 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
 	if (ist.fail() || (muted != 0)) {
 		muted = TRUE;
         if (call == NULL) {
-            app->sendResponse(Response("No call in progress. Can't mute.", COMMANDNAME));
+            app->sendResponse(Response("No call in progress. Can't mute.", COMMANDNAME_CAll_MUTE));
             return;
         }
 	} else {
         muted = FALSE;
         if (call == NULL) {
-            app->sendResponse(Response("No call in progress. Can't unmute.", COMMANDNAME2));
+            app->sendResponse(Response("No call in progress. Can't unmute.", COMMANDNAME_CALL_MUTE_0));
             return;
         }
 	}
@@ -70,5 +70,5 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
     else {
         buf << micStatus << unmutedStr;
     }
-	app->sendResponse(Response(buf.str(), muted ? COMMANDNAME : COMMANDNAME2 , Response::Ok));
+	app->sendResponse(Response(buf.str(), muted ? COMMANDNAME_CAll_MUTE : COMMANDNAME_CALL_MUTE_0 , Response::Ok));
 }
