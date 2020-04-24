@@ -50,7 +50,7 @@ void AnswerCommand::exec(Daemon *app, const string& args) {
 			LinphoneCallState cstate = linphone_call_get_state(call);
 			if (cstate == LinphoneCallIncomingReceived || cstate == LinphoneCallIncomingEarlyMedia) {
 				if (linphone_call_accept(call) == 0) {
-					app->sendResponse(Response());
+					app->sendResponse(Response("", COMMANDNAME_ANSWER, Response::Ok));
 					return;
 				}
 			}
@@ -58,20 +58,20 @@ void AnswerCommand::exec(Daemon *app, const string& args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id.", ""));
+			app->sendResponse(Response("No call with such id.", COMMANDNAME_ANSWER, Response::Error));
 			return;
 		}
 
 		LinphoneCallState cstate = linphone_call_get_state(call);
 		if (cstate == LinphoneCallIncomingReceived || cstate == LinphoneCallIncomingEarlyMedia) {
 			if (linphone_call_accept(call) == 0) {
-				app->sendResponse(Response());
+				app->sendResponse(Response("", COMMANDNAME_ANSWER, Response::Ok));
 				return;
 			}
 		}
-		app->sendResponse(Response("Can't accept this call.", ""));
+		app->sendResponse(Response("Can't accept this call.", COMMANDNAME_ANSWER, Response::Error));
 		return;
 	}
 
-	app->sendResponse(Response("No call to accept.", ""));
+	app->sendResponse(Response("No call to accept.", COMMANDNAME_ANSWER, Response::Error));
 }

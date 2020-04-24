@@ -22,11 +22,25 @@
 
 #include "daemon.h"
 
+using namespace std;
+
+#define COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION "adaptive-jitter-compensation"
+
 class AdaptiveBufferCompensationCommand: public DaemonCommand {
 public:
 	AdaptiveBufferCompensationCommand();
+    enum StreamType {
+        AudioStream,
+        VideoStream,
+        AllStreams
+    };
+
+    string AdaptiveBufferCompensationResponse(LinphoneCore *core, StreamType type);
 
 	void exec(Daemon *app, const std::string &args) override;
+
+private:
+    void outputAdaptiveBufferCompensation(LinphoneCore *core, ostringstream &ost, const string& header, bool_t value);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_ADAPTIVE_BUFFER_COMPENSATION_H_
