@@ -22,6 +22,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_AUDIO_STREAM_STATS "audio-stream-stats"
+
 class AudioStreamStatsCommand: public DaemonCommand {
 public:
 	AudioStreamStatsCommand();

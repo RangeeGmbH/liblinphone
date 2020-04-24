@@ -22,6 +22,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_AUDIO_CODEC_SET "audio-codec-set"
+
 class AudioCodecSetCommand: public DaemonCommand {
 public:
 	AudioCodecSetCommand();

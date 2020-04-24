@@ -30,6 +30,7 @@ public:
 
 protected:
 	bool mEnable;
+	const char *mName;
 };
 
 class AudioCodecEnableCommand: public AudioCodecToggleCommand {

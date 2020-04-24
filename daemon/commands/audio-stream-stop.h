@@ -22,6 +22,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_AUDIO_STREAM_STOP "audio-stream-stop"
+
 class AudioStreamStopCommand: public DaemonCommand {
 public:
 	AudioStreamStopCommand();

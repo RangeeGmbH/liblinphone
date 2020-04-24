@@ -66,7 +66,7 @@ void AudioCodecGetCommand::exec(Daemon *app, const string& args) {
 		ist >> mime_type;
 		PayloadTypeParser parser(app->getCore(), mime_type);
 		if (!parser.successful()) {
-			app->sendResponse(Response("Incorrect mime type format.", "", Response::Error));
+			app->sendResponse(Response("Incorrect mime type format.", COMMANDNAME_AUDIO_CODEC_GET, Response::Error));
 			return;
 		}
 		pt = parser.getPayloadType();
@@ -86,8 +86,8 @@ void AudioCodecGetCommand::exec(Daemon *app, const string& args) {
 	}
 
 	if (!found) {
-		app->sendResponse(Response("Audio codec not found.", "", Response::Error));
+		app->sendResponse(Response("Audio codec not found.", COMMANDNAME_AUDIO_CODEC_GET, Response::Error));
 	} else {
-		app->sendResponse(Response(ost.str(), "", Response::Ok));
+		app->sendResponse(Response(ost.str(), COMMANDNAME_AUDIO_CODEC_GET, Response::Ok));
 	}
 }
