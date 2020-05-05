@@ -22,7 +22,7 @@
 using namespace std;
 
 CallStatusCommand::CallStatusCommand() :
-		DaemonCommand("call-status", "call-status [<call_id>]", "Return status of a call.") {
+		DaemonCommand("call-status", "call-status [ALL] or [<call_id>]", "Return status of a call, or all calls") {
 	addExample(new DaemonCommandExample("call-status 1",
 						"Status: Ok\n\n"
 						"State: LinphoneCallStreamsRunning\n"
@@ -35,54 +35,106 @@ CallStatusCommand::CallStatusCommand() :
 	addExample(new DaemonCommandExample("call-status",
 						"Status: Error\n"
 						"Reason: No current call available."));
+    addExample(new DaemonCommandExample("call-status ALL",
+                                        "Status: Ok\n"));
 }
 void CallStatusCommand::exec(Daemon *app, const string& args) {
 	LinphoneCore *lc = app->getCore();
 	int cid;
+    const MSList *elem;
+    string param;
 	LinphoneCall *call = NULL;
 	istringstream ist(args);
-	ist >> cid;
-	if (ist.fail()) {
-		call = linphone_core_get_current_call(lc);
-		if (call == NULL) {
-			app->sendResponse(Response("No current call available.", COMMANDNAME_CALL_STATUS, Response::Error));
-			return;
-		}
-	} else {
-		call = app->findCall(cid);
-		if (call == NULL) {
-			app->sendResponse(Response("No call with such id.", COMMANDNAME_CALL_STATUS, Response::Error));
-			return;
-		}
-	}
+    istringstream iparam(args);
+    ist >> cid;
+    iparam >> param;
 
-	LinphoneCallState call_state = LinphoneCallIdle;
-	call_state = linphone_call_get_state(call);
-	const LinphoneAddress *remoteAddress = linphone_call_get_remote_address(call);
-	ostringstream ostr;
-	ostr << "State: " << linphone_call_state_to_string(call_state) << "\n";
+    if(param != "ALL") {
+        // call-status 1
 
-	switch (call_state) {
-	case LinphoneCallOutgoingInit:
-	case LinphoneCallOutgoingProgress:
-	case LinphoneCallOutgoingRinging:
-	case LinphoneCallPaused:
-	case LinphoneCallStreamsRunning:
-	case LinphoneCallConnected:
-	case LinphoneCallIncomingReceived:
-		ostr << "From: " << linphone_address_as_string(remoteAddress) << "\n";
-		break;
-	default:
-		break;
-	}
-	switch (call_state) {
-	case LinphoneCallStreamsRunning:
-	case LinphoneCallConnected:
-		ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
-		ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-		break;
-	default:
-		break;
-	}
-	app->sendResponse(Response(ostr.str(), COMMANDNAME_CALL_STATUS, Response::Ok));
+        if (ist.fail()) {
+            call = linphone_core_get_current_call(lc);
+            if (call == NULL) {
+                app->sendResponse(Response("No current call available.", COMMANDNAME_CALL_STATUS, Response::Error));
+                return;
+            }
+        } else {
+            call = app->findCall(cid);
+            if (call == NULL) {
+                app->sendResponse(Response("No call with such id.", COMMANDNAME_CALL_STATUS, Response::Error));
+                return;
+            }
+        }
+        LinphoneCallState call_state = LinphoneCallIdle;
+        call_state = linphone_call_get_state(call);
+        const LinphoneAddress *remoteAddress = linphone_call_get_remote_address(call);
+        ostringstream ostr;
+        ostr << "State: " << linphone_call_state_to_string(call_state) << "\n";
+
+        switch (call_state) {
+            case LinphoneCallOutgoingInit:
+            case LinphoneCallOutgoingProgress:
+            case LinphoneCallOutgoingRinging:
+            case LinphoneCallPaused:
+            case LinphoneCallStreamsRunning:
+            case LinphoneCallConnected:
+            case LinphoneCallIncomingReceived:
+                ostr << "From: " << linphone_address_as_string(remoteAddress) << "\n";
+                break;
+            default:
+                break;
+        }
+        switch (call_state) {
+            case LinphoneCallStreamsRunning:
+            case LinphoneCallConnected:
+                ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
+                ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
+                break;
+            default:
+                break;
+        }
+        app->sendResponse(Response(ostr.str(), COMMANDNAME_CALL_STATUS, Response::Ok));
+    }
+    if(param == "ALL") {
+        //call-status ALL
+        elem = linphone_core_get_calls(app->getCore());
+        if (elem != NULL) {
+            call = (LinphoneCall*)elem->data;
+        }
+        if (call == NULL) {
+            app->sendResponse(Response("No active call.", COMMANDNAME_CALL_STATUS, Response::Error));
+            return;
+        }
+        else{
+            for (int index = 0; index < ms_list_size(elem); index++) {
+                LinphoneCall* lCall = (LinphoneCall*) bctbx_list_nth_data(elem,index);
+
+                LinphoneCallState call_state = LinphoneCallIdle;
+                call_state = linphone_call_get_state(lCall);
+                const LinphoneAddress *remoteAddress = linphone_call_get_remote_address(lCall);
+                ostringstream ostr;
+
+                ostr << "CallId: " << app->updateCallId(lCall) << "\n";
+                ostr << "State: " << linphone_call_state_to_string(call_state) << "\n";
+
+                switch (call_state) {
+                    case LinphoneCallPaused:
+                    case LinphoneCallStreamsRunning:
+                    case LinphoneCallConnected:
+                    case LinphoneCallIncomingReceived:
+                    case LinphoneCallOutgoingInit:
+                    case LinphoneCallOutgoingProgress:
+                    case LinphoneCallOutgoingRinging:
+                        ostr << "From: " << linphone_address_as_string(remoteAddress) << "\n";
+                        ostr << "Direction: " << ((linphone_call_get_dir(lCall) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
+                        break;
+                    default:
+                        break;
+                }
+                app->sendResponse(Response(ostr.str(), COMMANDNAME_CALL_STATUS, Response::Ok));
+            }
+        }
+        return;
+    }
+
 }

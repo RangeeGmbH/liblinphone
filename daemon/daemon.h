@@ -142,7 +142,7 @@ public:
 		if(mBody.empty() && mReason.empty()){
             buf << "Command: " << this->msg2 << "\n" << mBody << "\n";
 		}
-        buf << "Status: " << status << "\n";
+        buf << "Status: " << status << "\n" << "\n";
 		return buf.str();
 	}
 private:
