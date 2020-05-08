@@ -72,6 +72,11 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
         const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
         char *fromStr = linphone_address_as_string(fromAddr);
 
+        const char *flag;
+        bool_t in_conference;
+        in_conference=(linphone_call_get_conference(call) != NULL);
+        flag=in_conference ? "Conferencing" : "";
+
         ostringstream ostr;
 
         ostr << "CallId: " << app->updateCallId(call) << "\n";
@@ -88,6 +93,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                 ostr << "From: " << fromStr << "\n";
                 ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                 ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
+                ostr << flag << "\n";
                 break;
             default:
                 break;
@@ -115,6 +121,11 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                 const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
                 char *fromStr = linphone_address_as_string(fromAddr);
 
+                const char *flag;
+                bool_t in_conference;
+                in_conference=(linphone_call_get_conference(lCall) != NULL);
+                flag=in_conference ? "Conferencing" : "";
+
                 ostringstream ostr;
 
                 ostr << "CallId: " << app->updateCallId(lCall) << "\n";
@@ -131,6 +142,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                         ostr << "From: " << fromStr << "\n";
                         ostr << "Direction: " << ((linphone_call_get_dir(lCall) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                         ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
+                        ostr << flag << "\n";
                         break;
                     default:
                         break;
