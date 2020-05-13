@@ -132,12 +132,22 @@ void *Daemon::iterateThread(void *arg) {
 CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
 	LinphoneCallLog *callLog = linphone_call_get_call_log(call);
 	const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+    const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
 	char *fromStr = linphone_address_as_string(fromAddr);
+	char *toStr = linphone_address_as_string(toAddr);
+    const char *flag;
+    bool_t in_conference;
+    in_conference=(linphone_call_get_conference(call) != NULL);
+    flag=in_conference ? "Conferencing" : "";
 
 	ostringstream ostr;
     ostr << "CallId: " << daemon->updateCallId(call) << "\n";
     ostr << "CallState: " << linphone_call_state_to_string(state) << "\n";
-	ostr << "CallAddress: " << fromStr << "\n";
+	ostr << "CallAddress from: " << fromStr << "\n";
+	ostr << "CallAddress to: " << toStr << "\n";
+    ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
+    ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
+    ostr << flag << "\n";
 	setBody(ostr.str());
 
 	bctbx_free(fromStr);

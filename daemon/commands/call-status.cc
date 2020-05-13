@@ -70,6 +70,8 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
 
         LinphoneCallLog *callLog = linphone_call_get_call_log(call);
         const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+        const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
+        char *toStr = linphone_address_as_string(toAddr);
         char *fromStr = linphone_address_as_string(fromAddr);
 
         const char *flag;
@@ -80,7 +82,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
         ostringstream ostr;
 
         ostr << "CallId: " << app->updateCallId(call) << "\n";
-        ostr << "State: " << linphone_call_state_to_string(call_state) << "\n";
+        ostr << "CallState: " << linphone_call_state_to_string(call_state) << "\n";
 
         switch (call_state) {
             case LinphoneCallOutgoingInit:
@@ -90,7 +92,8 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
             case LinphoneCallStreamsRunning:
             case LinphoneCallConnected:
             case LinphoneCallIncomingReceived:
-                ostr << "From: " << fromStr << "\n";
+                ostr << "CallAddress from: " << fromStr << "\n";
+                ostr << "CallAddress to: " << toStr << "\n";
                 ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                 ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
                 ostr << flag << "\n";
@@ -119,6 +122,8 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
 
                 LinphoneCallLog *callLog = linphone_call_get_call_log(lCall);
                 const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+                const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
+                char *toStr = linphone_address_as_string(toAddr);
                 char *fromStr = linphone_address_as_string(fromAddr);
 
                 const char *flag;
@@ -140,6 +145,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                     case LinphoneCallOutgoingProgress:
                     case LinphoneCallOutgoingRinging:
                         ostr << "From: " << fromStr << "\n";
+                        ostr << "To: " << toStr << "\n";
                         ostr << "Direction: " << ((linphone_call_get_dir(lCall) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                         ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
                         ostr << flag << "\n";
