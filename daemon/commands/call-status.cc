@@ -92,8 +92,8 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
             case LinphoneCallStreamsRunning:
             case LinphoneCallConnected:
             case LinphoneCallIncomingReceived:
-                ostr << "CallAddress from: " << fromStr << "\n";
-                ostr << "CallAddress to: " << toStr << "\n";
+                ostr << "SipAddressFrom: " << fromStr << "\n";
+                ostr << "SipAddressTo: " << toStr << "\n";
                 ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                 ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
                 ostr << flag << "\n";
@@ -144,8 +144,8 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                     case LinphoneCallOutgoingInit:
                     case LinphoneCallOutgoingProgress:
                     case LinphoneCallOutgoingRinging:
-                        ostr << "From: " << fromStr << "\n";
-                        ostr << "To: " << toStr << "\n";
+                        ostr << "SipAddressFrom: " << fromStr << "\n";
+                        ostr << "SipAddressTo: " << toStr << "\n";
                         ostr << "Direction: " << ((linphone_call_get_dir(lCall) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                         ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
                         ostr << flag << "\n";

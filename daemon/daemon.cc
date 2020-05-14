@@ -143,8 +143,8 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 	ostringstream ostr;
     ostr << "CallId: " << daemon->updateCallId(call) << "\n";
     ostr << "CallState: " << linphone_call_state_to_string(state) << "\n";
-	ostr << "CallAddress from: " << fromStr << "\n";
-	ostr << "CallAddress to: " << toStr << "\n";
+	ostr << "SipAddressFrom: " << fromStr << "\n";
+	ostr << "SipAddressTo: " << toStr << "\n";
     ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
     ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
     ostr << flag << "\n";
