@@ -641,21 +641,32 @@ void Daemon::iterate() {
 }
 
 void Daemon::execCommand(const string &command) {
-	istringstream ist(command);
-	string name;
-	ist >> name;
-	stringbuf argsbuf;
-	ist.get(argsbuf);
-	string args = argsbuf.str();
-	if (!args.empty() && (args[0] == ' ')) args.erase(0, 1);
-	list<DaemonCommand*>::iterator it = find_if(mCommands.begin(), mCommands.end(), bind2nd(mem_fun(&DaemonCommand::matches), name));
-	if (it != mCommands.end()) {
-		ms_mutex_lock(&mMutex);
-		(*it)->exec(this, args);
-		ms_mutex_unlock(&mMutex);
-	} else {
-		sendResponse(Response("Unknown command.", name, Response::Error));
-	}
+    size_t findpos = 0;
+    size_t strleng = 0;
+    string execCommand;
+    string ergCommand;
+    execCommand = command.substr(0,command.length());
+    while (strleng <= execCommand.length()) {
+        findpos = execCommand.find("\n", 0);
+        ergCommand = execCommand.substr(0,findpos+1);
+        execCommand = execCommand.substr(ergCommand.length(),execCommand.length());
+        strleng++;
+        istringstream ist(ergCommand);
+        string name;
+        ist >> name;
+        stringbuf argsbuf;
+        ist.get(argsbuf);
+        string args = argsbuf.str();
+        if (!args.empty() && (args[0] == ' ')) args.erase(0, 1);
+        list<DaemonCommand*>::iterator it = find_if(mCommands.begin(), mCommands.end(), bind2nd(mem_fun(&DaemonCommand::matches), name));
+        if (it != mCommands.end()) {
+            ms_mutex_lock(&mMutex);
+            (*it)->exec(this, args);
+            ms_mutex_unlock(&mMutex);
+        } else {
+            sendResponse(Response("Unknown command.", name, Response::Error));
+        }
+    }
 }
 
 void Daemon::sendResponse(const Response &resp) {
