@@ -167,7 +167,7 @@ public:
 	virtual std::string toBuf() const {
 		std::ostringstream buf;
 
-		buf << "Event-type: " << mEventType << "\n";
+		buf << "Event-type: " << mEventType;
 		if (!mBody.empty()) {
 			buf << "\n" << mBody << "\n";
 		}
