@@ -45,12 +45,8 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 		return;
 	}
 	if (param.compare("ALL") == 0) {
-		for (int i = 1; i <= app->maxProxyId(); i++) {
-			cfg = app->findProxy(i);
-			if (cfg != NULL) {
-				linphone_core_remove_proxy_config(app->getCore(), cfg);
-			}
-		}
+		//Erase all proxies from config
+        linphone_core_clear_proxy_config(app->getCore());
 	} else {
 		ist.clear();
 		ist.str(param);

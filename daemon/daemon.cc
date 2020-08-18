@@ -164,6 +164,48 @@ DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("rece
 	ms_free(remote);
 }
 
+ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) : Event("proxy-registration-state-changed") {
+    ostringstream ostr;
+    switch (cstate) {
+        case LinphoneRegistrationNone:
+        case LinphoneRegistrationProgress:
+        case LinphoneRegistrationOk:
+        case LinphoneRegistrationFailed:
+            for (int i = 1; i <= daemon->maxProxyId(); i++) {
+                cfg = daemon->findProxy(i);
+                if (cfg != NULL) {
+                    const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
+                    if (errorMessage != nullptr) {
+                        ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";
+                    } else {
+                        ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
+                    }
+                }
+            }
+            setBody(ostr.str());
+            break;
+        case LinphoneRegistrationCleared:
+            int i = 1;
+            cfg = daemon->findProxy(i);
+            if (cfg == NULL) {
+                size_t i = 0;
+                while ( i <= daemon->getlinphoneProxyConfigList().size()-1) {
+                    cfg = daemon->getlinphoneProxyConfigList()[i];
+                    const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
+                    if (errorMessage != nullptr) {
+                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";
+                    } else {
+                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
+                    }
+                    i++;
+                }
+            }
+            setBody(ostr.str());
+            break;
+
+    }
+}
+
 static ostream &printCallStatsHelper(ostream &ostr, const LinphoneCallStats *stats, const string &prefix) {
 	ostr << prefix << "ICE state: " << ice_state_str[linphone_call_stats_get_ice_state(stats)] << "\n";
 	ostr << prefix << "RoundTripDelay: " << linphone_call_stats_get_round_trip_delay(stats) << "\n";
@@ -313,6 +355,22 @@ bool DaemonCommand::matches(const string& name) const {
 	return mName.compare(name) == 0;
 }
 
+void Daemon::addToLinphoneProxyConfigList(LinphoneProxyConfig *cfg) {
+    m_LinphoneProxyConfigList.push_back(cfg);
+}
+
+std::vector <LinphoneProxyConfig*> Daemon::getlinphoneProxyConfigList() {
+    return m_LinphoneProxyConfigList;
+}
+
+void Daemon::addToProxyIdList(int proxyId) {
+    m_ProxyIdList.push_back(proxyId);
+}
+
+std::vector <int> Daemon::getProxyIdList() {
+    return m_ProxyIdList;
+}
+
 Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video) :
 		mLSD(0), mLogFile(NULL), mAutoVideo(0), mCallIds(0), mProxyIds(0), mAudioStreamIds(0) {
 	ms_mutex_init(&mMutex, NULL);
@@ -347,6 +405,7 @@ Daemon::Daemon(const char *config_path, const char *factory_config_path, const c
 
 	LinphoneCoreVTable vtable;
 	memset(&vtable, 0, sizeof(vtable));
+    vtable.registration_state_changed = proxyRegistrationChanged;
 	vtable.call_state_changed = callStateChanged;
 	vtable.call_stats_updated = callStatsUpdated;
 	vtable.dtmf_received = dtmfReceived;
@@ -577,6 +636,10 @@ void Daemon::dtmfReceived(LinphoneCall *call, int dtmf) {
 	queueEvent(new DtmfEvent(this, call, dtmf));
 }
 
+void Daemon::proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) {
+    queueEvent(new ProxyRegistrationChangedEvent(this, cfg, cstate, message));
+}
+
 void Daemon::callStateChanged(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState state, const char *msg) {
 	Daemon *app = (Daemon*) linphone_core_get_user_data(lc);
 	app->callStateChanged(call, state, msg);
@@ -588,6 +651,11 @@ void Daemon::callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const Linpho
 void Daemon::dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf) {
 	Daemon *app = (Daemon*) linphone_core_get_user_data(lc);
 	app->dtmfReceived(call, dtmf);
+}
+
+void Daemon::proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) {
+    Daemon *app = (Daemon*) linphone_core_get_user_data(lc);
+    app->proxyRegistrationChanged(cfg, cstate, message);
 }
 
 void Daemon::messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg){

@@ -79,6 +79,8 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	linphone_proxy_config_set_server_addr(cfg, cproxy);
 	linphone_proxy_config_enable_register(cfg, TRUE);
 	linphone_proxy_config_set_contact_parameters(cfg, cparameter);
+	app->addToProxyIdList(app->updateProxyId(cfg));
+	app->addToLinphoneProxyConfigList(cfg);
 	ostr << "Id: " << app->updateProxyId(cfg) << "\n";
 	linphone_core_add_proxy_config(lc, cfg);
 	app->sendResponse(Response(ostr.str(), COMMANDNAME_REGISTER, Response::Ok));

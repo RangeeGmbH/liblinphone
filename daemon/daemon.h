@@ -206,6 +206,12 @@ public:
 		const LinphoneCallStats *stats);
 };
 
+class ProxyRegistrationChangedEvent: public Event {
+public:
+    ProxyRegistrationChangedEvent(Daemon *daemon, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
+};
+
+
 class PayloadTypeResponse: public Response {
 public:
 	PayloadTypeResponse(LinphoneCore *core, const PayloadType *payloadType, int index = -1, const std::string &prefix = std::string(), bool enabled_status = true);
@@ -276,6 +282,10 @@ public:
 	void callPlayingComplete(int id);
 	void setAutoVideo( bool enabled ){ mAutoVideo = enabled; }
 	inline bool autoVideo(){ return mAutoVideo; }
+    std::vector<LinphoneProxyConfig*> getlinphoneProxyConfigList();
+    std::vector<int> getProxyIdList();
+    void addToLinphoneProxyConfigList(LinphoneProxyConfig *cfg);
+    void addToProxyIdList(int proxyId);
 
 private:
 	static void* iterateThread(void *arg);
@@ -283,11 +293,12 @@ private:
 	static void callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const LinphoneCallStats *stats);
 	static void dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf);
 	static void messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg);
+    static void proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
 	void callStateChanged(LinphoneCall *call, LinphoneCallState state, const char *msg);
 	void callStatsUpdated(LinphoneCall *call, const LinphoneCallStats *stats);
 	void dtmfReceived(LinphoneCall *call, int dtmf);
 	void messageReceived(LinphoneChatRoom *cr, LinphoneChatMessage *msg);
-
+    void proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
 	void execCommand(const std::string &command);
 	std::string readLine(const std::string&, bool*);
 	std::string readPipe();
@@ -312,6 +323,8 @@ private:
 	int mCallIds;
 	int mProxyIds;
 	int mAudioStreamIds;
+    std::vector<int> m_ProxyIdList;
+    std::vector<LinphoneProxyConfig*>  m_LinphoneProxyConfigList;
 	ms_thread_t mThread;
 	ms_mutex_t mMutex;
 	std::map<int, AudioStreamAndOther*> mAudioStreams;
