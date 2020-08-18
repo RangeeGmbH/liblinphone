@@ -63,7 +63,7 @@ void RegisterInfoCommand::exec(Daemon *app, const string& args) {
 		for (int i=1; i<=app->maxProxyId(); i++) {
 			::LinphoneProxyConfig *cfg = app->findProxy(i);
 			if (cfg != NULL) {
-                ost << "ProyyId: " << i << endl;
+                ost << "ProxyId: " << i << endl;
                 ost << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << endl;
                 ost << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << endl;
                 const char *route = linphone_proxy_config_get_route(cfg);
@@ -90,7 +90,7 @@ void RegisterInfoCommand::exec(Daemon *app, const string& args) {
 			app->sendResponse(Response("No register with such id.", COMMANDNAME_REGISTER_INFO, Response::Error));
 			return;
 		}
-        ost << "ProyyId: " << id << endl;
+        ost << "ProxyId: " << id << endl;
         ost << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << endl;
         ost << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << endl;
         const char *route = linphone_proxy_config_get_route(cfg);

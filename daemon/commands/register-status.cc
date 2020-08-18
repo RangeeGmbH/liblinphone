@@ -53,7 +53,7 @@ void RegisterStatusCommand::exec(Daemon *app, const string& args) {
 		for (int i = 1; i <= app->maxProxyId(); i++) {
 			cfg = app->findProxy(i);
 			if (cfg != NULL) {
-                ost << "ProyyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n";
+                ost << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n";
             }
 		}
 		app->sendResponse(Response(ost.str(), COMMANDNAME_REGISTER_STATUS, Response::Ok));
@@ -70,7 +70,7 @@ void RegisterStatusCommand::exec(Daemon *app, const string& args) {
 			app->sendResponse(Response("No register with such id.", COMMANDNAME_REGISTER_STATUS, Response::Error));
 			return;
 		}
-        ost << "ProyyId: " << pid << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg);
+        ost << "ProxyId: " << pid << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg);
 		app->sendResponse(Response(ost.str(), COMMANDNAME_REGISTER_STATUS, Response::Ok));
 	}
 }
