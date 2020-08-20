@@ -55,13 +55,13 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
         if (ist.fail()) {
             call = linphone_core_get_current_call(lc);
             if (call == NULL) {
-                app->sendResponse(Response("No current call available.", COMMANDNAME_CALL_STATUS, Response::Error));
+                app->sendResponse(Response(COMMANDNAME_CALL_STATUS, "No current call available.", Response::Error));
                 return;
             }
         } else {
             call = app->findCall(cid);
             if (call == NULL) {
-                app->sendResponse(Response("No call with such id.", COMMANDNAME_CALL_STATUS, Response::Error));
+                app->sendResponse(Response(COMMANDNAME_CALL_STATUS, "No call with such id.", Response::Error));
                 return;
             }
         }
@@ -96,12 +96,14 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                 ostr << "SipAddressTo: " << toStr << "\n";
                 ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                 ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-                ostr << flag << "\n";
+                if (flag[0] != '\0'){
+                    ostr << flag << "\n";
+                }
                 break;
             default:
                 break;
         }
-        app->sendResponse(Response(ostr.str(), COMMANDNAME_CALL_STATUS, Response::Ok));
+        app->sendResponse(Response(COMMANDNAME_CALL_STATUS, ostr.str(), Response::Ok));
     }
     if(param == "ALL") {
         //call-status ALL
@@ -110,7 +112,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            app->sendResponse(Response("No active call.", COMMANDNAME_CALL_STATUS, Response::Error));
+            app->sendResponse(Response(COMMANDNAME_CALL_STATUS, "No active call.", Response::Error));
             return;
         }
         else{
@@ -148,12 +150,14 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                         ostr << "SipAddressTo: " << toStr << "\n";
                         ostr << "Direction: " << ((linphone_call_get_dir(lCall) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                         ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-                        ostr << flag << "\n";
+                        if (flag[0] != '\0'){
+                            ostr << flag << "\n";
+                        }
                         break;
                     default:
                         break;
                 }
-                app->sendResponse(Response(ostr.str(), COMMANDNAME_CALL_STATUS, Response::Ok));
+                app->sendResponse(Response(COMMANDNAME_CALL_STATUS, ostr.str(), Response::Ok));
             }
         }
         return;

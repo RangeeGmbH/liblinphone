@@ -146,8 +146,12 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 	ostr << "SipAddressFrom: " << fromStr << "\n";
 	ostr << "SipAddressTo: " << toStr << "\n";
     ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
-    ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-    ostr << flag << "\n";
+    if (flag[0] != '\0'){
+        ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
+    } else {
+        ostr << "Duration: " << linphone_call_get_duration(call);
+    }
+    ostr << flag;
 	setBody(ostr.str());
 
 	bctbx_free(fromStr);
@@ -159,7 +163,7 @@ DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("rece
 	char *remote = linphone_call_get_remote_address_as_string(call);
     ostr << "CallId: " << daemon->updateCallId(call) << "\n";
 	ostr << "Tone: " << (char) dtmf << "\n";
-	ostr << "From: " << remote << "\n";
+	ostr << "From: " << remote;
 	setBody(ostr.str());
 	ms_free(remote);
 }
@@ -176,9 +180,9 @@ ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, Lin
                 if (cfg != NULL) {
                     const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
                     if (errorMessage != nullptr) {
-                        ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";
+                        ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage;
                     } else {
-                        ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
+                        ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg));
                     }
                 }
             }
@@ -193,9 +197,9 @@ ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, Lin
                     cfg = daemon->getlinphoneProxyConfigList()[i];
                     const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
                     if (errorMessage != nullptr) {
-                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";
+                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage;
                     } else {
-                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
+                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg));
                     }
                     i++;
                 }
@@ -242,10 +246,10 @@ CallStatsEvent::CallStatsEvent(Daemon *daemon, LinphoneCall *call, const Linphon
 
 	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
 		const PayloadType *audioCodec = linphone_call_params_get_used_audio_codec(callParams);
-		ostr << PayloadTypeResponse(linphone_call_get_core(call), audioCodec, -1, prefix, false).getBody() << "\n";
+		ostr << PayloadTypeResponse(linphone_call_get_core(call), audioCodec, -1, prefix, false).getBody();
 	} else {
 		const PayloadType *videoCodec = linphone_call_params_get_used_video_codec(callParams);
-		ostr << PayloadTypeResponse(linphone_call_get_core(call), videoCodec, -1, prefix, false).getBody() << "\n";
+		ostr << PayloadTypeResponse(linphone_call_get_core(call), videoCodec, -1, prefix, false).getBody();
 	}
 
 	setBody(ostr.str());
@@ -274,7 +278,7 @@ AudioStreamStatsEvent::AudioStreamStatsEvent(Daemon* daemon, AudioStream* stream
 CallPlayingStatsEvent::CallPlayingStatsEvent(Daemon* daemon, int id) : Event("call-playing-complete"){
 	ostringstream ostr;
 
-	ostr << "Id: " << id << "\n";
+	ostr << "Id: " << id;
 
 	setBody(ostr.str());
 }
@@ -603,7 +607,7 @@ bool Daemon::pullEvent() {
 		status = true;
 	}
 
-	sendResponse(Response(ostr.str().c_str(), COMMANDNAME_POP_EVENT, Response::Ok));
+	sendResponse(Response(COMMANDNAME_POP_EVENT, ostr.str().c_str(), Response::Ok));
 	return status;
 }
 
@@ -732,7 +736,7 @@ void Daemon::execCommand(const string &command) {
             (*it)->exec(this, args);
             ms_mutex_unlock(&mMutex);
         } else {
-            sendResponse(Response("Unknown command.", name, Response::Error));
+            sendResponse(Response(name, "Unknown command.", Response::Error));
         }
     }
 }

@@ -45,5 +45,5 @@ void HelpCommand::exec(Daemon *app, const string& args) {
 			ost << (*it)->getProto() << endl;
 		}
 	}
-	app->sendResponse(Response(ost.str(), COMMANDNAME_HELP, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_HELP, ost.str(), Response::Ok));
 }

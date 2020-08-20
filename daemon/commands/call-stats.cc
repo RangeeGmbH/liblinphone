@@ -61,13 +61,13 @@ void CallStatsCommand::exec(Daemon *app, const string& args) {
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available.", COMMANDNAME_CALL_STATS, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_CALL_STATS, "No current call available.", Response::Error));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id.", COMMANDNAME_CALL_STATS, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_CALL_STATS, "No call with such id.", Response::Error));
 			return;
 		}
 	}
@@ -86,9 +86,9 @@ void CallStatsCommand::exec(Daemon *app, const string& args) {
     }
 
     if(call_stats_audio == NULL && call_stats_video == NULL) {
-        app->sendResponse(Response("unable to get call-stats", COMMANDNAME_CALL_STATS, Response::Error));
+        app->sendResponse(Response(COMMANDNAME_CALL_STATS, "unable to get call-stats", Response::Error));
         return;
     }
 
-	app->sendResponse(Response(ostr.str(), COMMANDNAME_CALL_STATS, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_CALL_STATS, ostr.str(), Response::Ok));
 }

@@ -42,30 +42,30 @@ void AuthInfosClearCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> param;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", COMMANDNAME_AUTH_INFOS_CLEAR, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_AUTH_INFOS_CLEAR, "Missing parameter.",Response::Error));
 		return;
 	}
 	if (param.compare("ALL") == 0) {
 		int previous_size = app->maxAuthInfoId();
 		linphone_core_clear_all_auth_info(app->getCore());
 		ostr << "Successfully cleared " << previous_size - app->maxAuthInfoId() << " auth infos." << endl;
-		app->sendResponse(Response(ostr.str(), COMMANDNAME_AUTH_INFOS_CLEAR, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_AUTH_INFOS_CLEAR, ostr.str(), Response::Ok));
 	} else {
 		LinphoneAuthInfo *auth_info = NULL;
 		ist.clear();
 		ist.str(param);
 		ist >> pid;
 		if (ist.fail()) {
-			app->sendResponse(Response("Incorrect parameter.", COMMANDNAME_AUTH_INFOS_CLEAR, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_AUTH_INFOS_CLEAR, "Incorrect parameter.", Response::Error));
 			return;
 		}
 		auth_info = app->findAuthInfo(pid);
 		if (auth_info == NULL) {
-			app->sendResponse(Response("No auth info with such id.", COMMANDNAME_AUTH_INFOS_CLEAR, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_AUTH_INFOS_CLEAR, "No auth info with such id.", Response::Error));
 			return;
 		}
 		linphone_core_remove_auth_info(app->getCore(), auth_info);
 		ostr << "Successfully cleared auth info " << pid << "." << endl;
-		app->sendResponse(Response(ostr.str(), COMMANDNAME_AUTH_INFOS_CLEAR, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_AUTH_INFOS_CLEAR, ostr.str(), Response::Ok));
 	}
 }

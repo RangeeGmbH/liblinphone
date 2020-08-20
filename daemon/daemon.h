@@ -107,13 +107,13 @@ public:
 	Response() :
 			mStatus(Ok) {
 	}
-    Response(const std::string& msg, const std::string& msg2, Status status = Error):
+    Response(const std::string& commandMsg, const std::string& msg, Status status = Error):
             mStatus(status) {
         if( status == Ok) {
-            this->msg2 = msg2;
+            this->commandMsg = commandMsg;
             mBody = msg;
         } else {
-            this->msg2 = msg2;
+            this->commandMsg = commandMsg;
             mReason = msg;
         }
     }
@@ -133,23 +133,25 @@ public:
 	virtual std::string toBuf() const {
 		std::ostringstream buf;
 		std::string status = (mStatus == Ok) ? "Ok" : "Error";
-		if (!mReason.empty()) {
-            buf << "Command: " << this->msg2 << "\n" << "Reason: " << mReason << "\n";
-		}
+        buf << "Command: " << this->commandMsg << "\n";
+
+        if (!mReason.empty()) {
+            buf << "Reason: " << mReason << "\n";
+        }
 		if (!mBody.empty()) {
-            buf << "\n" << "Command: " << this->msg2 << "\n" << mBody << "\n";
+			buf << mBody;
 		}
-		if(mBody.empty() && mReason.empty()){
-            buf << "Command: " << this->msg2 << "\n" << mBody << "\n";
-		}
-        buf << "Status: " << status << "\n" << "\n";
-		return buf.str();
+
+		buf << "Status: " << status << "\n";
+		buf << "\n\n";
+
+        return buf.str();
 	}
 private:
 	Status mStatus;
 	std::string mReason;
 	std::string mBody;
-	std::string msg2;
+	std::string commandMsg;
 };
 
 /*Base class for all kind of event poping out of the linphonecore. They are posted to the Daemon's event queue with queueEvent().*/
@@ -167,10 +169,12 @@ public:
 	virtual std::string toBuf() const {
 		std::ostringstream buf;
 
-		buf << "Event-type: " << mEventType;
-		if (!mBody.empty()) {
-			buf << "\n" << mBody << "\n";
-		}
+        buf << "Event-type: " << mEventType << "\n";
+        if (!mBody.empty()) {
+            buf << mBody << "\n";
+        }
+
+        buf << "\n\n";
 		return buf.str();
 	}
 protected:

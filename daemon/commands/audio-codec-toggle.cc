@@ -38,14 +38,14 @@ void AudioCodecToggleCommand::exec(Daemon *app, const string& args) {
     }
 
 	if (ist.peek() == EOF) {
-		app->sendResponse(Response("Missing parameter.", mName, Response::Error));
+		app->sendResponse(Response(mName, "Missing parameter.",Response::Error));
 	} else {
 		string mime_type;
 		PayloadType *pt = NULL;
 		ist >> mime_type;
 		PayloadTypeParser parser(app->getCore(), mime_type, true);
 		if (!parser.successful()) {
-			app->sendResponse(Response("Incorrect mime type format.", mName, Response::Error));
+			app->sendResponse(Response(mName, "Incorrect mime type format.", Response::Error));
 			return;
 		}
 		if (!parser.all()) pt = parser.getPayloadType();
@@ -58,7 +58,7 @@ void AudioCodecToggleCommand::exec(Daemon *app, const string& args) {
 			} else {
 				if (pt == payload) {
 					linphone_core_enable_payload_type(app->getCore(), payload, mEnable);
-                    app->sendResponse(Response(PayloadTypeResponse(app->getCore(), payload, index).getBody(), mName, Response::Ok));
+                    app->sendResponse(Response(mName, PayloadTypeResponse(app->getCore(), payload, index).getBody(), Response::Ok));
 					return;
 				}
 			}
@@ -68,7 +68,7 @@ void AudioCodecToggleCommand::exec(Daemon *app, const string& args) {
 			AudioCodecGetCommand getCommand;
 			getCommand.exec(app, "");
 		} else {
-			app->sendResponse(Response("Audio codec not found.", mName, Response::Error));
+			app->sendResponse(Response(mName, "Audio codec not found.", Response::Error));
 		}
 	}
 }

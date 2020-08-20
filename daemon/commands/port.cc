@@ -103,23 +103,23 @@ void PortCommand::exec(Daemon *app, const string& args) {
 	ostringstream ost;
 	ist >> type;
 	if (ist.eof() && (type.length() == 0)) {
-		app->sendResponse(Response(getPortResponseStr(app->getCore(), AllPorts), COMMANDNAME_PORT, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), AllPorts), Response::Ok));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect type parameter.", COMMANDNAME_PORT, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 		return;
 	}
 	ist >> port;
 	if (ist.fail()) {
 		if (type.compare("sip") == 0) {
-			app->sendResponse(Response(getPortResponseStr(app->getCore(), SIPPort), COMMANDNAME_PORT, Response::Ok));
+			app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), SIPPort), Response::Ok));
 		} else if (type.compare("audio") == 0) {
-			app->sendResponse(Response(getPortResponseStr(app->getCore(), AudioRTPPort), COMMANDNAME_PORT, Response::Ok));
+			app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), AudioRTPPort), Response::Ok));
 		} else if (type.compare("video") == 0) {
-			app->sendResponse(Response(getPortResponseStr(app->getCore(), VideoRTPPort), COMMANDNAME_PORT, Response::Ok));
+			app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), VideoRTPPort), Response::Ok));
 		} else {
-			app->sendResponse(Response("Incorrect type parameter.", COMMANDNAME_PORT, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 		}
 		return;
 	}
@@ -135,7 +135,7 @@ void PortCommand::exec(Daemon *app, const string& args) {
 			} else if (protocol_str.compare("tls") == 0) {
 				protocol = TLSProtocol;
 			} else {
-				app->sendResponse(Response("Incorrect protocol parameter.", COMMANDNAME_PORT, Response::Error));
+				app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect protocol parameter.", Response::Error));
 				return;
 			}
 		}
@@ -153,14 +153,14 @@ void PortCommand::exec(Daemon *app, const string& args) {
 				break;
 		}
 		linphone_core_set_sip_transports(app->getCore(), &transports);
-        app->sendResponse(Response(getPortResponseStr(app->getCore(), SIPPort), COMMANDNAME_PORT, Response::Ok));
+        app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), SIPPort), Response::Ok));
 	} else if (type.compare("audio") == 0) {
 		linphone_core_set_audio_port(app->getCore(), port);
-        app->sendResponse(Response(getPortResponseStr(app->getCore(), AudioRTPPort), COMMANDNAME_PORT, Response::Ok));
+        app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), AudioRTPPort), Response::Ok));
 	} else if (type.compare("video") == 0) {
 		linphone_core_set_video_port(app->getCore(), port);
-        app->sendResponse(Response(getPortResponseStr(app->getCore(), VideoRTPPort), COMMANDNAME_PORT, Response::Ok));
+        app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), VideoRTPPort), Response::Ok));
 	} else {
-		app->sendResponse(Response("Incorrect type parameter.", COMMANDNAME_PORT, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 	}
 }

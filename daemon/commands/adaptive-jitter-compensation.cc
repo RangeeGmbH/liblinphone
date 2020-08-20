@@ -76,18 +76,18 @@ void AdaptiveBufferCompensationCommand::exec(Daemon *app, const string& args) {
 
 	ist >> stream;
 	if (ist.fail()) {
-		app->sendResponse(Response(AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationCommand::AllStreams), COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationCommand::AllStreams), Response::Ok));
 		return;
 	}
 
 	ist >> state;
 	if (ist.fail()) {
 		if (stream.compare("audio") == 0) {
-			app->sendResponse(Response(AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationCommand::AudioStream), COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, Response::Ok));
+			app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationCommand::AudioStream), Response::Ok));
 		} else if (stream.compare("video") == 0) {
-			app->sendResponse(Response(AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationCommand::VideoStream), COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, Response::Ok));
+			app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationCommand::VideoStream), Response::Ok));
 		} else {
-			app->sendResponse(Response("Incorrect stream parameter.", COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, "Incorrect stream parameter.", Response::Error));
 		}
 		return;
 	}
@@ -99,7 +99,7 @@ void AdaptiveBufferCompensationCommand::exec(Daemon *app, const string& args) {
 	} else if (stream.compare("video") == 0) {
 		type = AdaptiveBufferCompensationCommand::VideoStream;
 	} else {
-		app->sendResponse(Response("Incorrect stream parameter.", COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, "Incorrect stream parameter.", Response::Error));
 		return;
 	}
 	if (state.compare("enable") == 0) {
@@ -107,7 +107,7 @@ void AdaptiveBufferCompensationCommand::exec(Daemon *app, const string& args) {
 	} else if (state.compare("disable") == 0) {
 		enabled = FALSE;
 	} else {
-		app->sendResponse(Response("Incorrect parameter.", COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, "Incorrect parameter.", Response::Error));
 		return;
 	}
 	if (type == AdaptiveBufferCompensationCommand::AudioStream) {
@@ -115,5 +115,5 @@ void AdaptiveBufferCompensationCommand::exec(Daemon *app, const string& args) {
 	} else if (type == AdaptiveBufferCompensationCommand::VideoStream) {
 		linphone_core_enable_video_adaptive_jittcomp(app->getCore(), enabled);
 	}
-	app->sendResponse(Response(AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationCommand::AllStreams), COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationCommand::AllStreams), Response::Ok));
 }

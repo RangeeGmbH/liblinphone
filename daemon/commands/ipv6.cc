@@ -50,7 +50,7 @@ void IPv6Command::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> status;
 	if (ist.fail()) {
-		app->sendResponse(Response(getIPv6CommandResponseStr(app->getCore()), COMMANDNAME_IPV6, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_IPV6, getIPv6CommandResponseStr(app->getCore()), Response::Ok));
 		return;
 	}
 
@@ -59,8 +59,8 @@ void IPv6Command::exec(Daemon *app, const string& args) {
 	} else if (status.compare("disable") == 0) {
 		linphone_core_enable_ipv6(app->getCore(), FALSE);
 	} else {
-		app->sendResponse(Response("Incorrect parameter.", COMMANDNAME_IPV6, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_IPV6, "Incorrect parameter.", Response::Error));
 		return;
 	}
-	app->sendResponse(Response(getIPv6CommandResponseStr(app->getCore()), COMMANDNAME_IPV6, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_IPV6, getIPv6CommandResponseStr(app->getCore()), Response::Ok));
 }

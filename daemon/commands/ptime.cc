@@ -59,28 +59,28 @@ void PtimeCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> direction;
 	if (ist.fail()) {
-		app->sendResponse(Response(getPtimeResponseStr(app->getCore(), BothDirections), COMMANDNAME_PTIME, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_PTIME, getPtimeResponseStr(app->getCore(), BothDirections), Response::Error));
 		return;
 	}
 	if (direction.compare("up") == 0) {
 		if (!ist.eof()) {
 			ist >> ms;
 			if (ist.fail()) {
-				app->sendResponse(Response("Incorrect ms parameter.", COMMANDNAME_PTIME ,Response::Error));
+				app->sendResponse(Response(COMMANDNAME_PTIME, "Incorrect ms parameter.", Response::Error));
 			}
 			linphone_core_set_upload_ptime(app->getCore(), ms);
 		}
-        app->sendResponse(Response(getPtimeResponseStr(app->getCore(), Upload), COMMANDNAME_PTIME, Response::Ok));
+        app->sendResponse(Response(COMMANDNAME_PTIME, getPtimeResponseStr(app->getCore(), Upload), Response::Ok));
 	} else if (direction.compare("down") == 0) {
 		if (!ist.eof()) {
 			ist >> ms;
 			if (ist.fail()) {
-				app->sendResponse(Response("Incorrect ms parameter.", COMMANDNAME_PTIME, Response::Error));
+				app->sendResponse(Response(COMMANDNAME_PTIME, "Incorrect ms parameter.", Response::Error));
 			}
 			linphone_core_set_download_ptime(app->getCore(), ms);
 		}
-        app->sendResponse(Response(getPtimeResponseStr(app->getCore(), Download), COMMANDNAME_PTIME, Response::Ok));
+        app->sendResponse(Response(COMMANDNAME_PTIME, getPtimeResponseStr(app->getCore(), Download), Response::Ok));
 	} else {
-		app->sendResponse(Response("Missing/Incorrect parameter(s).", COMMANDNAME_PTIME, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_PTIME, "Missing/Incorrect parameter(s).", Response::Error));
 	}
 }

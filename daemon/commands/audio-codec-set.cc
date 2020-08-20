@@ -82,7 +82,7 @@ void AudioCodecSetCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 
 	if (ist.peek() == EOF) {
-		app->sendResponse(Response("Missing parameters.", COMMANDNAME_AUDIO_CODEC_SET, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_SET, "Missing parameters.", Response::Error));
 		return;
 	}
 
@@ -90,14 +90,14 @@ void AudioCodecSetCommand::exec(Daemon *app, const string& args) {
 	ist >> mime_type;
 	PayloadTypeParser parser(app->getCore(), mime_type);
 	if (!parser.successful()) {
-		app->sendResponse(Response("Incorrect mime type format.", COMMANDNAME_AUDIO_CODEC_SET, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_SET, "Incorrect mime type format.", Response::Error));
 		return;
 	}
 	string param;
 	string value;
 	ist >> param;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing/Incorrect parameter(s).", COMMANDNAME_AUDIO_CODEC_SET, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_SET, "Missing/Incorrect parameter(s).", Response::Error));
 		return;
 	}
 	ist >> value;
@@ -125,10 +125,10 @@ void AudioCodecSetCommand::exec(Daemon *app, const string& args) {
 					conflict=findPayload(app->getCore(), atoi(value.c_str()), NULL);
 				}
 				if (conflict) {
-					app->sendResponse(Response("New payload type number is already used.", COMMANDNAME_AUDIO_CODEC_SET, Response::Error));
+					app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_SET, "New payload type number is already used.", Response::Error));
 				} else {
 					payload_type_set_number(payload, idx);
-					app->sendResponse(Response(PayloadTypeResponse(app->getCore(), payload, parser.getPosition()).getBody(), COMMANDNAME_AUDIO_CODEC_SET, Response::Ok));
+					app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_SET, PayloadTypeResponse(app->getCore(), payload, parser.getPosition()).getBody(),Response::Ok));
 				}
 				return;
 			}
@@ -137,11 +137,11 @@ void AudioCodecSetCommand::exec(Daemon *app, const string& args) {
 			handled=true;
 		}
 		if (handled) {
-			app->sendResponse(Response(PayloadTypeResponse(app->getCore(), payload, parser.getPosition()).getBody(), COMMANDNAME_AUDIO_CODEC_SET, Response::Ok));
+			app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_SET, PayloadTypeResponse(app->getCore(), payload, parser.getPosition()).getBody(), Response::Ok));
 		} else {
-			app->sendResponse(Response("Invalid codec parameter.", COMMANDNAME_AUDIO_CODEC_SET, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_SET, "Invalid codec parameter.", Response::Error));
 		}
 		return;
 	}
-	app->sendResponse(Response("Audio codec not found.", COMMANDNAME_AUDIO_CODEC_SET, Response::Error));
+	app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_SET, "Audio codec not found.", Response::Error));
 }

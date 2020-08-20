@@ -69,11 +69,11 @@ void FirewallPolicyCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> type;
 	if (ist.eof() && (type.length() == 0)) {
-		app->sendResponse(Response(getFireWallPolicyResponseStr(app->getCore()), COMMANDNAME_FIREWALL_POLICY, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_FIREWALL_POLICY, getFireWallPolicyResponseStr(app->getCore()), Response::Ok));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect type parameter.", COMMANDNAME_FIREWALL_POLICY, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_FIREWALL_POLICY, "Incorrect type parameter.", Response::Error));
 		return;
 	}
 
@@ -95,13 +95,13 @@ void FirewallPolicyCommand::exec(Daemon *app, const string& args) {
 		policy = LinphonePolicyUseUpnp;
 		get_address = false;
 	} else {
-		app->sendResponse(Response("Incorrect type parameter.", COMMANDNAME_FIREWALL_POLICY, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_FIREWALL_POLICY, "Incorrect type parameter.",  Response::Error));
 		return;
 	}
 	if (get_address) {
 		ist >> address;
 		if (ist.fail()) {
-			app->sendResponse(Response("Missing/Incorrect address parameter.", COMMANDNAME_FIREWALL_POLICY, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_FIREWALL_POLICY, "Missing/Incorrect address parameter.", Response::Error));
 			return;
 		}
 	}
@@ -111,5 +111,5 @@ void FirewallPolicyCommand::exec(Daemon *app, const string& args) {
 	} else if ((policy == LinphonePolicyUseStun) || (policy == LinphonePolicyUseIce)) {
 		linphone_core_set_stun_server(app->getCore(), address.c_str());
 	}
-	app->sendResponse(Response(getFireWallPolicyResponseStr(app->getCore()), COMMANDNAME_FIREWALL_POLICY, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_FIREWALL_POLICY, getFireWallPolicyResponseStr(app->getCore()), Response::Ok));
 }

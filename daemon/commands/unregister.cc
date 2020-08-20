@@ -41,7 +41,7 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> param;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", COMMANDNAME_UNREGISTER, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_UNREGISTER, "Missing parameter.", Response::Error));
 		return;
 	}
 	if (param.compare("ALL") == 0) {
@@ -52,12 +52,12 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 		ist.str(param);
 		ist >> pid;
 		if (ist.fail()) {
-			app->sendResponse(Response("Incorrect parameter.", COMMANDNAME_UNREGISTER, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_UNREGISTER, "Incorrect parameter.", Response::Error));
 			return;
 		}
         cfg = app->findProxy(pid);
 		if (cfg == NULL) {
-			app->sendResponse(Response("No register with such id.", COMMANDNAME_UNREGISTER, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_UNREGISTER, "No register with such id.", Response::Error));
 			return;
 		} else {
             cfg = app->findProxy(pid);
@@ -65,5 +65,5 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
         }
         linphone_core_remove_proxy_config(app->getCore(), cfg);
 	}
-    app->sendResponse(Response(ost.str(), COMMANDNAME_UNREGISTER, Response::Ok));
+    app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Ok));
 }

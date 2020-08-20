@@ -55,13 +55,13 @@ void Video::exec(Daemon* app, const string& args)
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available.", COMMANDNAME_VIDEO, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_VIDEO, "No current call available.", Response::Error));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id.", COMMANDNAME_VIDEO, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_VIDEO, "No call with such id.", Response::Error));
 			return;
 		}
 	}
@@ -75,11 +75,11 @@ void Video::exec(Daemon* app, const string& args)
 		linphone_call_params_unref(new_params);
 
 	} else {
-		app->sendResponse(Response("No streams running: can't [de]activate video", COMMANDNAME_VIDEO, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEO, "No streams running: can't [de]activate video", Response::Error));
 		return;
 	}
 
-	app->sendResponse(Response(activate ? "Camera activated." : "Camera deactivated", COMMANDNAME_VIDEO, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_VIDEO, activate ? "Camera activated." : "Camera deactivated", Response::Ok));
 }
 
 
@@ -117,20 +117,20 @@ void VideoSource::exec(Daemon* app, const string& args)
 	istringstream ist(args);
 	ist >> subcommand;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", COMMANDNAME_VIDEOSOURCE, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, "Missing parameter.", Response::Error));
 		return;
 	}
 	ist >> cid;
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available.", COMMANDNAME_VIDEOSOURCE, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, "No current call available.", Response::Error));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id.", COMMANDNAME_VIDEOSOURCE, Response::Error));
+			app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, "No call with such id.", Response::Error));
 			return;
 		}
 	}
@@ -140,11 +140,11 @@ void VideoSource::exec(Daemon* app, const string& args)
 	} else if (subcommand.compare("dummy") == 0) {
 		activate = false;
 	} else {
-		app->sendResponse(Response("Invalid source.", COMMANDNAME_VIDEOSOURCE, Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, "Invalid source.", Response::Error));
 		return;
 	}
 	linphone_call_enable_camera(call,activate);
-	app->sendResponse(Response(activate ? "Dummy source selected." : "Webcam source selected.", COMMANDNAME_VIDEOSOURCE, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, activate ? "Dummy source selected." : "Webcam source selected.", Response::Ok));
 }
 
 
@@ -171,5 +171,5 @@ void AutoVideo::exec(Daemon* app, const string& args)
 
 	linphone_core_set_video_policy(lc, &vpol);
 	app->setAutoVideo(enable);
-	app->sendResponse(Response(enable?"Auto video ON": "Auto video OFF", COMMANDNAME_AUTOVIDEO, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_AUTOVIDEO, enable?"Auto video ON\n": "Auto video OFF\n", Response::Ok));
 }
