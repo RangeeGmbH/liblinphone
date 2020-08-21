@@ -138,7 +138,7 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
     const char *flag;
     bool_t in_conference;
     in_conference=(linphone_call_get_conference(call) != NULL);
-    flag=in_conference ? "Conferencing" : "";
+    flag=in_conference ? "InConferencing: yes" : "InConferencing: no";
 
 	ostringstream ostr;
     ostr << "CallId: " << daemon->updateCallId(call) << "\n";
@@ -146,11 +146,6 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 	ostr << "SipAddressFrom: " << fromStr << "\n";
 	ostr << "SipAddressTo: " << toStr << "\n";
     ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
-    if (flag[0] != '\0'){
-        ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-    } else {
-        ostr << "Duration: " << linphone_call_get_duration(call);
-    }
     ostr << flag;
 	setBody(ostr.str());
 

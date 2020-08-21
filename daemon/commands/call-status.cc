@@ -77,7 +77,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
         const char *flag;
         bool_t in_conference;
         in_conference=(linphone_call_get_conference(call) != NULL);
-        flag=in_conference ? "Conferencing" : "";
+        flag=in_conference ? "InConferencing: yes" : "InConferencing: no";
 
         ostringstream ostr;
 
@@ -96,9 +96,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                 ostr << "SipAddressTo: " << toStr << "\n";
                 ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                 ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-                if (flag[0] != '\0'){
-                    ostr << flag << "\n";
-                }
+                ostr << flag << "\n";
                 break;
             default:
                 break;
@@ -131,7 +129,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                 const char *flag;
                 bool_t in_conference;
                 in_conference=(linphone_call_get_conference(lCall) != NULL);
-                flag=in_conference ? "Conferencing" : "";
+                flag=in_conference ? "InConferencing: yes" : "InConferencing: no";
 
                 ostringstream ostr;
 
@@ -150,9 +148,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                         ostr << "SipAddressTo: " << toStr << "\n";
                         ostr << "Direction: " << ((linphone_call_get_dir(lCall) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
                         ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-                        if (flag[0] != '\0'){
-                            ostr << flag << "\n";
-                        }
+                        ostr << flag << "\n";
                         break;
                     default:
                         break;

@@ -140,10 +140,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
             }
         }
     }
-    if (param == "getMicMutedState"){
-        app->sendResponse(Response(COMMANDNAME_VOLUME, linphone_core_mic_enabled(app->getCore()) ? "Muted: no\n" : "Muted: yes\n", Response::Ok));
-    }
-    if (param != "get" && param != "set" && param != "" && param != "playback_dev" && param != "ringer_dev" && param != "capture_dev" && param != "getMicMutedState"){
+    if (param != "get" && param != "set" && param != "" && param != "playback_dev" && param != "ringer_dev" && param != "capture_dev"){
         app->sendResponse(Response(COMMANDNAME_VOLUME, "Wrong parameter", Response::Error));
     }
 }
