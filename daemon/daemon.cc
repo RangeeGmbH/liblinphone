@@ -192,9 +192,9 @@ ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, Lin
                     cfg = daemon->getlinphoneProxyConfigList()[i];
                     const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
                     if (errorMessage != nullptr) {
-                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage;
+                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";;
                     } else {
-                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg));
+                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
                     }
                     i++;
                 }
