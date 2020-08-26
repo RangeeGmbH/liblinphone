@@ -135,6 +135,7 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
     const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
 	char *fromStr = linphone_address_as_string(fromAddr);
 	char *toStr = linphone_address_as_string(toAddr);
+    const char * errorStateStr = linphone_reason_to_string(linphone_call_get_reason(call));
     const char *flag;
     bool_t in_conference;
     in_conference=(linphone_call_get_conference(call) != NULL);
@@ -146,7 +147,8 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 	ostr << "SipAddressFrom: " << fromStr << "\n";
 	ostr << "SipAddressTo: " << toStr << "\n";
     ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
-    ostr << flag;
+    ostr << flag << "\n";
+    ostr << "CallErrorReason: " << errorStateStr;
 	setBody(ostr.str());
 
 	bctbx_free(fromStr);
