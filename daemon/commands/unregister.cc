@@ -47,6 +47,7 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
 	if (param.compare("ALL") == 0) {
 		//Erase all proxies from config
         linphone_core_clear_proxy_config(app->getCore());
+        ost << "All Proxies were unregistered!" << "\n";
 	} else {
 		ist.clear();
 		ist.str(param);

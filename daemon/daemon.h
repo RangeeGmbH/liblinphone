@@ -286,10 +286,6 @@ public:
 	void callPlayingComplete(int id);
 	void setAutoVideo( bool enabled ){ mAutoVideo = enabled; }
 	inline bool autoVideo(){ return mAutoVideo; }
-    std::vector<LinphoneProxyConfig*> getlinphoneProxyConfigList();
-    std::vector<int> getProxyIdList();
-    void addToLinphoneProxyConfigList(LinphoneProxyConfig *cfg);
-    void addToProxyIdList(int proxyId);
 
 private:
 	static void* iterateThread(void *arg);
