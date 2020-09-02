@@ -897,7 +897,9 @@ static void printHelp() {
 		"\t-C                         Enable video capture." << endl <<
 		"\t-D                         Enable video display." << endl <<
 		"\t--auto-answer              Automatically answer incoming calls." << endl <<
-        "\t--list-soundcards          List all soundcards" << endl;
+        "\t--list-soundcards          List all soundcards" << endl <<
+        "\t--version                  Prints the daemon version number" << endl <<
+        "\t--api-version              Prints the api version number" << endl;
 }
 
 void Daemon::startThread() {
@@ -1106,6 +1108,12 @@ int main(int argc, char *argv[]) {
 			auto_answer = true;
         }else if (strcmp(argv[i], "--list-soundcards") == 0) {
             listSoundcards();
+            return 0;
+        }else if (strcmp(argv[i], "--version") == 0) {
+            printf("Version: %s",linphone_core_get_version());
+            return 0;
+        }else if (strcmp(argv[i], "--api-version") == 0) {
+            printf("ApiVersion: %d",API_VERSION);
             return 0;
         }
 		else{

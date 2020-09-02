@@ -30,6 +30,7 @@ VersionCommand::VersionCommand() :
 
 void VersionCommand::exec(Daemon *app, const string& args) {
     ostringstream ost;
-    ost << "Version: " << linphone_core_get_version();
+    ost << "Version: " << linphone_core_get_version() << "\n";
+    ost << "ApiVersion: " << API_VERSION;
     app->sendResponse(Response(COMMANDNAME_VERSION, ost.str()+"\n", Response::Ok));
 }

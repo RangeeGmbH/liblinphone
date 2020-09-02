@@ -53,6 +53,8 @@
 #endif
 #endif
 
+#define API_VERSION 1
+
 #define COMMANDNAME_POP_EVENT "pop-event"
 
 class Daemon;
