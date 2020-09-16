@@ -108,8 +108,10 @@ set(DAEMON_SOURCE_FILES
 	commands/message.h
 	commands/soundcards.cc
 	commands/soundcards.h
-		commands/volume.cc
-		commands/volume.h
+	commands/volume.cc
+	commands/volume.h
+	commands/set-sound-card.cc
+	commands/set-sound-card.h
 	daemon.cc
 	daemon.h
 )

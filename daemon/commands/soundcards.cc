@@ -30,6 +30,7 @@ SoundcardCommand::SoundcardCommand() :
 
 void SoundcardCommand::exec(Daemon *app, const string& args) {
     LinphoneCore *lc = app->getCore();
+    linphone_core_reload_sound_devices(lc);
     const char **dev;
     dev=linphone_core_get_sound_devices(lc);
     int i;

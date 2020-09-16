@@ -87,6 +87,7 @@
 #include "commands/message.h"
 #include "commands/soundcards.h"
 #include "commands/volume.h"
+#include "commands/set-sound-card.h"
 
 #include "private.h"
 
@@ -510,6 +511,7 @@ void Daemon::initCommands() {
 	mCommands.push_back(new PopEventCommand());
 	mCommands.push_back(new AnswerCommand());
     mCommands.push_back(new SoundcardCommand());
+    mCommands.push_back(new SetSoundCard());
     mCommands.push_back(new VolumeCommand());
 	mCommands.push_back(new CallStatusCommand());
 	mCommands.push_back(new CallStatsCommand());
