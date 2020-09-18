@@ -33,7 +33,7 @@ using namespace std;
 
 SetSoundCard::SetSoundCard() :
         DaemonCommand("set-sound-card", "set-sound-card",
-                      "set the volume around value for ringer_dev, or capture_dev, or playback_dev, or get the current volume") {
+                      "set the sound card for ringer_dev, or capture_dev, or playback_dev") {
     addExample(new DaemonCommandExample("set-sound-card set playback_dev <Sound Card Name>",
                                         "Status: OK\n"));
     addExample(new DaemonCommandExample("set-sound-card set ringer_dev <Sound Card Name>",
@@ -61,7 +61,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 linphone_core_set_playback_device(app->getCore(), soundCard.c_str());
                 if (!ist.str().empty() && ist.str() != "") {
                     app->sendResponse(
-                            Response(COMMANDNAME_SETSOUNDCARD, "Volume was set successfully\n", Response::Ok));
+                            Response(COMMANDNAME_SETSOUNDCARD, "Soundcard was set successfully\n", Response::Ok));
                 }
             }
         }
@@ -79,7 +79,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 linphone_core_set_ringer_device(app->getCore(), soundCard.c_str());
                 if (!ist.str().empty() && ist.str() != "") {
                     app->sendResponse(
-                            Response(COMMANDNAME_SETSOUNDCARD, "Volume was set successfully\n", Response::Ok));
+                            Response(COMMANDNAME_SETSOUNDCARD, "Soundcard was set successfully\n", Response::Ok));
                 }
             }
         }
@@ -97,9 +97,12 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 linphone_core_set_capture_device(app->getCore(), soundCard.c_str());
                 if (!ist.str().empty() && ist.str() != "") {
                     app->sendResponse(
-                            Response(COMMANDNAME_SETSOUNDCARD, "Volume was set successfully\n", Response::Ok));
+                            Response(COMMANDNAME_SETSOUNDCARD, "Soundcard was set successfully\n", Response::Ok));
                 }
             }
         }
+    }
+    if (param != "playback_dev" && param != "ringer_dev" && param != "capture_dev"){
+        app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Wrong parameter", Response::Error));
     }
 }

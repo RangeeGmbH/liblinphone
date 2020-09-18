@@ -112,6 +112,8 @@ set(DAEMON_SOURCE_FILES
 	commands/volume.h
 	commands/set-sound-card.cc
 	commands/set-sound-card.h
+	commands/get-sound-card.cc
+	commands/get-sound-card.h
 	daemon.cc
 	daemon.h
 )
