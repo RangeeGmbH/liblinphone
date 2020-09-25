@@ -56,13 +56,14 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
             if (ist.fail()) {
                 app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing or wrong value", Response::Error));
             } else {
-                string ringer_dev = "playback_dev";
-                const std::string& soundCard = ist.str().substr(ringer_dev.length()+1, ist.str().length());
+                string playback_dev = "playback_dev";
+                const std::string& soundCard = ist.str().substr(playback_dev.length()+1, ist.str().length());
                 linphone_core_set_playback_device(app->getCore(), soundCard.c_str());
                 if (!ist.str().empty() && ist.str() != "") {
                     app->sendResponse(
                             Response(COMMANDNAME_SETSOUNDCARD, "Soundcard was set successfully\n", Response::Ok));
                 }
+                param = playback_dev;
             }
         }
     }
@@ -81,6 +82,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                     app->sendResponse(
                             Response(COMMANDNAME_SETSOUNDCARD, "Soundcard was set successfully\n", Response::Ok));
                 }
+                param = ringer_dev;
             }
         }
     }
@@ -92,13 +94,14 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
             if (ist.fail()) {
                 app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing or wrong value", Response::Error));
             } else {
-                string ringer_dev = "capture_dev";
-                const std::string& soundCard = ist.str().substr(ringer_dev.length()+1, ist.str().length());
+                string capture_dev = "capture_dev";
+                const std::string& soundCard = ist.str().substr(capture_dev.length()+1, ist.str().length());
                 linphone_core_set_capture_device(app->getCore(), soundCard.c_str());
                 if (!ist.str().empty() && ist.str() != "") {
                     app->sendResponse(
                             Response(COMMANDNAME_SETSOUNDCARD, "Soundcard was set successfully\n", Response::Ok));
                 }
+                param = capture_dev;
             }
         }
     }
