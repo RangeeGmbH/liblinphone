@@ -193,6 +193,7 @@ ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, Lin
             setBody(ostr.str());
             break;
         case LinphoneRegistrationCleared:
+            linphone_core_clear_all_auth_info(daemon->getCore());
             break;
 
     }
