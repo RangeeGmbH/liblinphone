@@ -3932,9 +3932,6 @@ LinphoneCall * linphone_core_invite_address_with_params(LinphoneCore *lc, const 
 		return NULL;
 	}
 
-	if (!L_GET_PRIVATE_FROM_C_OBJECT(lc)->canWeAddCall())
-		return NULL;
-
 	cp = linphone_call_params_copy(params);
 	proxy=linphone_core_lookup_known_proxy(lc,addr);
 	if (proxy!=NULL) {
