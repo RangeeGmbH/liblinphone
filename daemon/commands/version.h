@@ -21,6 +21,7 @@
 #define LINPHONE_DAEMON_COMMAND_VERSION_H_
 
 #include "daemon.h"
+#define COMMANDNAME_VERSION "version"
 
 class VersionCommand: public DaemonCommand {
 public:

@@ -21,59 +21,69 @@
 
 using namespace std;
 
-class ConfigResponse : public Response {
-public:
-	ConfigResponse(const string &value);
-};
 
-ConfigResponse::ConfigResponse(const string& value) : Response() {
-	ostringstream ost;
-	ost << "Value: " << value ? value : "<unset>";
-	setBody(ost.str());
+string ConfigGetCommand::getConfigResponseStr(const string& value) {
+    ostringstream ost;
+    ost << "Value: " << value ? value : "<unset>";
+    return ost.str();
+}
+
+string ConfigSetCommand::getConfigResponseStr(const string& value) {
+    ostringstream ost;
+    ost << "Value: " << value ? value : "<unset>";
+    return ost.str();
 }
 
 ConfigGetCommand::ConfigGetCommand() :
-		DaemonCommand("config-get", "config-get <section> <key>",
-				"Reads a configuration value from linphone's configuration database.") {
-	addExample(new DaemonCommandExample("config-get rtp symmetric",
-						"Status: Ok\n\n"
-						"Value: <unset>"));
+DaemonCommand("config-get", "config-get <section> <key>",
+              "Reads a configuration value from linphone's configuration database.") {
+    addExample(new DaemonCommandExample("config-get rtp symmetric",
+                                        "Status: Ok\n\n"
+                                        "Value: <unset>"));
 }
 
 void ConfigGetCommand::exec(Daemon *app, const string& args) {
-	string section,key;
-	istringstream ist(args);
-	ist >> section >> key;
-	if (ist.fail()) {
-		app->sendResponse(Response("Missing section and/or key names."));
-		return;
-	}
-	const char *read_value=linphone_config_get_string(linphone_core_get_config(app->getCore()),section.c_str(),key.c_str(),NULL);
-	app->sendResponse(ConfigResponse(read_value));
+    string section,key;
+    istringstream ist(args);
+    ist >> section >> key;
+    if (ist.fail()) {
+        app->sendResponse(Response(COMMANDNAME_CONFIG_GET, "Missing section and/or key names.", Response::Error));
+        return;
+    }
+    const char *read_value=lp_config_get_string(linphone_core_get_config(app->getCore()),section.c_str(),key.c_str(),NULL);
+    if (read_value != NULL){
+        app->sendResponse(Response(COMMANDNAME_CONFIG_GET, getConfigResponseStr(read_value)+"\n", Response::Ok));
+    }
+    else {
+        ostringstream error;
+        error << "value from section: " << section << "\n" << "with key: "<< key << "\n" << "was not found";
+        app->sendResponse(Response(COMMANDNAME_CONFIG_GET, error.str(), Response::Error));
+    }
+
 }
 
 
 ConfigSetCommand::ConfigSetCommand() :
-		DaemonCommand("config-set", "config-set <section> <key> <value>",
-				"Sets a configuration value into linphone's configuration database.") {
-	addExample(new DaemonCommandExample("config-set rtp symmetric 1",
-						"Status: Ok\n\n"
-						"Value: 2"));
-	addExample(new DaemonCommandExample("config-set rtp symmetric",
-						"Status: Ok\n\n"
-						"Value: <unset>"));
+DaemonCommand("config-set", "config-set <section> <key> <value>",
+              "Sets a configuration value into linphone's configuration database.") {
+    addExample(new DaemonCommandExample("config-set rtp symmetric 1",
+                                        "Status: Ok\n\n"
+                                        "Value: 2"));
+    addExample(new DaemonCommandExample("config-set rtp symmetric",
+                                        "Status: Ok\n\n"
+                                        "Value: <unset>"));
 }
 
 void ConfigSetCommand::exec(Daemon *app, const string& args) {
-	string section,key,value;
-	istringstream ist(args);
-	ist >> section >> key;
-	if (ist.fail()) {
-		app->sendResponse(Response("Missing section and/or key names."));
-		return;
-	}
-	ist>>value;
-	linphone_config_set_string(linphone_core_get_config(app->getCore()), section.c_str(), key.c_str(), value.size()>0 ? value.c_str() : NULL);
-	app->sendResponse(ConfigResponse(value.c_str()));
+    string section,key,value;
+    istringstream ist(args);
+    ist >> section >> key;
+    if (ist.fail()) {
+        app->sendResponse(Response(COMMANDNAME_CONFIG_SET, "Missing section and/or key names.", Response::Error));
+        return;
+    }
+    ist>>value;
+    lp_config_set_string(linphone_core_get_config(app->getCore()), section.c_str(), key.c_str(), value.size()>0 ? value.c_str() : NULL);
+    app->sendResponse(Response(COMMANDNAME_CONFIG_SET, getConfigResponseStr(value.c_str())+"\n", Response::Ok));
 }
 

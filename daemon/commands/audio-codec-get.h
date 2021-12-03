@@ -22,6 +22,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_AUDIO_CODEC_GET "audio-codec-get"
+
+
 class AudioCodecGetCommand: public DaemonCommand {
 public:
 	AudioCodecGetCommand();

@@ -21,31 +21,6 @@
 
 using namespace std;
 
-class RegisterStatusResponse : public Response {
-public:
-	RegisterStatusResponse();
-	RegisterStatusResponse(int id, const LinphoneProxyConfig *cfg);
-	void append(int id, const LinphoneProxyConfig *cfg);
-};
-
-RegisterStatusResponse::RegisterStatusResponse() {
-}
-
-RegisterStatusResponse::RegisterStatusResponse(int id, const LinphoneProxyConfig *cfg) {
-	append(id, cfg);
-}
-
-void RegisterStatusResponse::append(int id, const LinphoneProxyConfig* cfg) {
-	ostringstream ost;
-	ost << getBody();
-	if (ost.tellp() > 0) {
-		ost << "\n";
-	}
-	ost << "Id: " << id << "\n";
-	ost << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n";
-	setBody(ost.str());
-}
-
 RegisterStatusCommand::RegisterStatusCommand() :
 		DaemonCommand("register-status", "register-status <register_id>|ALL", "Return status of a registration or of all registrations.") {
 	addExample(new DaemonCommandExample("register-status 1",
@@ -65,37 +40,38 @@ RegisterStatusCommand::RegisterStatusCommand() :
 
 void RegisterStatusCommand::exec(Daemon *app, const string& args) {
 	LinphoneProxyConfig *cfg = NULL;
+	ostringstream ost;
 	string param;
 	int pid;
 
 	istringstream ist(args);
 	ist >> param;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_REGISTER_STATUS, "Missing parameter.", Response::Error));
 		return;
 	}
 	if (param.compare("ALL") == 0) {
-		RegisterStatusResponse response;
 		for (int i = 1; i <= app->maxProxyId(); i++) {
 			cfg = app->findProxy(i);
 			if (cfg != NULL) {
-				response.append(i, cfg);
+			    ost << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n";
 			}
 		}
-		app->sendResponse(response);
+		app->sendResponse(Response(COMMANDNAME_REGISTER_STATUS, ost.str(), Response::Ok));
 	} else {
 		ist.clear();
 		ist.str(param);
 		ist >> pid;
 		if (ist.fail()) {
-			app->sendResponse(Response("Incorrect parameter.", Response::Error));
+		    app->sendResponse(Response(COMMANDNAME_REGISTER_STATUS, "Incorrect parameter.", Response::Error));
 			return;
 		}
 		cfg = app->findProxy(pid);
 		if (cfg == NULL) {
-			app->sendResponse(Response("No register with such id.", Response::Error));
+		    app->sendResponse(Response(COMMANDNAME_REGISTER_STATUS, "No register with such id.", Response::Error));
 			return;
 		}
-		app->sendResponse(RegisterStatusResponse(pid, cfg));
+		ost << "ProxyId: " << pid << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg);
+		app->sendResponse(Response(COMMANDNAME_REGISTER_STATUS, ost.str(), Response::Ok));
 	}
 }

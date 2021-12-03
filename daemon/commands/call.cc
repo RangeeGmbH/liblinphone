@@ -45,7 +45,7 @@ void CallCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> address;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing address parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_CALL, "Missing address parameter.", Response::Error));
 		return;
 	}
 	ist >> early_media;
@@ -61,11 +61,10 @@ void CallCommand::exec(Daemon *app, const string& args) {
 	}
 	
 	if (call == NULL) {
-		app->sendResponse(Response("Call creation failed."));
+	    app->sendResponse(Response(COMMANDNAME_CALL, "Call creation failed.", Response::Error));
 		return;
 	}
 
 	ostr << "Id: " << app->updateCallId(call) << "\n";
-	resp.setBody(ostr.str());
-	app->sendResponse(resp);
+	app->sendResponse(Response(COMMANDNAME_CALL, ostr.str(), Response::Ok));
 }

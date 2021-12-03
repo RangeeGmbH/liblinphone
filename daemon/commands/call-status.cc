@@ -22,7 +22,7 @@
 using namespace std;
 
 CallStatusCommand::CallStatusCommand() :
-		DaemonCommand("call-status", "call-status [<call_id>]", "Return status of a call.") {
+        DaemonCommand("call-status", "call-status [ALL] or [<call_id>]", "Return status of a call, or all calls") {
 	addExample(new DaemonCommandExample("call-status 1",
 						"Status: Ok\n\n"
 						"State: LinphoneCallStreamsRunning\n"
@@ -39,50 +39,121 @@ CallStatusCommand::CallStatusCommand() :
 void CallStatusCommand::exec(Daemon *app, const string& args) {
 	LinphoneCore *lc = app->getCore();
 	int cid;
+	const MSList *elem;
+	string param;
 	LinphoneCall *call = NULL;
 	istringstream ist(args);
+	istringstream iparam(args);
 	ist >> cid;
-	if (ist.fail()) {
-		call = linphone_core_get_current_call(lc);
-		if (call == NULL) {
-			app->sendResponse(Response("No current call available."));
-			return;
-		}
-	} else {
-		call = app->findCall(cid);
-		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
-			return;
-		}
-	}
+	iparam >> param;
 
-	LinphoneCallState call_state = LinphoneCallIdle;
-	call_state = linphone_call_get_state(call);
-	const LinphoneAddress *remoteAddress = linphone_call_get_remote_address(call);
-	ostringstream ostr;
-	ostr << "State: " << linphone_call_state_to_string(call_state) << "\n";
+	if(param != "ALL") {
+	    // call-status 1
 
-	switch (call_state) {
-	case LinphoneCallOutgoingInit:
-	case LinphoneCallOutgoingProgress:
-	case LinphoneCallOutgoingRinging:
-	case LinphoneCallPaused:
-	case LinphoneCallStreamsRunning:
-	case LinphoneCallConnected:
-	case LinphoneCallIncomingReceived:
-		ostr << "From: " << linphone_address_as_string(remoteAddress) << "\n";
-		break;
-	default:
-		break;
+	    if (ist.fail()) {
+	        call = linphone_core_get_current_call(lc);
+	        if (call == NULL) {
+	            app->sendResponse(Response(COMMANDNAME_CALL_STATUS, "No current call available.", Response::Error));
+	            return;
+	        }
+	    } else {
+	        call = app->findCall(cid);
+	        if (call == NULL) {
+	            app->sendResponse(Response(COMMANDNAME_CALL_STATUS, "No call with such id.", Response::Error));
+	            return;
+	        }
+	    }
+	    LinphoneCallState call_state = LinphoneCallIdle;
+	    call_state = linphone_call_get_state(call);
+
+	    LinphoneCallLog *callLog = linphone_call_get_call_log(call);
+	    const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+	    const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
+	    char *toStr = linphone_address_as_string(toAddr);
+	    char *fromStr = linphone_address_as_string(fromAddr);
+
+	    const char *flag;
+	    bool_t in_conference;
+	    in_conference=(linphone_call_get_conference(call) != NULL);
+	    flag=in_conference ? "InConferencing: yes" : "InConferencing: no";
+
+	    ostringstream ostr;
+
+	    ostr << "CallId: " << app->updateCallId(call) << "\n";
+	    ostr << "CallState: " << linphone_call_state_to_string(call_state) << "\n";
+
+	    switch (call_state) {
+	        case LinphoneCallOutgoingInit:
+	            case LinphoneCallOutgoingProgress:
+	                case LinphoneCallOutgoingRinging:
+	                    case LinphoneCallPaused:
+	                        case LinphoneCallStreamsRunning:
+	                            case LinphoneCallConnected:
+	                                case LinphoneCallIncomingReceived:
+	                                    ostr << "SipAddressFrom: " << fromStr << "\n";
+	                                    ostr << "SipAddressTo: " << toStr << "\n";
+	                                    ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
+	                                    ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
+	                                    ostr << flag << "\n";
+	                                    break;
+	                                    default:
+	                                        break;
+	    }
+	    app->sendResponse(Response(COMMANDNAME_CALL_STATUS, ostr.str(), Response::Ok));
 	}
-	switch (call_state) {
-	case LinphoneCallStreamsRunning:
-	case LinphoneCallConnected:
-		ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
-		ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-		break;
-	default:
-		break;
+	if(param == "ALL") {
+	    //call-status ALL
+	    elem = linphone_core_get_calls(app->getCore());
+	    if (elem != NULL) {
+	        call = (LinphoneCall*)elem->data;
+	    }
+	    if (call == NULL) {
+	        app->sendResponse(Response(COMMANDNAME_CALL_STATUS, "No active call.", Response::Error));
+	        return;
+	    }
+	    else{
+	        for (int index = 0; index < ms_list_size(elem); index++) {
+	            LinphoneCall* lCall = (LinphoneCall*) bctbx_list_nth_data(elem,index);
+
+	            LinphoneCallState call_state = LinphoneCallIdle;
+	            call_state = linphone_call_get_state(lCall);
+
+	            LinphoneCallLog *callLog = linphone_call_get_call_log(lCall);
+	            const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+	            const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
+	            char *toStr = linphone_address_as_string(toAddr);
+	            char *fromStr = linphone_address_as_string(fromAddr);
+
+	            const char *flag;
+	            bool_t in_conference;
+	            in_conference=(linphone_call_get_conference(lCall) != NULL);
+	            flag=in_conference ? "InConferencing: yes" : "InConferencing: no";
+
+	            ostringstream ostr;
+
+	            ostr << "CallId: " << app->updateCallId(lCall) << "\n";
+	            ostr << "State: " << linphone_call_state_to_string(call_state) << "\n";
+
+	            switch (call_state) {
+	                case LinphoneCallPaused:
+	                    case LinphoneCallStreamsRunning:
+	                        case LinphoneCallConnected:
+	                            case LinphoneCallIncomingReceived:
+	                                case LinphoneCallOutgoingInit:
+	                                    case LinphoneCallOutgoingProgress:
+	                                        case LinphoneCallOutgoingRinging:
+	                                            ostr << "SipAddressFrom: " << fromStr << "\n";
+	                                            ostr << "SipAddressTo: " << toStr << "\n";
+	                                            ostr << "Direction: " << ((linphone_call_get_dir(lCall) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
+	                                            ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
+	                                            ostr << flag << "\n";
+	                                            break;
+	                                            default:
+	                                                break;
+	            }
+	            app->sendResponse(Response(COMMANDNAME_CALL_STATUS, ostr.str(), Response::Ok));
+	        }
+	    }
+	    return;
 	}
-	app->sendResponse(Response(ostr.str(), Response::Ok));
 }

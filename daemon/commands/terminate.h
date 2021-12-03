@@ -22,6 +22,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_TERMINATE "terminate"
+
+
 class TerminateCommand: public DaemonCommand {
 public:
 	TerminateCommand();

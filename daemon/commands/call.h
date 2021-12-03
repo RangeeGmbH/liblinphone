@@ -22,6 +22,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CALL "call"
+
+
 class CallCommand: public DaemonCommand {
 public:
 	CallCommand();

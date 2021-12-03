@@ -22,12 +22,17 @@
 
 #include "daemon.h"
 
+using namespace::std;
+
 
 class JitterBufferCommand : public DaemonCommand{
 public:
 	JitterBufferCommand();
 
 	void exec(Daemon *app, const std::string& args) override;
+
+private:
+    string getJitterBufferCommandResponseStr(LinphoneCore *lc,bool audio, bool video);
 };
 
 

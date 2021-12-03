@@ -22,6 +22,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_QUIT "quit"
+
 class QuitCommand: public DaemonCommand {
 public:
 	QuitCommand();

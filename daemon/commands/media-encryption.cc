@@ -21,30 +21,25 @@
 
 using namespace std;
 
-class MediaEncryptionResponse : public Response {
-public:
-	MediaEncryptionResponse(LinphoneCore *core);
-};
-
-MediaEncryptionResponse::MediaEncryptionResponse(LinphoneCore *core) : Response() {
-	LinphoneMediaEncryption encryption = linphone_core_get_media_encryption(core);
-	ostringstream ost;
-	ost << "Encryption: ";
-	switch (encryption) {
-		case LinphoneMediaEncryptionNone:
-			ost << "none\n";
-			break;
-		case LinphoneMediaEncryptionSRTP:
-			ost << "srtp\n";
-			break;
-		case LinphoneMediaEncryptionZRTP:
-			ost << "zrtp\n";
-			break;
-		case LinphoneMediaEncryptionDTLS:
-			ost << "DTLS\n";
-			break;
-	}
-	setBody(ost.str());
+string MediaEncryptionCommand::getMediaEncryptionCommandResponseStr(LinphoneCore *core) {
+    LinphoneMediaEncryption encryption = linphone_core_get_media_encryption(core);
+    ostringstream ost;
+    ost << "Encryption: ";
+    switch (encryption) {
+        case LinphoneMediaEncryptionNone:
+            ost << "none\n";
+            break;
+            case LinphoneMediaEncryptionSRTP:
+                ost << "srtp\n";
+                break;
+                case LinphoneMediaEncryptionZRTP:
+                    ost << "zrtp\n";
+                    break;
+                    case LinphoneMediaEncryptionDTLS:
+                        ost << "DTLS\n";
+                        break;
+    }
+    return ost.str();
 }
 
 MediaEncryptionCommand::MediaEncryptionCommand() :
@@ -66,11 +61,11 @@ void MediaEncryptionCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> encryption_str;
 	if (ist.eof() && (encryption_str.length() == 0)) {
-		app->sendResponse(MediaEncryptionResponse(app->getCore()));
+	    app->sendResponse(Response(COMMANDNAME_MEDIA_ENCRYPTION, getMediaEncryptionCommandResponseStr(app->getCore()), Response::Ok));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_MEDIA_ENCRYPTION, "Incorrect parameter.", Response::Error));
 		return;
 	}
 	LinphoneMediaEncryption encryption;
@@ -81,12 +76,12 @@ void MediaEncryptionCommand::exec(Daemon *app, const string& args) {
 	} else if (encryption_str.compare("zrtp") == 0) {
 		encryption = LinphoneMediaEncryptionZRTP;
 	} else {
-		app->sendResponse(Response("Incorrect parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_MEDIA_ENCRYPTION, "Incorrect parameter.", Response::Error));
 		return;
 	}
 	if (linphone_core_set_media_encryption(app->getCore(), encryption) == 0) {
-		app->sendResponse(MediaEncryptionResponse(app->getCore()));
+	    app->sendResponse(Response(COMMANDNAME_MEDIA_ENCRYPTION, getMediaEncryptionCommandResponseStr(app->getCore()), Response::Ok));
 	}else{
-		app->sendResponse(Response("Unsupported media encryption", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_MEDIA_ENCRYPTION, "Unsupported media encryption", Response::Error));
 	}
 }

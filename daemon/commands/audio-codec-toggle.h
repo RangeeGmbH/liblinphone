@@ -24,12 +24,13 @@
 
 class AudioCodecToggleCommand: public DaemonCommand {
 public:
-	AudioCodecToggleCommand(const char *name, const char *proto, const char *help, bool enable);
+    AudioCodecToggleCommand(const char *name, const char *proto, const char *help, bool enable);
 
 	void exec(Daemon *app, const std::string &args) override;
 
 protected:
 	bool mEnable;
+	const char *mName;
 };
 
 class AudioCodecEnableCommand: public AudioCodecToggleCommand {

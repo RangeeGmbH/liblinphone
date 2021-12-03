@@ -22,6 +22,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CALL_TRANSFER "call-transfer"
+
+
 class CallTransferCommand : public DaemonCommand
 {
 public:

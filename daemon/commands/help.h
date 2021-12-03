@@ -22,6 +22,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_HELP "help"
+
+
 class HelpCommand: public DaemonCommand {
 public:
 	HelpCommand();

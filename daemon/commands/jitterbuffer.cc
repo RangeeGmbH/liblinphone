@@ -25,17 +25,14 @@
 using namespace::std;
 
 
-class JitterBufferResponse : public Response{
-public:
-	JitterBufferResponse(LinphoneCore *lc,bool audio, bool video){
-		ostringstream ostr;
-		if (audio)
-			ostr<<"audio-jitter-buffer-size: "<<linphone_core_get_audio_jittcomp(lc)<<endl;
-		if (video)
-			ostr<<"video-jitter-buffer-size: "<<linphone_core_get_video_jittcomp(lc)<<endl;
-		setBody(ostr.str());
-	}
-};
+string JitterBufferCommand::getJitterBufferCommandResponseStr(LinphoneCore *lc,bool audio, bool video){
+    ostringstream ostr;
+    if (audio)
+        ostr<<"audio-jitter-buffer-size: "<<linphone_core_get_audio_jittcomp(lc)<<endl;
+    if (video)
+        ostr<<"video-jitter-buffer-size: "<<linphone_core_get_video_jittcomp(lc)<<endl;
+    return ostr.str();
+}
 
 JitterBufferCommand::JitterBufferCommand() : DaemonCommand("jitter-buffer",
 	"jitter-buffer [audio|video] [size <milliseconds>]",
@@ -57,24 +54,24 @@ void JitterBufferCommand::exec(Daemon *app, const string& args) {
 	string arg1;
 	istr >> arg1;
 	if (istr.fail()){
-		app->sendResponse(JitterBufferResponse(app->getCore(), true, true));
+	    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER, getJitterBufferCommandResponseStr(app->getCore(), true, true), Response::Ok));
 		return;
 	}
 	if (arg1 != "audio" && arg1 != "video") {
-		app->sendResponse(Response("Invalid argument."));
+	    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER, "Invalid argument.", Response::Error));
 		return;
 	}
 	string arg2;
 	istr >> arg2;
 	if (istr.fail()) {
-		app->sendResponse(JitterBufferResponse(app->getCore(), arg1 == "audio", arg1 == "video"));
+	    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER, getJitterBufferCommandResponseStr(app->getCore(), arg1 == "audio", arg1 == "video"), Response::Ok));
 		return;
 	}
 	if (arg2 == "size") {
 		int arg3;
 		istr >> arg3;
 		if (istr.fail()) {
-			app->sendResponse(Response("Bad command argument."));
+		    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER, "Bad command argument.", Response::Error));
 			return;
 		}
 		if (arg1 == "audio")
@@ -82,7 +79,7 @@ void JitterBufferCommand::exec(Daemon *app, const string& args) {
 		else if (arg1=="video")
 			linphone_core_set_video_jittcomp(app->getCore(), arg3);
 	}
-	app->sendResponse(JitterBufferResponse(app->getCore(), arg1 == "audio", arg1 == "video"));
+	app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER, getJitterBufferCommandResponseStr(app->getCore(), arg1 == "audio", arg1 == "video"), Response::Ok));
 }
 
 JitterBufferResetCommand::JitterBufferResetCommand() : DaemonCommand("jitter-buffer-reset",
@@ -101,17 +98,17 @@ void JitterBufferResetCommand::exec(Daemon *app, const string& args) {
 	string arg1;
 	istr >> arg1;
 	if (istr.fail()) {
-		app->sendResponse(Response("Missing arguments"));
+	    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER_RESET, "Missing arguments", Response::Error));
 		return;
 	}
 	if (arg1 != "call" && arg1 != "stream") {
-		app->sendResponse(Response("Invalid command syntax."));
+	    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER_RESET, "Invalid command syntax.", Response::Error));
 		return;
 	}
 	int arg2;
 	istr >> arg2;
 	if (istr.fail()) {
-		app->sendResponse(Response("Missing call or stream id."));
+	    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER_RESET, "Missing call or stream id.", Response::Error));
 		return;
 	}
 	MSFilter *rtprecv = NULL;
@@ -119,7 +116,7 @@ void JitterBufferResetCommand::exec(Daemon *app, const string& args) {
 		LinphoneCall *call = app->findCall(arg2);
 		string streamtype;
 		if (call == NULL) {
-			app->sendResponse(Response("No such call id"));
+		    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER_RESET, "No such call id", Response::Error));
 			return;
 		}
 		istr >> streamtype;
@@ -133,17 +130,17 @@ void JitterBufferResetCommand::exec(Daemon *app, const string& args) {
 	} else {
 		AudioStream *stream = app->findAudioStream(arg2);
 		if (stream == NULL) {
-			app->sendResponse(Response("No such stream id"));
+		    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER_RESET, "No such stream id", Response::Error));
 			return;
 		}
 		rtprecv = stream->ms.rtprecv;
 	}
 	if (rtprecv == NULL) {
-		app->sendResponse(Response("No such active stream"));
+	    app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER_RESET, "No such active stream", Response::Error));
 		return;
 	}
 	ms_filter_call_method_noarg(rtprecv, MS_RTP_RECV_RESET_JITTER_BUFFER);
-	app->sendResponse(Response());
+	app->sendResponse(Response(COMMANDNAME_JITTER_BUFFER_RESET, "", Response::Ok));
 }
 
 

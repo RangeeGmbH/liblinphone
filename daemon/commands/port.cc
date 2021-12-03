@@ -27,63 +27,47 @@ enum Protocol {
 	TLSProtocol = 2
 };
 
-class PortResponse : public Response {
-public:
-	enum PortType {
-		SIPPort = 0,
-		AudioRTPPort = 1,
-		VideoRTPPort = 2,
-		AllPorts = 3
-	};
-
-	PortResponse(LinphoneCore *core, PortType type);
-
-private:
-	void outputSIPPort(LinphoneCore *core, ostringstream &ost);
-	void outputAudioRTPPort(LinphoneCore *core, ostringstream &ost);
-	void outputVideoRTPPort(LinphoneCore *core, ostringstream &ost);
-};
-
-PortResponse::PortResponse(LinphoneCore *core, PortResponse::PortType type) : Response() {
-	ostringstream ost;
-	switch (type) {
-		case SIPPort:
-			outputSIPPort(core, ost);
-			break;
-		case AudioRTPPort:
-			outputAudioRTPPort(core, ost);
-			break;
-		case VideoRTPPort:
-			outputVideoRTPPort(core, ost);
-			break;
-		case AllPorts:
-			outputSIPPort(core, ost);
-			outputAudioRTPPort(core, ost);
-			outputVideoRTPPort(core, ost);
-			break;
-	}
-	setBody(ost.str());
+string PortCommand::getPortResponseStr(LinphoneCore *core, PortType portType) {
+    ostringstream ost;
+    switch (portType) {
+        case SIPPort:
+            outputSIPPort(core, ost);
+            break;
+            case AudioRTPPort:
+                outputAudioRTPPort(core, ost);
+                break;
+                case VideoRTPPort:
+                    outputVideoRTPPort(core, ost);
+                    break;
+                    case AllPorts:
+                        outputSIPPort(core, ost);
+                        outputAudioRTPPort(core, ost);
+                        outputVideoRTPPort(core, ost);
+                        break;
+    }
+    return ost.str();
 }
 
-void PortResponse::outputSIPPort(LinphoneCore *core, ostringstream &ost) {
-	LCSipTransports transports;
-	linphone_core_get_sip_transports(core, &transports);
-	ost << "SIP: ";
-	if (transports.udp_port > 0) {
-		ost << transports.udp_port << " UDP\n";
-	} else if (transports.tcp_port > 0) {
-		ost << transports.tcp_port << " TCP\n";
-	} else {
-		ost << transports.tls_port << " TLS\n";
-	}
+void PortCommand::outputSIPPort(LinphoneCore *core, ostringstream &ost) {
+    LCSipTransports transports;
+    linphone_core_get_sip_transports(core, &transports);
+    ost << "SIP: ";
+    if (transports.udp_port > 0) {
+        ost << transports.udp_port << " UDP\n";
+    } else if (transports.tcp_port > 0) {
+        ost << transports.tcp_port << " TCP\n";
+    } else {
+        ost << transports.tls_port << " TLS\n";
+    }
 }
 
-void PortResponse::outputAudioRTPPort(LinphoneCore *core, ostringstream &ost) {
-	ost << "Audio RTP: " << linphone_core_get_audio_port(core) << "\n";
+
+void PortCommand::outputAudioRTPPort(LinphoneCore *core, ostringstream &ost) {
+    ost << "Audio RTP: " << linphone_core_get_audio_port(core) << "\n";
 }
 
-void PortResponse::outputVideoRTPPort(LinphoneCore *core, ostringstream &ost) {
-	ost << "Video RTP: " << linphone_core_get_video_port(core) << "\n";
+void PortCommand::outputVideoRTPPort(LinphoneCore *core, ostringstream &ost) {
+    ost << "Video RTP: " << linphone_core_get_video_port(core) << "\n";
 }
 
 PortCommand::PortCommand() :
@@ -122,23 +106,23 @@ void PortCommand::exec(Daemon *app, const string& args) {
 	ostringstream ost;
 	ist >> type;
 	if (ist.eof() && (type.length() == 0)) {
-		app->sendResponse(PortResponse(app->getCore(), PortResponse::AllPorts));
+	    app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), AllPorts), Response::Ok));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect type parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 		return;
 	}
 	ist >> port;
 	if (ist.fail()) {
 		if (type.compare("sip") == 0) {
-			app->sendResponse(PortResponse(app->getCore(), PortResponse::SIPPort));
+		    app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), SIPPort), Response::Ok));
 		} else if (type.compare("audio") == 0) {
-			app->sendResponse(PortResponse(app->getCore(), PortResponse::AudioRTPPort));
+		    app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), AudioRTPPort), Response::Ok));
 		} else if (type.compare("video") == 0) {
-			app->sendResponse(PortResponse(app->getCore(), PortResponse::VideoRTPPort));
+		    app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), VideoRTPPort), Response::Ok));
 		} else {
-			app->sendResponse(Response("Incorrect type parameter.", Response::Error));
+		    app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 		}
 		return;
 	}
@@ -154,7 +138,7 @@ void PortCommand::exec(Daemon *app, const string& args) {
 			} else if (protocol_str.compare("tls") == 0) {
 				protocol = TLSProtocol;
 			} else {
-				app->sendResponse(Response("Incorrect protocol parameter.", Response::Error));
+			    app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect protocol parameter.", Response::Error));
 				return;
 			}
 		}
@@ -172,14 +156,14 @@ void PortCommand::exec(Daemon *app, const string& args) {
 				break;
 		}
 		linphone_core_set_sip_transports(app->getCore(), &transports);
-		app->sendResponse(PortResponse(app->getCore(), PortResponse::SIPPort));
+		app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), SIPPort), Response::Ok));
 	} else if (type.compare("audio") == 0) {
 		linphone_core_set_audio_port(app->getCore(), port);
-		app->sendResponse(PortResponse(app->getCore(), PortResponse::AudioRTPPort));
+		app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), AudioRTPPort), Response::Ok));
 	} else if (type.compare("video") == 0) {
 		linphone_core_set_video_port(app->getCore(), port);
-		app->sendResponse(PortResponse(app->getCore(), PortResponse::VideoRTPPort));
+		app->sendResponse(Response(COMMANDNAME_PORT, getPortResponseStr(app->getCore(), VideoRTPPort), Response::Ok));
 	} else {
-		app->sendResponse(Response("Incorrect type parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 	}
 }

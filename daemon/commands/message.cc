@@ -35,18 +35,18 @@ void MessageCommand::exec(Daemon *app, const std::string &args){
 	istr>>uri;
 	
 	if (uri.empty()){
-		app->sendResponse(Response("Missing uri parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_MESSAGE, "Missing uri parameter.", Response::Error));
 		return;
 	}
 	LinphoneAddress *addr = linphone_factory_create_address(linphone_factory_get(), uri.c_str());
 	if (!addr){
-		app->sendResponse(Response("Bad sip uri.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_MESSAGE, "Bad sip uri.", Response::Error));
 		return;
 	}
 	LinphoneChatRoom *cr = linphone_core_get_chat_room(app->getCore(), addr);
 	linphone_address_unref(addr);
 	if (!cr){
-		app->sendResponse(Response("Internal error creating chat room.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_MESSAGE, "Internal error creating chat room.", Response::Error));
 		return;
 	}
 	string text(args.substr(uri.size() + 1, string::npos));
@@ -57,7 +57,7 @@ void MessageCommand::exec(Daemon *app, const std::string &args){
 	linphone_chat_message_send(msg);
 	ostringstream ostr;
 	ostr << "Id: "<< linphone_chat_message_get_message_id(msg) << "\n";
-	app->sendResponse(Response(ostr.str(), Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_MESSAGE, ostr.str(), Response::Ok));
 }
 
 void MessageCommand::sMsgStateChanged(LinphoneChatMessage *msg, LinphoneChatMessageState state){

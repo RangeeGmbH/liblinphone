@@ -37,7 +37,7 @@ void DtmfCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> digit_str;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing digit parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_DTMF, "Missing digit parameter.", Response::Error));
 		return;
 	}
 
@@ -48,8 +48,8 @@ void DtmfCommand::exec(Daemon *app, const string& args) {
 		if (call != NULL) {
 			linphone_call_send_dtmf(call, digit);
 		}
-		app->sendResponse(Response());
+		app->sendResponse(Response(COMMANDNAME_DTMF, "", Response::Ok));
 	} else {
-		app->sendResponse(Response("Incorrect digit parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_DTMF, "Incorrect digit parameter.", Response::Error));
 	}
 }

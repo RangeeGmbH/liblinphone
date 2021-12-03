@@ -26,24 +26,24 @@ public:
 	NetsimResponse(LinphoneCore *core);
 };
 
-NetsimResponse::NetsimResponse(LinphoneCore *lc) : Response() {
-	ostringstream ost;
-	const OrtpNetworkSimulatorParams *params=linphone_core_get_network_simulator_params(lc);
-	ost << "State: ";
-	if (params->enabled) {
-		ost << "enabled\n";
-	} else {
-		ost << "disabled\n";
-	}
-	ost<<"max_bandwidth: "<<params->max_bandwidth<<endl;
-	ost<<"max_buffer_size: "<<params->max_buffer_size<<endl;
-	ost<<"loss_rate: "<<params->loss_rate<<endl;
-	ost<<"latency: "<<params->latency<<endl;
-	ost<<"consecutive_loss_probability: "<<params->consecutive_loss_probability<<endl;
-	ost<<"jitter_burst_density: "<<params->jitter_burst_density<<endl;
-	ost<<"jitter_strength: "<<params->jitter_strength<<endl;
-	ost<<"mode: "<<ortp_network_simulator_mode_to_string(params->mode)<<endl;
-	setBody(ost.str());
+string NetsimCommand::getNetSimResponseStr(LinphoneCore *lc) {
+    ostringstream ost;
+    const OrtpNetworkSimulatorParams *params=linphone_core_get_network_simulator_params(lc);
+    ost << "State: ";
+    if (params->enabled) {
+        ost << "enabled\n";
+    } else {
+        ost << "disabled\n";
+    }
+    ost<<"max_bandwidth: "<<params->max_bandwidth<<endl;
+    ost<<"max_buffer_size: "<<params->max_buffer_size<<endl;
+    ost<<"loss_rate: "<<params->loss_rate<<endl;
+    ost<<"latency: "<<params->latency<<endl;
+    ost<<"consecutive_loss_probability: "<<params->consecutive_loss_probability<<endl;
+    ost<<"jitter_burst_density: "<<params->jitter_burst_density<<endl;
+    ost<<"jitter_strength: "<<params->jitter_strength<<endl;
+    ost<<"mode: "<<ortp_network_simulator_mode_to_string(params->mode)<<endl;
+    return ost.str();
 }
 
 NetsimCommand::NetsimCommand(): DaemonCommand("netsim","netsim [enable|disable|parameters] [<parameters>]",
@@ -75,7 +75,7 @@ void NetsimCommand::exec(Daemon* app, const string& args) {
 	istringstream ist(args);
 	ist >> subcommand;
 	if (ist.fail()) {
-		app->sendResponse(NetsimResponse(app->getCore()));
+	    app->sendResponse(Response(COMMANDNAME_NETSIM, getNetSimResponseStr(app->getCore()), Response::Ok));
 		return;
 	}
 	if (subcommand.compare("enable")==0){
@@ -117,7 +117,7 @@ void NetsimCommand::exec(Daemon* app, const string& args) {
 		}
 	}
 	linphone_core_set_network_simulator_params(lc, &params);
-	app->sendResponse(NetsimResponse(app->getCore()));
+	app->sendResponse(Response(COMMANDNAME_NETSIM, getNetSimResponseStr(app->getCore()), Response::Ok));
 }
 
 

@@ -21,23 +21,30 @@
 #include "audio-codec-get.h"
 
 using namespace std;
-
 AudioCodecToggleCommand::AudioCodecToggleCommand(const char *name, const char *proto, const char *help, bool enable) :
-		DaemonCommand(name, proto, help), mEnable(enable) {
+    DaemonCommand(name, proto, help), mEnable(enable), mName(name) {
 }
 
 void AudioCodecToggleCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
+	const char * audio_codec_enable = "audio-codec-enable";
+	const char * audio_codec_disable = "audio-codec-disable";
+	if(mName == audio_codec_enable) {
+	    mName = audio_codec_enable;
+	}
+	if(mName == audio_codec_disable) {
+	    mName = audio_codec_disable;
+	}
 
 	if (ist.peek() == EOF) {
-		app->sendResponse(Response("Missing parameter.", Response::Error));
+	    app->sendResponse(Response(mName, "Missing parameter.",Response::Error));
 	} else {
 		string mime_type;
 		PayloadType *pt = NULL;
 		ist >> mime_type;
 		PayloadTypeParser parser(app->getCore(), mime_type, true);
 		if (!parser.successful()) {
-			app->sendResponse(Response("Incorrect mime type format.", Response::Error));
+		    app->sendResponse(Response(mName, "Incorrect mime type format.", Response::Error));
 			return;
 		}
 		if (!parser.all()) pt = parser.getPayloadType();
@@ -60,7 +67,7 @@ void AudioCodecToggleCommand::exec(Daemon *app, const string& args) {
 			AudioCodecGetCommand getCommand;
 			getCommand.exec(app, "");
 		} else {
-			app->sendResponse(Response("Audio codec not found.", Response::Error));
+		    app->sendResponse(Response(mName, "Audio codec not found.", Response::Error));
 		}
 	}
 }

@@ -27,5 +27,5 @@ QuitCommand::QuitCommand() :
 
 void QuitCommand::exec(Daemon *app, const string& args) {
 	app->quit();
-	app->sendResponse(Response());
+	app->sendResponse(Response(COMMANDNAME_QUIT, "", Response::Ok));
 }

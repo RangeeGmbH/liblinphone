@@ -22,6 +22,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_UNREGISTER "unregister"
+
+
 class UnregisterCommand: public DaemonCommand {
 public:
 	UnregisterCommand();

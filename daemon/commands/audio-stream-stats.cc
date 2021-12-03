@@ -51,18 +51,16 @@ void AudioStreamStatsCommand::exec(Daemon *app, const string& args) {
 	istringstream ist(args);
 	ist >> sid;
 	if (ist.fail()) {
-		app->sendResponse(Response("No stream specified."));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_STREAM_STATS, "No stream specified.", Response::Error));
 		return;
 	}
 
 	stream = app->findAudioStreamAndOther(sid);
 	if (!stream) {
-		app->sendResponse(Response("No audio stream with such id."));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_STREAM_STATS, "No audio stream with such id.", Response::Error));
 		return;
 	}
 
-	Response resp;
 	AudioStreamStatsEvent ev(app, stream->stream, stream->stats);
-	resp.setBody(ev.getBody());
-	app->sendResponse(resp);
+	app->sendResponse(Response(COMMANDNAME_AUDIO_STREAM_STATS, ev.getBody(), Response::Ok));
 }

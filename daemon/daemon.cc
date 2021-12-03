@@ -129,12 +129,22 @@ void *Daemon::iterateThread(void *arg) {
 CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
 	LinphoneCallLog *callLog = linphone_call_get_call_log(call);
 	const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+	const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
 	char *fromStr = linphone_address_as_string(fromAddr);
+	char *toStr = linphone_address_as_string(toAddr);
+	const char *flag;
+	bool_t in_conference;
+	in_conference=(linphone_call_get_conference(call) != NULL);
+	flag=in_conference ? "Conferencing" : "";
 
 	ostringstream ostr;
-	ostr << "Event: " << linphone_call_state_to_string(state) << "\n";
-	ostr << "From: " << fromStr << "\n";
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
+	ostr << "CallId: " << daemon->updateCallId(call) << "\n";
+	ostr << "CallState: " << linphone_call_state_to_string(state) << "\n";
+	ostr << "SipAddressFrom: " << fromStr << "\n";
+	ostr << "SipAddressTo: " << toStr << "\n";
+	ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
+	ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
+	ostr << flag << "\n";
 	setBody(ostr.str());
 
 	bctbx_free(fromStr);
@@ -144,11 +154,53 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("receiving-tone"){
 	ostringstream ostr;
 	char *remote = linphone_call_get_remote_address_as_string(call);
+	ostr << "CallId: " << daemon->updateCallId(call) << "\n";
 	ostr << "Tone: " << (char) dtmf << "\n";
 	ostr << "From: " << remote << "\n";
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
 	setBody(ostr.str());
 	ms_free(remote);
+}
+
+ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) : Event("proxy-registration-state-changed") {
+    ostringstream ostr;
+    switch (cstate) {
+        case LinphoneRegistrationNone:
+            case LinphoneRegistrationProgress:
+                case LinphoneRegistrationOk:
+                    case LinphoneRegistrationFailed:
+                        for (int i = 1; i <= daemon->maxProxyId(); i++) {
+                            cfg = daemon->findProxy(i);
+                            if (cfg != NULL) {
+                                const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
+                                if (errorMessage != nullptr) {
+                                    ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";
+                                } else {
+                                    ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
+                                }
+                            }
+                        }
+                        setBody(ostr.str());
+                        break;
+                        case LinphoneRegistrationCleared:
+                            int i = 1;
+                            cfg = daemon->findProxy(i);
+                            if (cfg == NULL) {
+                                size_t i = 0;
+                                while ( i <= daemon->getlinphoneProxyConfigList().size()-1) {
+                                    cfg = daemon->getlinphoneProxyConfigList()[i];
+                                    const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
+                                    if (errorMessage != nullptr) {
+                                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";
+                                    } else {
+                                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
+                                    }
+                                    i++;
+                                }
+                            }
+                            setBody(ostr.str());
+                            break;
+
+    }
 }
 
 static ostream &printCallStatsHelper(ostream &ostr, const LinphoneCallStats *stats, const string &prefix) {
@@ -173,7 +225,7 @@ CallStatsEvent::CallStatsEvent(Daemon *daemon, LinphoneCall *call, const Linphon
 	const char *prefix = "";
 
 	ostringstream ostr;
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
+	ostr << "CallId: " << daemon->updateCallId(call) << "\n";
 	ostr << "Type: ";
 	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
 		ostr << "Audio";
@@ -202,7 +254,7 @@ AudioStreamStatsEvent::AudioStreamStatsEvent(Daemon* daemon, AudioStream* stream
 	const char *prefix = "";
 
 	ostringstream ostr;
-	ostr << "Id: " << daemon->updateAudioStreamId(stream) << "\n";
+	ostr << "AudioStreamId: " << daemon->updateAudioStreamId(stream) << "\n";
 	ostr << "Type: ";
 	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
 		ostr << "Audio";
@@ -300,6 +352,22 @@ bool DaemonCommand::matches(const string& name) const {
 	return mName.compare(name) == 0;
 }
 
+void Daemon::addToLinphoneProxyConfigList(LinphoneProxyConfig *cfg) {
+    m_LinphoneProxyConfigList.push_back(cfg);
+}
+
+std::vector <LinphoneProxyConfig*> Daemon::getlinphoneProxyConfigList() {
+    return m_LinphoneProxyConfigList;
+}
+
+void Daemon::addToProxyIdList(int proxyId) {
+    m_ProxyIdList.push_back(proxyId);
+}
+
+std::vector <int> Daemon::getProxyIdList() {
+    return m_ProxyIdList;
+}
+
 Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video) :
 		mLSD(0), mLogFile(NULL), mAutoVideo(0), mCallIds(0), mProxyIds(0), mAudioStreamIds(0) {
 	ms_mutex_init(&mMutex, NULL);
@@ -334,6 +402,7 @@ Daemon::Daemon(const char *config_path, const char *factory_config_path, const c
 
 	LinphoneCoreVTable vtable;
 	memset(&vtable, 0, sizeof(vtable));
+	vtable.registration_state_changed = proxyRegistrationChanged;
 	vtable.call_state_changed = callStateChanged;
 	vtable.call_stats_updated = callStatsUpdated;
 	vtable.dtmf_received = dtmfReceived;
@@ -463,6 +532,8 @@ void Daemon::initCommands() {
 	mCommands.push_back(new PlayWavCommand());
 	mCommands.push_back(new PopEventCommand());
 	mCommands.push_back(new AnswerCommand());
+	mCommands.push_back(new SoundcardCommand());
+	mCommands.push_back(new VolumeCommand());
 	mCommands.push_back(new CallStatusCommand());
 	mCommands.push_back(new CallStatsCommand());
 	mCommands.push_back(new CallPauseCommand());
@@ -526,7 +597,7 @@ bool Daemon::pullEvent() {
 	
 	if (size != 0) size--;
 	
-	ostr << "Size: " << size << "\n"; //size is the number items remaining in the queue after popping the event.
+	ostr << "Size: " << size << "\n"; //size is the number items remaininCallEventg in the queue after popping the event.
 	
 	if (!mEventQueue.empty()) {
 		Event *e = mEventQueue.front();
@@ -536,7 +607,7 @@ bool Daemon::pullEvent() {
 		status = true;
 	}
 	
-	sendResponse(Response(ostr.str().c_str(), Response::Ok));
+	sendResponse(Response(ostr.str().c_str(), COMMANDNAME_POP_EVENT, Response::Ok));
 	return status;
 }
 
@@ -569,6 +640,11 @@ void Daemon::dtmfReceived(LinphoneCall *call, int dtmf) {
 	queueEvent(new DtmfEvent(this, call, dtmf));
 }
 
+void Daemon::proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) {
+    queueEvent(new ProxyRegistrationChangedEvent(this, cfg, cstate, message));
+}
+
+
 void Daemon::callStateChanged(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState state, const char *msg) {
 	Daemon *app = (Daemon*) linphone_core_get_user_data(lc);
 	app->callStateChanged(call, state, msg);
@@ -580,6 +656,11 @@ void Daemon::callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const Linpho
 void Daemon::dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf) {
 	Daemon *app = (Daemon*) linphone_core_get_user_data(lc);
 	app->dtmfReceived(call, dtmf);
+}
+
+void Daemon::proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) {
+    Daemon *app = (Daemon*) linphone_core_get_user_data(lc);
+    app->proxyRegistrationChanged(cfg, cstate, message);
 }
 
 void Daemon::messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg){
@@ -614,24 +695,51 @@ void Daemon::iterate() {
 			delete r;
 		}
 	}
+	else{
+	    if (!mEventQueue.empty()) {
+	        Event *r = mEventQueue.front();
+	        mEventQueue.pop();
+	        string buf = r->toBuf();
+	        if (mChildFd != (ortp_pipe_t)-1) {
+	            if (ortp_pipe_write(mChildFd, (uint8_t *)buf.c_str(), (int)buf.size()) == -1) {
+	                ms_error("Fail to write to pipe: %s", strerror(errno));
+	            }
+	        } else {
+	            cout << buf << flush;
+	        }
+	        fflush(stdout);
+	        delete r;
+	    }
+	}
 }
 
 void Daemon::execCommand(const string &command) {
-	istringstream ist(command);
-	string name;
-	ist >> name;
-	stringbuf argsbuf;
-	ist.get(argsbuf);
-	string args = argsbuf.str();
-	if (!args.empty() && (args[0] == ' ')) args.erase(0, 1);
-	list<DaemonCommand*>::iterator it = find_if(mCommands.begin(), mCommands.end(), bind2nd(mem_fun(&DaemonCommand::matches), name));
-	if (it != mCommands.end()) {
-		ms_mutex_lock(&mMutex);
-		(*it)->exec(this, args);
-		ms_mutex_unlock(&mMutex);
-	} else {
-		sendResponse(Response("Unknown command."));
-	}
+    size_t findpos = 0;
+    size_t strleng = 0;
+    string execCommand;
+    string ergCommand;
+    execCommand = command.substr(0,command.length());
+    while (strleng <= execCommand.length()) {
+        findpos = execCommand.find("\n", 0);
+        ergCommand = execCommand.substr(0,findpos+1);
+        execCommand = execCommand.substr(ergCommand.length(),execCommand.length());
+        strleng++;
+        istringstream ist(ergCommand);
+        string name;
+        ist >> name;
+        stringbuf argsbuf;
+        ist.get(argsbuf);
+        string args = argsbuf.str();
+        if (!args.empty() && (args[0] == ' ')) args.erase(0, 1);
+        list<DaemonCommand*>::iterator it = find_if(mCommands.begin(), mCommands.end(), bind2nd(mem_fun(&DaemonCommand::matches), name));
+        if (it != mCommands.end()) {
+            ms_mutex_lock(&mMutex);
+            (*it)->exec(this, args);
+            ms_mutex_unlock(&mMutex);
+        } else {
+            sendResponse(Response("Unknown command.", name, Response::Error));
+        }
+    }
 }
 
 void Daemon::sendResponse(const Response &resp) {
@@ -819,7 +927,8 @@ static void printHelp() {
 		"\t--enable-lsd               Use the linphone sound daemon." << endl <<
 		"\t-C                         Enable video capture." << endl <<
 		"\t-D                         Enable video display." << endl <<
-		"\t--auto-answer              Automatically answer incoming calls."<<endl;
+		"\t--auto-answer              Automatically answer incoming calls." << endl <<
+		"\t--list-soundcards          List all soundcards" << endl;
 }
 
 void Daemon::startThread() {
@@ -939,6 +1048,31 @@ static void sighandler(int signum){
 		the_app = NULL;
 	}
 }
+
+static void listSoundcards() {
+    const char **devices;
+    size_t ndev;
+    const char *msplugins_dir;
+    const char *image_resources_dir;
+
+    LinphoneFactory *lfactory = linphone_factory_get();
+    msplugins_dir = linphone_factory_get_msplugins_dir(lfactory);
+    image_resources_dir = linphone_factory_get_image_resources_dir(lfactory);
+    MSFactory *factory = ms_factory_new_with_voip_and_directories(msplugins_dir, image_resources_dir);
+
+    const bctbx_list_t *elem = ms_snd_card_manager_get_list(ms_factory_get_snd_card_manager(factory));
+    ndev = bctbx_list_size(elem);
+    devices = reinterpret_cast<const char **>(ms_malloc((ndev + 1) * sizeof(const char *)));
+    for (int i = 0; elem != NULL; elem = elem->next, i++) {
+        devices[i] = ms_snd_card_get_string_id((MSSndCard *) elem->data);
+    }
+    devices[ndev] = NULL;
+
+    for (int i = 0; devices[i] != NULL; ++i) {
+        cout << devices[i] << "\n";
+    }
+}
+
 #if defined(__APPLE__)
 extern "C" int apple_main(int argc, char **argv){
 #else
@@ -960,11 +1094,11 @@ int main(int argc, char *argv[]) {
 			printHelp();
 			return 0;
 		} else if (strcmp(argv[i], "--dump-commands-help") == 0) {
-			Daemon app(NULL, NULL, NULL, NULL, false, false);
+		    Daemon app(NULL, NULL, NULL, NULL, false, false);
 			app.dumpCommandsHelp();
 			return 0;
 		}else if (strcmp(argv[i], "--dump-commands-html-help") == 0) {
-			Daemon app(NULL, NULL, NULL, NULL, false, false);
+		    Daemon app(NULL, NULL, NULL, NULL, false, false);
 			app.dumpCommandsHelpHtml();
 			return 0;
 		} else if (strcmp(argv[i], "--pipe") == 0) {
@@ -1005,7 +1139,10 @@ int main(int argc, char *argv[]) {
 			lsd_enabled = true;
 		}else if (strcmp(argv[i], "--auto-answer") == 0) {
 			auto_answer = true;
-		}
+		}else if (strcmp(argv[i], "--list-soundcards") == 0) {
+		    listSoundcards();
+            return 0;
+        }
 		else{
 			fprintf(stderr, "Unrecognized option : %s", argv[i]);
 		}
