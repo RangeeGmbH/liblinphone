@@ -50,7 +50,7 @@ void ConfigGetCommand::exec(Daemon *app, const string& args) {
         app->sendResponse(Response(COMMANDNAME_CONFIG_GET, "Missing section and/or key names.", Response::Error));
         return;
     }
-    const char *read_value=lp_config_get_string(linphone_core_get_config(app->getCore()),section.c_str(),key.c_str(),NULL);
+    const char *read_value=linphone_config_get_string(linphone_core_get_config(app->getCore()),section.c_str(),key.c_str(),NULL);
     if (read_value != NULL){
         app->sendResponse(Response(COMMANDNAME_CONFIG_GET, getConfigResponseStr(read_value)+"\n", Response::Ok));
     }
@@ -83,7 +83,7 @@ void ConfigSetCommand::exec(Daemon *app, const string& args) {
         return;
     }
     ist>>value;
-    lp_config_set_string(linphone_core_get_config(app->getCore()), section.c_str(), key.c_str(), value.size()>0 ? value.c_str() : NULL);
+    linphone_config_set_string(linphone_core_get_config(app->getCore()), section.c_str(), key.c_str(), value.size()>0 ? value.c_str() : NULL);
     app->sendResponse(Response(COMMANDNAME_CONFIG_SET, getConfigResponseStr(value.c_str())+"\n", Response::Ok));
 }
 

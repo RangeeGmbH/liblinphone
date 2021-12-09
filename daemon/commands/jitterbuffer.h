@@ -22,6 +22,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_JITTER_BUFFER "jitter-buffer"
+#define COMMANDNAME_JITTER_BUFFER_RESET "jitter-buffer-reset"
+
 using namespace::std;
 
 

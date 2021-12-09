@@ -24,6 +24,7 @@
 
 #define COMMANDNAME_NETSIM "netsim"
 
+using namespace std;
 
 class NetsimCommand: public DaemonCommand {
 public:

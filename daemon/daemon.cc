@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2019 Belledonne Communications SARL.
+ * * Copyright (c) 2019-2021 Rangee GmbH.
  *
  * This file is part of Liblinphone.
  *
@@ -84,6 +85,12 @@
 #include "commands/version.h"
 #include "commands/play.h"
 #include "commands/message.h"
+#include "commands/soundcards.h"
+#include "commands/volume.h"
+#include "commands/set-sound-card.h"
+#include "commands/get-sound-card.h"
+#include "commands/maxCall.h"
+
 
 #include "private.h"
 
@@ -132,10 +139,16 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 	const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
 	char *fromStr = linphone_address_as_string(fromAddr);
 	char *toStr = linphone_address_as_string(toAddr);
+	const char * errorStateStr;
+	if(state != LinphoneCallState::LinphoneCallStateError) {
+	    errorStateStr = "No error";
+	} else {
+	    errorStateStr = linphone_reason_to_string(linphone_call_get_reason(call));
+	}
 	const char *flag;
 	bool_t in_conference;
 	in_conference=(linphone_call_get_conference(call) != NULL);
-	flag=in_conference ? "Conferencing" : "";
+	flag=in_conference ? "InConferencing: yes" : "InConferencing: no";
 
 	ostringstream ostr;
 	ostr << "CallId: " << daemon->updateCallId(call) << "\n";
@@ -145,6 +158,7 @@ CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state
 	ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
 	ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
 	ostr << flag << "\n";
+	ostr << "CallErrorReason: " << errorStateStr;
 	setBody(ostr.str());
 
 	bctbx_free(fromStr);
@@ -156,7 +170,7 @@ DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("rece
 	char *remote = linphone_call_get_remote_address_as_string(call);
 	ostr << "CallId: " << daemon->updateCallId(call) << "\n";
 	ostr << "Tone: " << (char) dtmf << "\n";
-	ostr << "From: " << remote << "\n";
+	ostr << "From: " << remote;
 	setBody(ostr.str());
 	ms_free(remote);
 }
@@ -173,31 +187,16 @@ ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, Lin
                             if (cfg != NULL) {
                                 const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
                                 if (errorMessage != nullptr) {
-                                    ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";
+                                    ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage;
                                 } else {
-                                    ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
+                                    ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg));
                                 }
                             }
                         }
                         setBody(ostr.str());
                         break;
                         case LinphoneRegistrationCleared:
-                            int i = 1;
-                            cfg = daemon->findProxy(i);
-                            if (cfg == NULL) {
-                                size_t i = 0;
-                                while ( i <= daemon->getlinphoneProxyConfigList().size()-1) {
-                                    cfg = daemon->getlinphoneProxyConfigList()[i];
-                                    const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
-                                    if (errorMessage != nullptr) {
-                                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage << "\n" << "\n";
-                                    } else {
-                                        ostr << "ProxyId: " << daemon->getProxyIdList()[i] << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "\n";
-                                    }
-                                    i++;
-                                }
-                            }
-                            setBody(ostr.str());
+                            linphone_core_clear_all_auth_info(daemon->getCore());
                             break;
 
     }
@@ -239,10 +238,10 @@ CallStatsEvent::CallStatsEvent(Daemon *daemon, LinphoneCall *call, const Linphon
 
 	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
 		const PayloadType *audioCodec = linphone_call_params_get_used_audio_codec(callParams);
-		ostr << PayloadTypeResponse(linphone_call_get_core(call), audioCodec, -1, prefix, false).getBody() << "\n";
+		ostr << PayloadTypeResponse(linphone_call_get_core(call), audioCodec, -1, prefix, false).getBody();
 	} else {
 		const PayloadType *videoCodec = linphone_call_params_get_used_video_codec(callParams);
-		ostr << PayloadTypeResponse(linphone_call_get_core(call), videoCodec, -1, prefix, false).getBody() << "\n";
+		ostr << PayloadTypeResponse(linphone_call_get_core(call), videoCodec, -1, prefix, false).getBody();
 	}
 
 	setBody(ostr.str());
@@ -271,7 +270,7 @@ AudioStreamStatsEvent::AudioStreamStatsEvent(Daemon* daemon, AudioStream* stream
 CallPlayingStatsEvent::CallPlayingStatsEvent(Daemon* daemon, int id) : Event("call-playing-complete"){
 	ostringstream ostr;
  
-	ostr << "Id: " << id << "\n";
+	ostr << "Id: " << id;
 
 	setBody(ostr.str());
 }
@@ -350,22 +349,6 @@ const string DaemonCommand::getHelp() const {
 
 bool DaemonCommand::matches(const string& name) const {
 	return mName.compare(name) == 0;
-}
-
-void Daemon::addToLinphoneProxyConfigList(LinphoneProxyConfig *cfg) {
-    m_LinphoneProxyConfigList.push_back(cfg);
-}
-
-std::vector <LinphoneProxyConfig*> Daemon::getlinphoneProxyConfigList() {
-    return m_LinphoneProxyConfigList;
-}
-
-void Daemon::addToProxyIdList(int proxyId) {
-    m_ProxyIdList.push_back(proxyId);
-}
-
-std::vector <int> Daemon::getProxyIdList() {
-    return m_ProxyIdList;
 }
 
 Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video) :
@@ -533,7 +516,10 @@ void Daemon::initCommands() {
 	mCommands.push_back(new PopEventCommand());
 	mCommands.push_back(new AnswerCommand());
 	mCommands.push_back(new SoundcardCommand());
+	mCommands.push_back(new GetSoundCard());
+	mCommands.push_back(new SetSoundCard());
 	mCommands.push_back(new VolumeCommand());
+	mCommands.push_back(new MaxCallsCommand());
 	mCommands.push_back(new CallStatusCommand());
 	mCommands.push_back(new CallStatsCommand());
 	mCommands.push_back(new CallPauseCommand());
@@ -607,7 +593,7 @@ bool Daemon::pullEvent() {
 		status = true;
 	}
 	
-	sendResponse(Response(ostr.str().c_str(), COMMANDNAME_POP_EVENT, Response::Ok));
+	sendResponse(Response(COMMANDNAME_POP_EVENT, ostr.str().c_str(), Response::Ok));
 	return status;
 }
 
@@ -737,7 +723,7 @@ void Daemon::execCommand(const string &command) {
             (*it)->exec(this, args);
             ms_mutex_unlock(&mMutex);
         } else {
-            sendResponse(Response("Unknown command.", name, Response::Error));
+            sendResponse(Response(name, "Unknown command.", Response::Error));
         }
     }
 }
@@ -928,7 +914,9 @@ static void printHelp() {
 		"\t-C                         Enable video capture." << endl <<
 		"\t-D                         Enable video display." << endl <<
 		"\t--auto-answer              Automatically answer incoming calls." << endl <<
-		"\t--list-soundcards          List all soundcards" << endl;
+		"\t--list-soundcards          List all soundcards" << endl <<
+		"\t--version                  Prints the daemon version number" << endl <<
+		"\t--api-version              Prints the api version number" << endl;
 }
 
 void Daemon::startThread() {
@@ -1142,7 +1130,13 @@ int main(int argc, char *argv[]) {
 		}else if (strcmp(argv[i], "--list-soundcards") == 0) {
 		    listSoundcards();
             return 0;
-        }
+		}else if (strcmp(argv[i], "--version") == 0) {
+		    printf("Version: %s",linphone_core_get_version());
+		    return 0;
+		}else if (strcmp(argv[i], "--api-version") == 0) {
+		    printf("ApiVersion: %d",API_VERSION);
+		    return 0;
+		}
 		else{
 			fprintf(stderr, "Unrecognized option : %s", argv[i]);
 		}

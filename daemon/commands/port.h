@@ -28,15 +28,20 @@ using namespace std;
 
 class PortCommand: public DaemonCommand {
 public:
-	PortCommand();
+    PortCommand();
+    enum PortType {
+        SIPPort,
+        AudioRTPPort,
+        VideoRTPPort,
+        AllPorts
+    };
 
-	void exec(Daemon *app, const std::string& args) override;
+    void exec(Daemon *app, const std::string& args) override;
 private:
     string getPortResponseStr(LinphoneCore *core, PortType portType);
     void outputSIPPort(LinphoneCore *core, ostringstream &ost);
     void outputAudioRTPPort(LinphoneCore *core, ostringstream &ost);
     void outputVideoRTPPort(LinphoneCore *core, ostringstream &ost);
-};
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_PORT_H_

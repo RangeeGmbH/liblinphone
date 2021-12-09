@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2019 Belledonne Communications SARL.
+ * Copyright (c) 2019 Rangee GmbH.
  *
  * This file is part of Liblinphone.
  *
@@ -15,36 +16,30 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * The code of this class was inspired by
+ * https://stackoverflow.com/a/7661176
  */
 
-#ifndef LINPHONE_DAEMON_COMMAND_CONFIG_H_
-#define LINPHONE_DAEMON_COMMAND_CONFIG_H_
+#ifndef LINPHONE_SDK_VOLUME_H
+#define LINPHONE_SDK_VOLUME_H
 
 #include "daemon.h"
+#define COMMANDNAME_VOLUME "volume"
 
 using namespace std;
 
-#define COMMANDNAME_CONFIG_GET "config-get"
-#define COMMANDNAME_CONFIG_SET "config-set"
-
-class ConfigGetCommand: public DaemonCommand {
+class VolumeCommand: public DaemonCommand  {
 public:
-	ConfigGetCommand();
+    VolumeCommand();
 
-	void exec(Daemon *app, const std::string& args) override;
+    typedef enum {
+        AUDIO_VOLUME_SET_PLAYBACK_DEVICE,
+        AUDIO_VOLUME_GET_PLAYBACK_DEVICE
+    } audio_volume_action;
 
-private:
-    string getConfigResponseStr(const string& value);
+    void exec(Daemon *app, const std::string &args) override;
 };
 
-class ConfigSetCommand: public DaemonCommand {
-public:
-	ConfigSetCommand();
 
-	void exec(Daemon *app, const std::string& args) override;
-
-private:
-    string getConfigResponseStr(const string& value);
-};
-
-#endif // LINPHONE_DAEMON_COMMAND_CONFIG_H_
+#endif //LINPHONE_SDK_VOLUME_H

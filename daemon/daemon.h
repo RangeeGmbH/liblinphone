@@ -53,6 +53,9 @@
 #endif
 #endif
 
+#define API_VERSION 1
+
+#define COMMANDNAME_POP_EVENT "pop-event"
 
 class Daemon;
 
@@ -207,6 +210,11 @@ public:
 		const LinphoneCallStats *stats);
 };
 
+class ProxyRegistrationChangedEvent: public Event {
+public:
+	ProxyRegistrationChangedEvent(Daemon *daemon, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
+};
+
 class PayloadTypeResponse: public Response {
 public:
 	PayloadTypeResponse(LinphoneCore *core, const PayloadType *payloadType, int index = -1, const std::string &prefix = std::string(), bool enabled_status = true);
@@ -284,11 +292,12 @@ private:
 	static void callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const LinphoneCallStats *stats);
 	static void dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf);
 	static void messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg);
+	static void proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
 	void callStateChanged(LinphoneCall *call, LinphoneCallState state, const char *msg);
 	void callStatsUpdated(LinphoneCall *call, const LinphoneCallStats *stats);
 	void dtmfReceived(LinphoneCall *call, int dtmf);
 	void messageReceived(LinphoneChatRoom *cr, LinphoneChatMessage *msg);
-
+	void proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
 	void execCommand(const std::string &command);
 	std::string readLine(const std::string&, bool*);
 	std::string readPipe();

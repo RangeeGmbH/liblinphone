@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2019 Belledonne Communications SARL.
+ * Copyright (c) 2019-2020 Rangee GmbH.
  *
  * This file is part of Liblinphone.
  *
@@ -17,34 +18,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LINPHONE_DAEMON_COMMAND_CONFIG_H_
-#define LINPHONE_DAEMON_COMMAND_CONFIG_H_
+#ifndef LINPHONE_SDK_SOUNDCARDS_H
+#define LINPHONE_SDK_SOUNDCARDS_H
 
 #include "daemon.h"
 
-using namespace std;
+#define COMMANDNAME_SOUNDCARDS "soundcards"
 
-#define COMMANDNAME_CONFIG_GET "config-get"
-#define COMMANDNAME_CONFIG_SET "config-set"
-
-class ConfigGetCommand: public DaemonCommand {
+class SoundcardCommand: public DaemonCommand  {
 public:
-	ConfigGetCommand();
+    SoundcardCommand();
 
-	void exec(Daemon *app, const std::string& args) override;
-
-private:
-    string getConfigResponseStr(const string& value);
+    void exec(Daemon *app, const std::string &args) override;
 };
 
-class ConfigSetCommand: public DaemonCommand {
-public:
-	ConfigSetCommand();
 
-	void exec(Daemon *app, const std::string& args) override;
-
-private:
-    string getConfigResponseStr(const string& value);
-};
-
-#endif // LINPHONE_DAEMON_COMMAND_CONFIG_H_
+#endif //LINPHONE_SDK_SOUNDCARDS_H

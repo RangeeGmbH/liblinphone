@@ -75,7 +75,8 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 		}
 	}
 	linphone_proxy_config_set_identity_address(cfg, from);
-	if (from) linphone_address_unref(from);linphone_proxy_config_set_contact_parameters(cfg, cparameter);
+	if (from) linphone_address_unref(from);
+	linphone_proxy_config_set_contact_parameters(cfg, cparameter);
 	linphone_proxy_config_set_server_addr(cfg, cproxy);
 	linphone_proxy_config_enable_register(cfg, TRUE);
 	linphone_proxy_config_set_contact_parameters(cfg, cparameter);

@@ -106,6 +106,16 @@ set(DAEMON_SOURCE_FILES
 	commands/video.h
 	commands/message.cc
 	commands/message.h
+	commands/soundcards.cc
+	commands/soundcards.h
+	commands/volume.cc
+	commands/volume.h
+	commands/set-sound-card.cc
+	commands/set-sound-card.h
+	commands/get-sound-card.cc
+	commands/get-sound-card.h
+	commands/maxCall.cc
+	commands/maxCall.h
 	daemon.cc
 	daemon.h
 )

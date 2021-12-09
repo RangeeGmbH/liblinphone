@@ -72,7 +72,7 @@ void PtimeCommand::exec(Daemon *app, const string& args) {
 			}
 			linphone_core_set_upload_ptime(app->getCore(), ms);
 		}
-		app->sendResponse(PtimeResponse(app->getCore(), PtimeResponse::Upload));
+		app->sendResponse(Response(COMMANDNAME_PTIME, getPtimeResponseStr(app->getCore(), Upload), Response::Ok));
 	} else if (direction.compare("down") == 0) {
 		if (!ist.eof()) {
 			ist >> ms;

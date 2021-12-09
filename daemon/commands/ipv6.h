@@ -24,6 +24,8 @@
 
 #define COMMANDNAME_IPV6 "ipv6"
 
+using namespace std;
+
 
 class IPv6Command: public DaemonCommand {
 public:

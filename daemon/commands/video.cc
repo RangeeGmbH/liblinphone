@@ -310,7 +310,7 @@ void VideoDisplaySet::exec(Daemon* app, const string& args)
 {
 	if(linphone_core_is_media_filter_supported(app->getCore(), args.c_str())){
 		linphone_core_set_video_display_filter(app->getCore(), args.c_str());
-		app->sendResponse(Response(args, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_VIDEODISPLAY_SET, args, Response::Ok));
 	}else {
 	    app->sendResponse(Response(COMMANDNAME_VIDEODISPLAY_SET, "No display filter found.", Response::Error));
 	}
