@@ -34,9 +34,14 @@ void SoundcardCommand::exec(Daemon *app, const string& args) {
     const char **dev;
     dev=linphone_core_get_sound_devices(lc);
     int i;
-    ostringstream ost;
+    char ost[1024];
+    vector<std::string> v;
     for(i=0; dev[i]!=NULL; ++i){
-        ost << i << " " << dev[i] << "\n";
+        std::string vectorStr = "\"" + to_string(i) + " " + dev[i] + "\"";
+        v.push_back(vectorStr);
     }
-    app->sendResponse(Response(COMMANDNAME_SOUNDCARDS, ost.str(), Response::Ok));
+    std::string soundCards =  app->join(v, ", ");
+    sprintf(ost, "[%s]", soundCards.c_str());
+
+    app->sendResponse(Response(COMMANDNAME_SOUNDCARDS, ost, Response::Ok));
 }

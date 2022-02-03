@@ -41,11 +41,14 @@ void CallCommand::exec(Daemon *app, const string& args) {
 	LinphoneCall *call;
 	Response resp;
 	ostringstream ostr;
+	char ost[1024];
+	bool bearly_media = false;
 
 	istringstream ist(args);
 	ist >> address;
 	if (ist.fail()) {
-	    app->sendResponse(Response(COMMANDNAME_CALL, "Missing address parameter.", Response::Error));
+	    sprintf(ost, "\"Missing address parameter.\"");
+	    app->sendResponse(Response(COMMANDNAME_CALL, ost, Response::Error));
 		return;
 	}
 	ist >> early_media;
@@ -54,6 +57,7 @@ void CallCommand::exec(Daemon *app, const string& args) {
 		if (early_media.compare("--early-media") == 0) {
 			linphone_call_params_enable_early_media_sending(cp, TRUE);
 			ostr << "Early media: Ok\n";
+			bearly_media = true;
 		}
 		call = linphone_core_invite_with_params(app->getCore(), address.c_str(), cp);
 	} else {
@@ -61,10 +65,17 @@ void CallCommand::exec(Daemon *app, const string& args) {
 	}
 	
 	if (call == NULL) {
-	    app->sendResponse(Response(COMMANDNAME_CALL, "Call creation failed.", Response::Error));
+	    sprintf(ost, "\"Call creation failed.\"");
+	    app->sendResponse(Response(COMMANDNAME_CALL, ost, Response::Error));
 		return;
 	}
 
-	ostr << "Id: " << app->updateCallId(call) << "\n";
-	app->sendResponse(Response(COMMANDNAME_CALL, ostr.str(), Response::Ok));
+	if(bearly_media) {
+	    sprintf(ost, "{ \"CallID\": \"%d\", \"Early media\": \"Ok\" }",  app->updateCallId(call));
+	}
+	else {
+	    sprintf(ost, "{ \"CallID\": \"%d\" }",  app->updateCallId(call));
+	}
+
+	app->sendResponse(Response(COMMANDNAME_CALL, ost, Response::Ok));
 }

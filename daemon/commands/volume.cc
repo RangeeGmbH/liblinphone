@@ -32,115 +32,82 @@
 using namespace std;
 
 VolumeCommand::VolumeCommand() :
-DaemonCommand("volume", "volume",
-              "set the volume around value for ringer_dev, or capture_dev, or playback_dev, or get the current volume") {
-    addExample(new DaemonCommandExample("volume set playback_dev 1",
+DaemonCommand("volume", "volume <call-iD> [<value for speaker volume> <value for record volume>]",
+              "set or get the volume around value for speaker volume and record volume") {
+    addExample(new DaemonCommandExample("volume 1",
                                         "Status: OK\n"));
-    addExample(new DaemonCommandExample("volume set ringer_dev 1",
-                                        "Status: OK\n"));
-    addExample(new DaemonCommandExample("volume set capture_dev 1",
-                                        "Status: OK\n"));
-    addExample(new DaemonCommandExample("volume get playback_dev",
-                                        "Status: OK\n"));
-    addExample(new DaemonCommandExample("volume get ringer_dev",
-                                        "Status: OK\n"));
-    addExample(new DaemonCommandExample("volume get capture_dev",
+    addExample(new DaemonCommandExample("volume 1 0.xx or 1.00 0.xx or 1.00",
                                         "Status: OK\n"));
 }
 void VolumeCommand::exec(Daemon *app, const string &args) {
-    MSFactory* factory = app->getCore()->factory;
-    MSSndCardManager *manager = ms_factory_get_snd_card_manager(factory);
+    string callId;
+    string playbackVolume;
+    string recordVolume;
     istringstream ist(args);
-    string param;
-    int value;
-    ist >> param;
-    if (ist.fail()) {
-        app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing parameter", Response::Error));
+    ist >> callId;
+    ist >> playbackVolume;
+    ist >> recordVolume;
+    char ost[80];
+
+    if(callId.empty()) {
+        sprintf(ost, "Missing parameter.");
+        std::string str(ost);
+        std::string commandName = COMMANDNAME_VOLUME;
+        app->sendResponse(Response(commandName, ost, Response::Error));
+        return;
     }
-    if (param == "set") {
-        ist >> param;
-        if(ist.fail()) {
-            app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing parameter", Response::Error));
-        } else{
-            if(param == "playback_dev"){
-                ist >> value;
-                if(ist.fail()) {
-                    app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing or wrong value", Response::Error));
-                } else{
-                    MSSndCard *play_card = ms_snd_card_manager_get_playback_card(manager, linphone_core_get_playback_device(app->getCore()));
-                    ms_snd_card_set_level(play_card,MS_SND_CARD_PLAYBACK,value);
-                    if(value >=0) {
-                        app->sendResponse(Response(COMMANDNAME_VOLUME, "Volume was set successfully\n", Response::Ok));
-                    }
-                }
-            }
-            if(param == "ringer_dev"){
-                ist >> value;
-                if(ist.fail()) {
-                    app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing or wrong value", Response::Error));
-                } else{
-                    MSSndCard *ring_card = ms_snd_card_manager_get_playback_card(manager, linphone_core_get_ringer_device(app->getCore()));
-                    ms_snd_card_set_level(ring_card,MS_SND_CARD_PLAYBACK,value);
-                    if(value >=0) {
-                        app->sendResponse(Response(COMMANDNAME_VOLUME, "Volume was set successfully\n", Response::Ok));
-                    }
-                }
-            }
-            if(param == "capture_dev"){
-                ist >> value;
-                if(ist.fail()) {
-                    app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing or wrong value", Response::Error));
-                } else{
-                    MSSndCard *capture_card = ms_snd_card_manager_get_capture_card(manager, linphone_core_get_capture_device(app->getCore()));
-                    ms_snd_card_set_level(capture_card,MS_SND_CARD_CAPTURE,value);
-                    if(value >=0) {
-                        app->sendResponse(Response(COMMANDNAME_VOLUME, "Volume was set successfully\n", Response::Ok));
-                    }
-                }
-            }
+    LinphoneCall *call = NULL;
+    call = app->findCall(std::stoi(callId));
+    if (call == NULL) {
+        sprintf(ost, "No call with such id.");
+        std::string str(ost);
+        std::string commandName = COMMANDNAME_VOLUME;
+        app->sendResponse(Response(commandName, ost, Response::Error));
+        return;
+    }
+    if(!playbackVolume.empty() && !recordVolume.empty()) {
+        int speakerVolume;
+        speakerVolume = std::stoi(playbackVolume);
+        if( speakerVolume == 100 ) {
+            playbackVolume = "1.00";
         }
-    }
-    if (param == "get") {
-        ist >> param;
-        if(ist.fail()) {
-            app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing parameter", Response::Error));
-        } else{
-            if(param == "playback_dev"){
-                MSSndCard *play_card = ms_snd_card_manager_get_playback_card(manager, linphone_core_get_playback_device(app->getCore()));
-                value = ms_snd_card_get_level(play_card,MS_SND_CARD_PLAYBACK);
-                if(value >=0){
-                    Response resp;
-                    string volume = to_string(value);
-                    string volumeErg = "Current playback volume: ";
-                    volumeErg = volumeErg + volume + "\n";
-                    app->sendResponse(Response(COMMANDNAME_VOLUME, volumeErg.c_str(), Response::Ok));
-                }
-            }
-            if(param == "ringer_dev"){
-                MSSndCard *ring_card = ms_snd_card_manager_get_playback_card(manager, linphone_core_get_ringer_device(app->getCore()));
-                value = ms_snd_card_get_level(ring_card,MS_SND_CARD_PLAYBACK);
-                if(value >=0){
-                    Response resp;
-                    string volume = to_string(value);
-                    string volumeErg = "Current ring volume: ";
-                    volumeErg = volumeErg + volume + "\n";
-                    app->sendResponse(Response(COMMANDNAME_VOLUME, volumeErg.c_str(), Response::Ok));
-                }
-            }
-            if(param == "capture_dev"){
-                MSSndCard *capture_card = ms_snd_card_manager_get_capture_card(manager, linphone_core_get_capture_device(app->getCore()));
-                value = ms_snd_card_get_level(capture_card,MS_SND_CARD_CAPTURE);
-                if(value >=0){
-                    Response resp;
-                    string volume = to_string(value);
-                    string volumeErg = "Current capture volume: ";
-                    volumeErg = volumeErg + volume + "\n";
-                    app->sendResponse(Response(COMMANDNAME_VOLUME, volumeErg.c_str(), Response::Ok));
-                }
-            }
+        else if ( speakerVolume < 100 ) {
+            playbackVolume = "0." + to_string(speakerVolume);
         }
+
+        int micVolume;
+        micVolume = std::stoi(recordVolume);
+        if( micVolume == 100 ) {
+            recordVolume = "1.00";
+        }
+        else if ( micVolume < 100 ) {
+            recordVolume = "0." + to_string(micVolume);
+        }
+
+        linphone_call_set_speaker_volume_gain(call, std::stof(playbackVolume));
+        linphone_call_set_microphone_volume_gain(call, std::stof(recordVolume));
     }
-    if (param != "get" && param != "set" && param != "" && param != "playback_dev" && param != "ringer_dev" && param != "capture_dev"){
-        app->sendResponse(Response(COMMANDNAME_VOLUME, "Wrong parameter", Response::Error));
+    float playbackVolumeFloat = linphone_call_get_speaker_volume_gain(call);
+    char strPlayback[40];
+    sprintf(strPlayback, "%.2f", playbackVolumeFloat);
+    sscanf(strPlayback, "%f", &playbackVolumeFloat);
+    float recordVolumeFloat = linphone_call_get_microphone_volume_gain(call);
+    char strRecord[40];
+    sprintf(strRecord, "%.2f", recordVolumeFloat);
+    sscanf(strRecord, "%f", &recordVolumeFloat);
+
+    if(playbackVolumeFloat >=0 && recordVolumeFloat >=0){
+        Response resp;
+        string volumePlayback = to_string(recordVolumeFloat);
+        string volumeErgPlayback = "Current playback volume: ";
+        volumeErgPlayback = volumeErgPlayback + volumePlayback + "\n";
+        string volumeRecord = to_string(recordVolumeFloat);
+        string volumeErgRecord = "Current record volume: ";
+        volumeErgRecord = volumeErgRecord + volumeRecord + "\n";
+        string callId = "CallID: ";
+        string callIdErg = callId + to_string(app->updateCallId(call)) + "\n";
+
+        sprintf(ost, "{ \"Current playback volume\": \"%s\", \"Current record volume\": \"%s\",  \"CallID\": \"%s\" }", volumePlayback.c_str(), volumeRecord.c_str(), to_string(app->updateCallId(call)).c_str());
+        app->sendResponse(Response(COMMANDNAME_VOLUME, ost, Response::Ok));
     }
 }

@@ -54,14 +54,17 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 	istringstream ist(args);
 	ist >> subcommand;
 	ist >> id;
+	char ost[240];
 	if (ist.fail()) {
-	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, "Invalid command format.", Response::Error));
+	    sprintf(ost, "\"Invalid command format.\"");
+	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Error));
 		return;
 	}
 
 	LinphoneCall *call=app->findCall(id);
 	if (call == NULL) {
-	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, "No call with such id.", Response::Error));
+	    sprintf(ost, "\"No call with such id.\"");
+	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Error));
 		return;
 	}
 
@@ -74,7 +77,8 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 	} else if (subcommand.compare("leave") == 0) {
 		ret = linphone_core_leave_conference(lc);
 	} else {
-	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, "Invalid command format.", Response::Error));
+	    sprintf(ost, "\"Invalid command format.\"");
+	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Error));
 		return;
 	}
 
@@ -82,9 +86,10 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 		ostringstream ostr;
 		ostr << "Call ID: " << id << "\n";
 		ostr << "Conference: " << subcommand << " OK" << "\n";
-		app->sendResponse(Response(COMMANDNAME_CONFERENCE, ostr.str(), Response::Ok));
+		sprintf(ost, "{ \"Call ID\": \"%d\", \"Conference\": \"%s\" OK }",  id, subcommand.c_str());
+		app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Ok));
 		return;
 	}
-
-	app->sendResponse(Response(COMMANDNAME_CONFERENCE, "Command failed", Response::Error));
+	sprintf(ost, "\"Command failed\"");
+	app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Error));
 }

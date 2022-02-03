@@ -34,10 +34,12 @@ DtmfCommand::DtmfCommand() :
 void DtmfCommand::exec(Daemon *app, const string& args) {
 	string digit_str;
 	char digit;
+	char ost[240];
 	istringstream ist(args);
 	ist >> digit_str;
 	if (ist.fail()) {
-	    app->sendResponse(Response(COMMANDNAME_DTMF, "Missing digit parameter.", Response::Error));
+	    sprintf(ost, "\"Incorrect digit parameter.\"");
+	    app->sendResponse(Response(COMMANDNAME_DTMF, ost, Response::Error));
 		return;
 	}
 
@@ -50,6 +52,7 @@ void DtmfCommand::exec(Daemon *app, const string& args) {
 		}
 		app->sendResponse(Response(COMMANDNAME_DTMF, "", Response::Ok));
 	} else {
-	    app->sendResponse(Response(COMMANDNAME_DTMF, "Incorrect digit parameter.", Response::Error));
+	    sprintf(ost, "\"Incorrect digit parameter.\"");
+	    app->sendResponse(Response(COMMANDNAME_DTMF, ost, Response::Error));
 	}
 }

@@ -34,7 +34,7 @@ RegisterCommand::RegisterCommand() :
 }
 void RegisterCommand::exec(Daemon *app, const string& args) {
 	LinphoneCore *lc = app->getCore();
-	ostringstream ostr;
+	char ost[80];
 	string identity;
 	string proxy;
 	string password;
@@ -56,7 +56,8 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	ist >> realm;
 	ist >> parameter;
 	if (proxy.empty()) {
-	    app->sendResponse(Response(COMMANDNAME_REGISTER, "Missing/Incorrect parameter(s).", Response::Error));
+	    sprintf(ost, "\"Missing/Incorrect parameter(s).\"");
+	    app->sendResponse(Response(COMMANDNAME_REGISTER, ost, Response::Error));
 		return;
 	}
 	cidentity = identity.c_str();
@@ -80,7 +81,8 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	linphone_proxy_config_set_server_addr(cfg, cproxy);
 	linphone_proxy_config_enable_register(cfg, TRUE);
 	linphone_proxy_config_set_contact_parameters(cfg, cparameter);
-	ostr << "Id: " << app->updateProxyId(cfg) << "\n";
+	//ostr << "Id: " << app->updateProxyId(cfg) << "\n";
 	linphone_core_add_proxy_config(lc, cfg);
-	app->sendResponse(Response(COMMANDNAME_REGISTER, ostr.str(), Response::Ok));
+	sprintf(ost, "{ \"ProxyID\": \"%d\" }",  app->updateProxyId(cfg));
+	app->sendResponse(Response(COMMANDNAME_REGISTER, ost, Response::Ok));
 }

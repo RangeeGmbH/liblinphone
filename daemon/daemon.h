@@ -109,13 +109,15 @@ public:
 	Response() :
 			mStatus(Ok) {
 	}
-	Response(const std::string& commandMsg, const std::string& msg, Status status = Error):
+	Response(const std::string& commandName, const std::string& msg, Status status = Error):
 	    mStatus(status) {
 	    if( status == Ok) {
-	        this->commandMsg = commandMsg;
+	        this->commandName = commandName;
 	        mBody = msg;
+	        mReason = "";
 	    } else {
-	        this->commandMsg = commandMsg;
+	        this->commandName = commandName;
+	        mBody = "{ }";
 	        mReason = msg;
 	    }
 	}
@@ -132,28 +134,26 @@ public:
 	const std::string &getBody() const {
 		return mBody;
 	}
+
 	virtual std::string toBuf() const {
-	    std::ostringstream buf;
-	    std::string status = (mStatus == Ok) ? "Ok" : "Error";
-	    buf << "Command: " << this->commandMsg << "\n";
+	    char ost[4096];
 
-	    if (!mReason.empty()) {
-	        buf << "Reason: " << mReason << "\n";
-	    }
-	    if (!mBody.empty()) {
-	        buf << mBody;
-	    }
-
-	    buf << "Status: " << status << "\n";
-	    buf << "\n\n";
-
-	    return buf.str();
+	    std::ostringstream bufStr;
+	    std::string status = (mStatus == Ok) ? "true" : "false";
+	    //QString testFromJSON = "{"
+        //                       "\"command\": { "
+        //                       "\"description\": \"Version\""
+        //                       "}"
+        //                       "}";
+        sprintf(ost, "{\"type\": \"command\", \"name\": \"%s\", \"response\": %s, \"success\": \"%s\", \"message\": \"%s\" }\n", this->commandName.c_str(), this->mBody.c_str(), status.c_str(), this->mReason.c_str());
+	    std::string str(ost);
+	    return str;
 	}
 private:
 	Status mStatus;
 	std::string mReason;
 	std::string mBody;
-	std::string commandMsg;
+	std::string commandName;
 };
 
 /*Base class for all kind of event poping out of the linphonecore. They are posted to the Daemon's event queue with queueEvent().*/
@@ -169,13 +169,16 @@ public:
 	virtual ~Event(){
 	}
 	virtual std::string toBuf() const {
+	    char ost[4096];
 		std::ostringstream buf;
+		sprintf(ost, "{\"type\": \"event\", \"name\": \"%s\", \"data\": %s}\n", this->mEventType.c_str(), this->mBody.c_str());
 
-		buf << "Event-type: " << mEventType << "\n";
+		/*buf << "Event-type: " << mEventType;
 		if (!mBody.empty()) {
 			buf << "\n" << mBody << "\n";
-		}
-		return buf.str();
+		}*/
+		std::string str(ost);
+		return str;
 	}
 protected:
 	const std::string mEventType;
@@ -251,7 +254,6 @@ struct AudioStreamAndOther {
 		ortp_ev_queue_destroy(queue);
 	}
 };
-
 class Daemon {
 	friend class DaemonCommand;
 public:
@@ -261,6 +263,9 @@ public:
 	int run();
 	void quit();
 	void sendResponse(const Response &resp);
+	std::string join(const std::vector<std::string>& values, std::string delimiter);
+	std::string getJsonForCall(LinphoneCall *call);
+	std::string getJsonForProxys(LinphoneProxyConfig *cfg);
 	void queueEvent(Event *resp);
 	LinphoneCore *getCore();
 	LinphoneSoundDaemon *getLSD();

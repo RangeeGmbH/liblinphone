@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <functional>
 #include <limits>
+#include <vector>
 
 #ifdef HAVE_READLINE
 #include <readline/readline.h>
@@ -134,35 +135,11 @@ void *Daemon::iterateThread(void *arg) {
 }
 
 CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
-	LinphoneCallLog *callLog = linphone_call_get_call_log(call);
-	const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
-	const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
-	char *fromStr = linphone_address_as_string(fromAddr);
-	char *toStr = linphone_address_as_string(toAddr);
-	const char * errorStateStr;
-	if(state != LinphoneCallState::LinphoneCallStateError) {
-	    errorStateStr = "No error";
-	} else {
-	    errorStateStr = linphone_reason_to_string(linphone_call_get_reason(call));
-	}
-	const char *flag;
-	bool_t in_conference;
-	in_conference=(linphone_call_get_conference(call) != NULL);
-	flag=in_conference ? "InConferencing: yes" : "InConferencing: no";
-
-	ostringstream ostr;
-	ostr << "CallId: " << daemon->updateCallId(call) << "\n";
-	ostr << "CallState: " << linphone_call_state_to_string(state) << "\n";
-	ostr << "SipAddressFrom: " << fromStr << "\n";
-	ostr << "SipAddressTo: " << toStr << "\n";
-	ostr << "Direction: " << ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in") << "\n";
-	ostr << "Duration: " << linphone_call_get_duration(call) << "\n";
-	ostr << flag << "\n";
-	ostr << "CallErrorReason: " << errorStateStr;
-	setBody(ostr.str());
-
-	bctbx_free(fromStr);
-	
+	string callStr;
+	callStr = "{ call: ";
+	callStr += daemon->getJsonForCall(call);
+	callStr += " }";
+	setBody(callStr);
 }
 
 DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("receiving-tone"){
@@ -176,29 +153,13 @@ DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("rece
 }
 
 ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) : Event("proxy-registration-state-changed") {
-    ostringstream ostr;
-    switch (cstate) {
-        case LinphoneRegistrationNone:
-            case LinphoneRegistrationProgress:
-                case LinphoneRegistrationOk:
-                    case LinphoneRegistrationFailed:
-                        for (int i = 1; i <= daemon->maxProxyId(); i++) {
-                            cfg = daemon->findProxy(i);
-                            if (cfg != NULL) {
-                                const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
-                                if (errorMessage != nullptr) {
-                                    ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\n" << "ErrorState: " << errorMessage;
-                                } else {
-                                    ostr << "ProxyId: " << i << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg) << "\n" << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg));
-                                }
-                            }
-                        }
-                        setBody(ostr.str());
-                        break;
-                        case LinphoneRegistrationCleared:
-                            linphone_core_clear_all_auth_info(daemon->getCore());
-                            break;
-
+    string proxysStr;
+    proxysStr = "proxies: {";
+    proxysStr += daemon->getJsonForProxys(cfg);
+    proxysStr += " }";
+    setBody(proxysStr);
+    if(linphone_proxy_config_get_state(cfg) == LinphoneRegistrationCleared) {
+        linphone_core_clear_all_auth_info(daemon->getCore());
     }
 }
 
@@ -710,6 +671,7 @@ void Daemon::execCommand(const string &command) {
         ergCommand = execCommand.substr(0,findpos+1);
         execCommand = execCommand.substr(ergCommand.length(),execCommand.length());
         strleng++;
+        //stringstream ist(execCommand);
         istringstream ist(ergCommand);
         string name;
         ist >> name;
@@ -737,6 +699,91 @@ void Daemon::sendResponse(const Response &resp) {
 	} else {
 		cout << buf << flush;
 	}
+}
+
+std::string Daemon::join(const vector<string>& values, string delimiter) {
+    string result;
+
+    for (vector<string>::const_iterator value = values.begin();
+    value != values.end(); ++value) {
+        result += *value;
+        if (value != values.end() - 1)
+            result += delimiter;
+    }
+    return result;
+}
+
+std::string Daemon::getJsonForCall(LinphoneCall *call) {
+    char ost[4096];
+    LinphoneCallState call_state = LinphoneCallIdle;
+    call_state = linphone_call_get_state(call);
+
+    LinphoneCallLog *callLog = linphone_call_get_call_log(call);
+    const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+    const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
+    char *toStr = linphone_address_as_string(toAddr);
+    char *fromStr = linphone_address_as_string(fromAddr);
+    const char * errorStateStr;
+    if(call_state != LinphoneCallState::LinphoneCallStateError) {
+        errorStateStr = "No error";
+    } else {
+        errorStateStr = linphone_reason_to_string(linphone_call_get_reason(call));
+    }
+
+    const char *flag;
+    bool_t in_conference;
+    in_conference=(linphone_call_get_conference(call) != NULL);
+    flag=in_conference ? "InConferencing: yes" : "InConferencing: no";
+
+    //ostringstream ostr;
+
+    //ostr << "CallId: " << app->updateCallId(call) << "\n";
+    //ostr << "CallState: " << linphone_call_state_to_string(call_state) << "\n";
+
+    switch (call_state) {
+        case LinphoneCallOutgoingInit:
+            case LinphoneCallOutgoingProgress:
+                case LinphoneCallOutgoingRinging:
+                    case LinphoneCallPaused:
+                        case LinphoneCallStreamsRunning:
+                            case LinphoneCallConnected:
+                                case LinphoneCallIncomingReceived:
+                                    sprintf(ost, "{ \"CallId\": \"%d\", \"CallState\": \"%s\", \"SipAddressFrom\": \"%s\", \"SipAddressTo\": \"%s\", \"Direction\": \"%s\", \"Duration\": \"%d\", \"Conference\": \"%s\", \"CallErrorReason\": \"%s\"}",
+                                            updateCallId(call),
+                                            linphone_call_state_to_string(call_state),
+                                            fromStr,
+                                            toStr,
+                                            ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in"),
+                                            linphone_call_get_duration(call),
+                                            flag,
+                                            errorStateStr);
+                                    break;
+                                    default:
+                                        /*sprintf(ost, "{ \"CallId\": \"%d\", \"CallState\": \"%s\"}",
+                                                app->updateCallId(call), linphone_call_state_to_string(call_state));*/
+                                        break;
+    }
+    string returnStr;
+    returnStr = ost;
+    bctbx_free(fromStr);
+    bctbx_free(toStr);
+    return returnStr;
+}
+
+std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg){
+    char ost[4096];
+    string returnStr;
+    const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
+    sprintf(ost, "{ \"ProyyId\": \"%d\", \"ProxyAddress\": \"%s\", \"ProxyIdentity\": \"%s\", \"Route\": \"%s\", \"State\": \"%s\", \"ErrorState\": \"%s\"}",
+            updateProxyId(cfg),
+            linphone_proxy_config_get_server_addr(cfg),
+            linphone_proxy_config_get_identity(cfg),
+            linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)),
+            linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg)),
+            errorMessage);
+    returnStr = ost;
+
+    return returnStr;
 }
 
 void Daemon::queueEvent(Event *ev){

@@ -49,18 +49,21 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
     istringstream paramStringStream(args);
     paramStringStream >> param;
     ist >> muted;
+    char ost[1024];
     if (param != "get"){
         get = false;
         if (ist.fail() || (muted != 0)) {
             muted = TRUE;
             if (call == NULL) {
-                app->sendResponse(Response(COMMANDNAME_CAll_MUTE, "No call in progress. Can't mute."));
+                sprintf(ost, "\"No call in progress. Can't mute.\"");
+                app->sendResponse(Response(COMMANDNAME_CAll_MUTE, ost, Response::Error));
                 return;
             }
         } else {
             muted = FALSE;
             if (call == NULL) {
-                app->sendResponse(Response(COMMANDNAME_CALL_MUTE_0, "No call in progress. Can't unmute."));
+                sprintf(ost, "\"No call in progress. Can't unmute.\"");
+                app->sendResponse(Response(COMMANDNAME_CALL_MUTE_0, ost, Response::Error));
                 return;
             }
         }
@@ -74,14 +77,17 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
         else {
             buf << unmutedStr << "\n";
         }
-        app->sendResponse(Response(muted ? COMMANDNAME_CAll_MUTE : COMMANDNAME_CALL_MUTE_0 ,buf.str(), Response::Ok));
+        sprintf(ost, "\"%s\"", buf.str().c_str());
+        app->sendResponse(Response(muted ? COMMANDNAME_CAll_MUTE : COMMANDNAME_CALL_MUTE_0 ,ost, Response::Ok));
     }
 
     if (param == "get") {
         get = true;
-        app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, linphone_core_mic_enabled(app->getCore()) ? "Muted: no\n" : "Muted: yes\n", Response::Ok));
+        sprintf(ost, "\"%s\"",  linphone_core_mic_enabled(app->getCore()) ? "Muted: no\n" : "Muted: yes");
+        app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost, Response::Ok));
     }
     if(param != "get" && get == true){
-        app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, "Wrong parameter", Response::Error));
+        sprintf(ost, "\"Wrong parameter\"");
+        app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost, Response::Error));
     }
 }

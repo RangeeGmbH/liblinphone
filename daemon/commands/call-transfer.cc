@@ -46,9 +46,11 @@ void CallTransferCommand::exec(Daemon* app, const string& args)
 	LinphoneCall *call_to_transfer = NULL;
 	LinphoneCall *call_to_transfer_to = NULL;
 	istringstream ist(args);
+	char ost[1024];
 
 	if (ist.peek() == EOF) {
-	    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, "Missing call_to_transfer_id parameter.", Response::Error));
+	    sprintf(ost, "\"Missing call_to_transfer_id parameter.\"");
+	    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Error));
 		return;
 	}
 
@@ -57,49 +59,50 @@ void CallTransferCommand::exec(Daemon* app, const string& args)
 	string sip_uri_to_transfer_to;
 	ist >> call_to_transfer_id;
 	if (ist.fail()) {
-	    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, "Invalid command format (wrong call_to_transfer_id parameter).", Response::Error));
+	    sprintf(ost, "\"Invalid command format (wrong call_to_transfer_id parameter).\"");
+	    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Error));
 		return;
 	}
 	if (ist.peek() == EOF) {
-	    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, "Missing call_to_transfer_to_id or sip_uri_to_transfer_to parameter.", Response::Error));
+	    sprintf(ost, "\"Missing call_to_transfer_to_id or sip_uri_to_transfer_to parameter.\"");
+	    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Error));
 	}
 	ist >> call_to_transfer_to_id;
 	if (ist.fail()) {
 		ist.clear();
 		ist >> sip_uri_to_transfer_to;
 		if (ist.fail()) {
-		    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, "Invalid command format (wrong call_to_transfer_to_id or sip_uri_to_transfer_to parameter.", Response::Error));
+		    sprintf(ost, "\"Invalid command format (wrong call_to_transfer_to_id or sip_uri_to_transfer_to parameter.\"");
+		    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Error));
 			return;
 		}
 	}
 
 	call_to_transfer = app->findCall(call_to_transfer_id);
 	if (call_to_transfer == NULL) {
-	    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, "No call with such id.", Response::Error));
+	    sprintf(ost, "\"No call with such id.\"");
+	    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Error));
 		return;
 	}
 	if (sip_uri_to_transfer_to.empty()) {
 		call_to_transfer_to = app->findCall(call_to_transfer_to_id);
 		if (call_to_transfer_to == NULL) {
-		    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, "No call with such id.", Response::Error));
+		    sprintf(ost, "\"No call with such id.\"");
+		    app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Error));
 			return;
 		}
 		if (linphone_call_transfer_to_another(call_to_transfer, call_to_transfer_to) == 0) {
-			ostringstream ostr;
-			ostr << "Call ID: " << call_to_transfer_id << "\n";
-			ostr << "Transfer to: " << call_to_transfer_to_id << "\n";
-			app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ostr.str(),Response::Ok));
+			sprintf(ost, "{ \"Call ID\": \"%d\", \"Transfer to\": \"%d\" }",  call_to_transfer_id, call_to_transfer_to_id);
+			app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Ok));
 			return;
 		}
 	} else {
 		if (linphone_call_transfer(call_to_transfer, sip_uri_to_transfer_to.c_str()) == 0) {
-			ostringstream ostr;
-			ostr << "Call ID: " << call_to_transfer_id << "\n";
-			ostr << "Transfer to: " << sip_uri_to_transfer_to << "\n";
-			app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ostr.str(), Response::Ok));
+			sprintf(ost, "{ \"Call ID\": \"%d\", \"Transfer to\": \"%d\" }",  call_to_transfer_id, call_to_transfer_to_id);
+			app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Ok));
 			return;
 		}
 	}
-
-	app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, "Error transferring call.", Response::Error));
+	sprintf(ost, "\"Error transferring call.\"");
+	app->sendResponse(Response(COMMANDNAME_CALL_TRANSFER, ost, Response::Error));
 }

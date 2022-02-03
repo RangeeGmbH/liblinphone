@@ -36,35 +36,53 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
     LinphoneProxyConfig *cfg = NULL;
     string param;
     int pid;
-    ostringstream ost;
+    char ost[80];
+    string proxysStr;
 
     istringstream ist(args);
     ist >> param;
     if (ist.fail()) {
-        app->sendResponse(Response(COMMANDNAME_UNREGISTER, "Missing parameter.", Response::Error));
+        sprintf(ost, "\"Missing parameter\"");
+        app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost, Response::Error));
         return;
     }
     if (param.compare("ALL") == 0) {
         //Erase all proxies from config
+        proxysStr += "{ isALL: true, proxies: [ ";
+        for (int i = 1; i <= app->maxProxyId(); i++) {
+            cfg = app->findProxy(i);
+            if (cfg != NULL) {
+                proxysStr += app->getJsonForProxys(cfg);
+                if (i< app->maxProxyId()-1) {
+                    proxysStr += ",";
+                }
+            }
+        }
+        proxysStr += " ]";
         linphone_core_clear_proxy_config(app->getCore());
-        ost << "All Proxies were unregistered!" << "\n";
+        app->sendResponse(Response(COMMANDNAME_UNREGISTER, proxysStr, Response::Ok));
     } else {
         ist.clear();
         ist.str(param);
         ist >> pid;
         if (ist.fail()) {
-            app->sendResponse(Response(COMMANDNAME_UNREGISTER, "Incorrect parameter.", Response::Error));
+            sprintf(ost, "\"Incorrect parameter\"");
+            app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost, Response::Error));
             return;
         }
         cfg = app->findProxy(pid);
         if (cfg == NULL) {
-            app->sendResponse(Response(COMMANDNAME_UNREGISTER, "No register with such id.", Response::Error));
+            sprintf(ost, "\"Incorrect parameter\"");
+            app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost, Response::Error));
             return;
         } else {
             cfg = app->findProxy(pid);
-            ost << "ProxyId: " << pid << "\n" << "ProxyAddress: " << linphone_proxy_config_get_server_addr(cfg) << "\n" << "ProxyIdentity: " << linphone_proxy_config_get_identity(cfg);
+            proxysStr += "{ isALL: false, proxies: [ ";
+            proxysStr += app->getJsonForProxys(cfg);
+            proxysStr += " ]";
         }
         linphone_core_remove_proxy_config(app->getCore(), cfg);
+        app->sendResponse(Response(COMMANDNAME_UNREGISTER, proxysStr, Response::Ok));
     }
-    app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Ok));
+    app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost, Response::Ok));
 }
