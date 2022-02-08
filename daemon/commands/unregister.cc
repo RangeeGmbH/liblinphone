@@ -58,7 +58,7 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
                 }
             }
         }
-        proxysStr += " ]";
+        proxysStr += " ] }";
         linphone_core_clear_proxy_config(app->getCore());
         app->sendResponse(Response(COMMANDNAME_UNREGISTER, proxysStr, Response::Ok));
     } else {
@@ -79,7 +79,7 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
             cfg = app->findProxy(pid);
             proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
             proxysStr += app->getJsonForProxys(cfg);
-            proxysStr += " ]";
+            proxysStr += " ] }";
         }
         linphone_core_remove_proxy_config(app->getCore(), cfg);
         app->sendResponse(Response(COMMANDNAME_UNREGISTER, proxysStr, Response::Ok));

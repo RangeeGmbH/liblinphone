@@ -92,7 +92,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
                         callString += ",";
                     }
                 }
-                callString += " ]";
+                callString += " ] }";
                 app->sendResponse(Response(COMMANDNAME_CALL_STATUS, callString, Response::Ok));
 	        }
 	    return;

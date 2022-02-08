@@ -23,25 +23,27 @@
 using namespace std;
 
 SoundcardCommand::SoundcardCommand() :
-DaemonCommand("soundcards", "soundcards", "list all soundcards") {
+        DaemonCommand("soundcards", "soundcards", "list all soundcards") {
     addExample(new DaemonCommandExample("soundcards",
                                         "Status: OK\n"));
 }
 
-void SoundcardCommand::exec(Daemon *app, const string& args) {
+void SoundcardCommand::exec(Daemon *app, const string &args) {
     LinphoneCore *lc = app->getCore();
     linphone_core_reload_sound_devices(lc);
     const char **dev;
-    dev=linphone_core_get_sound_devices(lc);
+    dev = linphone_core_get_sound_devices(lc);
     int i;
     char ost[1024];
-    vector<std::string> v;
-    for(i=0; dev[i]!=NULL; ++i){
-        std::string vectorStr = "\"" + to_string(i) + " " + dev[i] + "\"";
+    vector <std::string> v;
+    for (i = 0; dev[i] != NULL; ++i) {
+        std::string vectorStr = "\"";
+        vectorStr = vectorStr += dev[i];
+        vectorStr = vectorStr += "\"";
         v.push_back(vectorStr);
     }
-    std::string soundCards =  app->join(v, ", ");
-    sprintf(ost, "[%s]", soundCards.c_str());
+    std::string soundCards = app->join(v, ", ");
+    sprintf(ost, "{ \"soundcards\": [%s] }", soundCards.c_str());
 
     app->sendResponse(Response(COMMANDNAME_SOUNDCARDS, ost, Response::Ok));
 }

@@ -87,7 +87,7 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	cfg = app->findProxy(app->updateProxyId(cfg));
 	proxysStr += "{ \"isALL\": false, \"proxies\": [ ";
 	proxysStr += app->getJsonForProxys(cfg);
-	proxysStr += " ]";
+	proxysStr += " ]  }";
 
 	app->sendResponse(Response(COMMANDNAME_REGISTER, proxysStr, Response::Ok));
 }

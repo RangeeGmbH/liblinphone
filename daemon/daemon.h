@@ -145,7 +145,7 @@ public:
         //                       "\"description\": \"Version\""
         //                       "}"
         //                       "}";
-        sprintf(ost, "{\"type\": \"command\", \"name\": \"%s\", \"response\": %s, \"success\": %s, \"message\": \"%s\" }\n", this->commandName.c_str(), this->mBody.c_str(), status.c_str(), this->mReason.c_str());
+        sprintf(ost, "{ \"type\": \"command\", \"name\": \"%s\", \"data\": %s, \"success\": %s, \"message\": \"%s\" }\n", this->commandName.c_str(), this->mBody.c_str(), status.c_str(), this->mReason.c_str());
 	    std::string str(ost);
 	    return str;
 	}
@@ -171,7 +171,7 @@ public:
 	virtual std::string toBuf() const {
 	    char ost[4096];
 		std::ostringstream buf;
-		sprintf(ost, "{\"type\": \"event\", \"name\": \"%s\", \"data\": %s}\n", this->mEventType.c_str(), this->mBody.c_str());
+		sprintf(ost, "{ \"type\": \"event\", \"name\": \"%s\", \"data\": { %s } }\n", this->mEventType.c_str(), this->mBody.c_str());
 
 		/*buf << "Event-type: " << mEventType;
 		if (!mBody.empty()) {
