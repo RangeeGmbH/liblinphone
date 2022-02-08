@@ -48,7 +48,7 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
     }
     if (param.compare("ALL") == 0) {
         //Erase all proxies from config
-        proxysStr += "{ isALL: true, proxies: [ ";
+        proxysStr += "{ \"isAll\": true, \"proxies\": [ ";
         for (int i = 1; i <= app->maxProxyId(); i++) {
             cfg = app->findProxy(i);
             if (cfg != NULL) {
@@ -77,12 +77,11 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
             return;
         } else {
             cfg = app->findProxy(pid);
-            proxysStr += "{ isALL: false, proxies: [ ";
+            proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
             proxysStr += app->getJsonForProxys(cfg);
             proxysStr += " ]";
         }
         linphone_core_remove_proxy_config(app->getCore(), cfg);
         app->sendResponse(Response(COMMANDNAME_UNREGISTER, proxysStr, Response::Ok));
     }
-    app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost, Response::Ok));
 }

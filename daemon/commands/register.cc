@@ -48,6 +48,7 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	const char *cuserid = NULL;
 	const char *crealm = NULL;
 	const char *cparameter = NULL;
+	string proxysStr;
 
 	ist >> identity;
 	ist >> proxy;
@@ -81,8 +82,12 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	linphone_proxy_config_set_server_addr(cfg, cproxy);
 	linphone_proxy_config_enable_register(cfg, TRUE);
 	linphone_proxy_config_set_contact_parameters(cfg, cparameter);
-	//ostr << "Id: " << app->updateProxyId(cfg) << "\n";
 	linphone_core_add_proxy_config(lc, cfg);
-	sprintf(ost, "{ \"ProxyID\": \"%d\" }",  app->updateProxyId(cfg));
-	app->sendResponse(Response(COMMANDNAME_REGISTER, ost, Response::Ok));
+
+	cfg = app->findProxy(app->updateProxyId(cfg));
+	proxysStr += "{ \"isALL\": false, \"proxies\": [ ";
+	proxysStr += app->getJsonForProxys(cfg);
+	proxysStr += " ]";
+
+	app->sendResponse(Response(COMMANDNAME_REGISTER, proxysStr, Response::Ok));
 }

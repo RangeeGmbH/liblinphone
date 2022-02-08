@@ -145,7 +145,7 @@ public:
         //                       "\"description\": \"Version\""
         //                       "}"
         //                       "}";
-        sprintf(ost, "{\"type\": \"command\", \"name\": \"%s\", \"response\": %s, \"success\": \"%s\", \"message\": \"%s\" }\n", this->commandName.c_str(), this->mBody.c_str(), status.c_str(), this->mReason.c_str());
+        sprintf(ost, "{\"type\": \"command\", \"name\": \"%s\", \"response\": %s, \"success\": %s, \"message\": \"%s\" }\n", this->commandName.c_str(), this->mBody.c_str(), status.c_str(), this->mReason.c_str());
 	    std::string str(ost);
 	    return str;
 	}
@@ -266,6 +266,8 @@ public:
 	std::string join(const std::vector<std::string>& values, std::string delimiter);
 	std::string getJsonForCall(LinphoneCall *call);
 	std::string getJsonForProxys(LinphoneProxyConfig *cfg);
+	std::string replaceAll(std::string str, const std::string& from, const std::string& to);
+	std::string replaceEscapeChar(std::string replaceStr);
 	void queueEvent(Event *resp);
 	LinphoneCore *getCore();
 	LinphoneSoundDaemon *getLSD();

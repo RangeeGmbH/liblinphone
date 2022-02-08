@@ -71,10 +71,10 @@ void CallCommand::exec(Daemon *app, const string& args) {
 	}
 
 	if(bearly_media) {
-	    sprintf(ost, "{ \"CallID\": \"%d\", \"Early media\": \"Ok\" }",  app->updateCallId(call));
+	    sprintf(ost, "{ \"call\": { \"id\": %d, \"Early media\": \"Ok\" } }",  app->updateCallId(call));
 	}
 	else {
-	    sprintf(ost, "{ \"CallID\": \"%d\" }",  app->updateCallId(call));
+	    sprintf(ost, "{ \"call\": { \"id\": %d } }",  app->updateCallId(call));
 	}
 
 	app->sendResponse(Response(COMMANDNAME_CALL, ost, Response::Ok));

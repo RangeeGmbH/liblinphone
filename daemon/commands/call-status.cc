@@ -66,7 +66,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
 	            return;
 	        }
 	    }
-	    callString += "{ isALL: false, calls: [ ";
+	    callString += "{ \"isALL\": false, \"calls\": [ ";
 	    callString += app->getJsonForCall(call);
 	    callString += " ]";
 
@@ -83,7 +83,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
 	        return;
 	    }
 	    else{
-	            callString += "{ isALL: true, calls: [ ";
+	        callString += "{ \"isALL\": true, \"calls\": [ ";
                 for (int index = 0; index < ms_list_size(elem); index++) {
                     LinphoneCall* lCall = (LinphoneCall*) bctbx_list_nth_data(elem,index);
                     callString += app->getJsonForCall(lCall);
