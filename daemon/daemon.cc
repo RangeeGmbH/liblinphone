@@ -123,16 +123,6 @@ const char * const ice_state_str[] = {
 	"Relayed connection"	/* LinphoneIceStateRelayConnection */
 };
 
-template<typename ... Args>
-std::string string_format( const std::string& format, Args ... args )
-{
-    int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
-    if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
-    auto size = static_cast<size_t>( size_s );
-    auto buf = std::make_unique<char[]>( size );
-    std::snprintf( buf.get(), size, format.c_str(), args ... );
-    return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
-}
 
 void *Daemon::iterateThread(void *arg) {
 	Daemon *daemon = (Daemon *) arg;
@@ -410,6 +400,14 @@ int Daemon::updateCallId(LinphoneCall *call) {
         return mCallIds;
     }
     return val;
+}
+
+std::string getJsonForAudioDevice(LinphoneAudioDevice* device) {
+    string returnStr;
+    std::string deviceName(linphone_audio_device_get_device_name(device));
+    std::string driverName(linphone_audio_device_get_driver_name(device));
+    string_format(returnStr, "{ \"driver\": \"%s\", \"name\": \"%s\" }",  driverName.c_str(), deviceName.c_str());
+    return returnStr;
 }
 
 std::string Daemon::getJsonForCall(LinphoneCall *call) {

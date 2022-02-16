@@ -87,9 +87,8 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
 
                         // get default output card
                         const LinphoneAudioDevice *output_device = linphone_core_get_default_output_audio_device(app->getCore());
-                        std::string deviceName(linphone_audio_device_get_device_name(output_device));
-                        std::string driverName(linphone_audio_device_get_driver_name(output_device));
-                        string_format(ost, "{ \"driver\": \"%s\", \"name\": \"%s\" }",  driverName.c_str(), deviceName.c_str());
+
+                        app->getJsonForAudioDevice((LinphoneAudioDevice*)output_device);
 
                         if (!ist.str().empty() && ist.str() != "") {
                             app->sendResponse(
