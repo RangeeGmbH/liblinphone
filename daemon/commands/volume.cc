@@ -47,10 +47,10 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
     ist >> callId;
     ist >> playbackVolume;
     ist >> recordVolume;
-    char ost[80];
+    string ost;
 
     if(callId.empty()) {
-        sprintf(ost, "Missing parameter.");
+        string_format(ost, "Missing parameter.");
         std::string str(ost);
         std::string commandName = COMMANDNAME_VOLUME;
         app->sendResponse(Response(commandName, ost, Response::Error));
@@ -59,7 +59,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
     LinphoneCall *call = NULL;
     call = app->findCall(std::stoi(callId));
     if (call == NULL) {
-        sprintf(ost, "No call with such id.");
+        string_format(ost, "No call with such id.");
         std::string str(ost);
         std::string commandName = COMMANDNAME_VOLUME;
         app->sendResponse(Response(commandName, ost, Response::Error));
@@ -107,7 +107,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
         string callId = "CallID: ";
         string callIdErg = callId + to_string(app->updateCallId(call)) + "\n";
 
-        sprintf(ost, "{ \"Current playback volume\": \"%s\", \"Current record volume\": \"%s\",  \"CallID\": \"%s\" }", volumePlayback.c_str(), volumeRecord.c_str(), to_string(app->updateCallId(call)).c_str());
+        string_format(ost, "{ \"Current playback volume\": \"%s\", \"Current record volume\": \"%s\",  \"CallID\": \"%s\" }", volumePlayback.c_str(), volumeRecord.c_str(), to_string(app->updateCallId(call)).c_str());
         app->sendResponse(Response(COMMANDNAME_VOLUME, ost, Response::Ok));
     }
 }

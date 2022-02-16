@@ -57,6 +57,9 @@
 
 #define COMMANDNAME_POP_EVENT "pop-event"
 
+template<typename ... Args>
+std::string string_format( const std::string& format, Args ... args );
+
 class Daemon;
 
 class DaemonCommandExample {
@@ -136,7 +139,7 @@ public:
 	}
 
 	virtual std::string toBuf() const {
-	    char ost[4096];
+	    std::string ost;
 
 	    std::ostringstream bufStr;
 	    std::string status = (mStatus == Ok) ? "true" : "false";
@@ -145,7 +148,7 @@ public:
         //                       "\"description\": \"Version\""
         //                       "}"
         //                       "}";
-        sprintf(ost, "{ \"type\": \"command\", \"name\": \"%s\", \"data\": %s, \"success\": %s, \"message\": \"%s\" }\n", this->commandName.c_str(), this->mBody.c_str(), status.c_str(), this->mReason.c_str());
+        string_format(ost, "{ \"type\": \"command\", \"name\": \"%s\", \"data\": %s, \"success\": %s, \"message\": \"%s\" }\n", this->commandName.c_str(), this->mBody.c_str(), status.c_str(), this->mReason.c_str());
 	    std::string str(ost);
 	    return str;
 	}
@@ -168,10 +171,11 @@ public:
 	}
 	virtual ~Event(){
 	}
+
 	virtual std::string toBuf() const {
-	    char ost[4096];
+	    std::string ost;
 		std::ostringstream buf;
-		sprintf(ost, "{ \"type\": \"event\", \"name\": \"%s\", \"data\": { %s } }\n", this->mEventType.c_str(), this->mBody.c_str());
+		string_format(ost, "{ \"type\": \"event\", \"name\": \"%s\", \"data\": { %s } }\n", this->mEventType.c_str(), this->mBody.c_str());
 
 		/*buf << "Event-type: " << mEventType;
 		if (!mBody.empty()) {

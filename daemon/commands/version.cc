@@ -29,7 +29,7 @@ VersionCommand::VersionCommand() :
 }
 
 void VersionCommand::exec(Daemon *app, const string& args) {
-    char ost[80];
-    sprintf(ost, "{ \"Version\": \"%s\", \"ApiVersion\": \"%s\" }", linphone_core_get_version(), to_string(API_VERSION).c_str());
+    string ost;
+    string_format(ost, "{ \"Version\": \"%s\", \"ApiVersion\": \"%s\" }", linphone_core_get_version(), to_string(API_VERSION).c_str());
     app->sendResponse(Response(COMMANDNAME_VERSION, ost, Response::Ok));
 }

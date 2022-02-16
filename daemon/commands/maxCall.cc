@@ -17,19 +17,19 @@ void MaxCallsCommand::exec(Daemon *app, const string &args) {
     istringstream ist(args);
     istringstream ivalue(args);
     string param;
-    char ost[240];
+    string ost;
     int value;
     ist >> param;
     if (param == "") {
         string maxCalls = to_string(linphone_core_get_max_calls(app->getCore()));
-        sprintf(ost, "{ \"Maximum number of calls: \": \"%d\" }",  linphone_core_get_max_calls(app->getCore()));
+        string_format(ost, "{ \"Maximum number of calls: \": \"%d\" }",  linphone_core_get_max_calls(app->getCore()));
         app->sendResponse(Response(COMMANDNAME_MAXCALLS, ost, Response::Ok));
     }
     else {
         ist >> param;
         ivalue >> value;
         linphone_core_set_max_calls(app->getCore(), value);
-        sprintf(ost, "{ \"MaxCalls was set successfully. Maximum number of calls \": \"%d\" }", linphone_core_get_max_calls(app->getCore()));
+        string_format(ost, "{ \"MaxCalls was set successfully. Maximum number of calls \": \"%d\" }", linphone_core_get_max_calls(app->getCore()));
         app->sendResponse(Response(COMMANDNAME_MAXCALLS, ost, Response::Ok));
     }
 }

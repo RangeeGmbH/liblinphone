@@ -34,7 +34,7 @@ RegisterCommand::RegisterCommand() :
 }
 void RegisterCommand::exec(Daemon *app, const string& args) {
 	LinphoneCore *lc = app->getCore();
-	char ost[80];
+	string ost;
 	string identity;
 	string proxy;
 	string password;
@@ -57,7 +57,7 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	ist >> realm;
 	ist >> parameter;
 	if (proxy.empty()) {
-	    sprintf(ost, "\"Missing/Incorrect parameter(s).\"");
+	    string_format(ost, "\"Missing/Incorrect parameter(s).\"");
 	    app->sendResponse(Response(COMMANDNAME_REGISTER, ost, Response::Error));
 		return;
 	}

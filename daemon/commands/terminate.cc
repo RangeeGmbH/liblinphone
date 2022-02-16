@@ -43,7 +43,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
     istringstream ist(args);
     const MSList *elem;
     LinphoneCall *call = NULL;
-    char ost[80];
+    string ost;
     ist >> param;
     // terminate
     if (ist.fail()) {
@@ -52,13 +52,13 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            sprintf(ost, "\"No active call.\"");
+            string_format(ost, "\"No active call.\"");
             app->sendResponse(Response(COMMANDNAME_TERMINATE, ost, Response::Error));
             return;
         }
         linphone_call_terminate(call);
         //ost << "CallId: " << app->updateCallId(call);
-        sprintf(ost, "{ \"CallId\": \"%s\" }",  to_string(app->updateCallId(call)).c_str());
+        string_format(ost, "{ \"CallId\": \"%s\" }",  to_string(app->updateCallId(call)).c_str());
         app->sendResponse(Response(COMMANDNAME_TERMINATE, ost, Response::Ok));
         return;
     }
@@ -69,7 +69,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            sprintf(ost, "\"No active call.\"");
+            string_format(ost, "\"No active call.\"");
             app->sendResponse(Response(COMMANDNAME_TERMINATE, ost, Response::Error));
             return;
         }
@@ -85,7 +85,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
     // terminate 1
     call = app->findCall(cid);
     if (call == NULL) {
-        sprintf(ost, "\"No call with such id. CallId: %s\"", to_string(cid).c_str());
+        string_format(ost, "\"No call with such id. CallId: %s\"", to_string(cid).c_str());
         app->sendResponse(Response(COMMANDNAME_TERMINATE, ost, Response::Error));
         return;
     }

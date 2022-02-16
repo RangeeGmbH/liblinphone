@@ -123,6 +123,17 @@ const char * const ice_state_str[] = {
 	"Relayed connection"	/* LinphoneIceStateRelayConnection */
 };
 
+template<typename ... Args>
+std::string string_format( const std::string& format, Args ... args )
+{
+    int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
+    if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
+    auto size = static_cast<size_t>( size_s );
+    auto buf = std::make_unique<char[]>( size );
+    std::snprintf( buf.get(), size, format.c_str(), args ... );
+    return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
+}
+
 void *Daemon::iterateThread(void *arg) {
 	Daemon *daemon = (Daemon *) arg;
 	while (daemon->mRunning) {
@@ -313,7 +324,7 @@ bool DaemonCommand::matches(const string& name) const {
 }
 
 Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name, bool display_video, bool capture_video) :
-		mLSD(0), mLogFile(NULL), mAutoVideo(0), mCallIds(0), mProxyIds(0), mAudioStreamIds(0) {
+mLSD(0), mLogFile(NULL), mAutoVideo(0), mCallIds(0), mProxyIds(0), mAudioStreamIds(0) {
 	ms_mutex_init(&mMutex, NULL);
 	mServerFd = (ortp_pipe_t)-1;
 	mChildFd = (ortp_pipe_t)-1;
@@ -376,13 +387,70 @@ LinphoneSoundDaemon *Daemon::getLSD() {
 	return mLSD;
 }
 
+std::string Daemon::replaceAll(std::string str, const std::string& from, const std::string& to) {
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+    }
+    return str;
+}
+
+std::string Daemon::replaceEscapeChar(std::string replaceStr) {
+    std::string returnStr;
+    returnStr = replaceAll(replaceStr,  "\\", "\\\\");
+    returnStr = replaceAll(replaceStr, "\"", "\\\"");
+    return replaceStr;
+}
+
 int Daemon::updateCallId(LinphoneCall *call) {
-	int val = VOIDPTR_TO_INT(linphone_call_get_user_data(call));
-	if (val == 0) {
-		linphone_call_set_user_data(call, INT_TO_VOIDPTR(++mCallIds));
-		return mCallIds;
-	}
-	return val;
+    int val = VOIDPTR_TO_INT(linphone_call_get_user_data(call));
+    if (val == 0) {
+        linphone_call_set_user_data(call, INT_TO_VOIDPTR(++mCallIds));
+        return mCallIds;
+    }
+    return val;
+}
+
+std::string Daemon::getJsonForCall(LinphoneCall *call) {
+    LinphoneCallState call_state = LinphoneCallIdle;
+    call_state = linphone_call_get_state(call);
+
+    LinphoneCallLog *callLog = linphone_call_get_call_log(call);
+    const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+    const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
+    std::string toStr;
+    std::string fromStr;
+    toStr = linphone_address_as_string(toAddr);
+    fromStr = linphone_address_as_string(fromAddr);
+    replaceEscapeChar(toStr);
+    replaceEscapeChar(fromStr);
+
+    const char * errorMessage;
+    if(call_state != LinphoneCallState::LinphoneCallStateError) {
+        errorMessage = "";
+    } else {
+        errorMessage = linphone_reason_to_string(linphone_call_get_reason(call));
+    }
+    replaceEscapeChar(errorMessage);
+
+    const char *flag;
+    bool_t in_conference;
+    in_conference=(linphone_call_get_conference(call) != NULL);
+    flag=in_conference ? "true" : "false";
+    string ost;
+    string_format(ost, "{ \"id\": %d, \"state\": \"%s\", \"addressFrom\": \"%s\", \"addressTo\": \"%s\", \"direction\": \"%s\", \"duration\": %d, \"inConference\": %s, \"errorMessage\": \"%s\"}",
+                  updateCallId(call),
+                  linphone_call_state_to_string(call_state),
+                  fromStr.c_str(),
+                  toStr.c_str(),
+                  ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in"),
+                  linphone_call_get_duration(call),
+                  flag,
+                  errorMessage);
+    string returnStr;
+    returnStr = ost;
+    return returnStr;
 }
 
 LinphoneCall *Daemon::findCall(int id) {
@@ -713,71 +781,13 @@ std::string Daemon::join(const vector<string>& values, string delimiter) {
     return result;
 }
 
-std::string Daemon::replaceAll(std::string str, const std::string& from, const std::string& to) {
-    size_t start_pos = 0;
-    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
-        str.replace(start_pos, from.length(), to);
-        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
-    }
-    return str;
-}
-
-std::string Daemon::replaceEscapeChar(std::string replaceStr) {
-    std::string returnStr;
-    returnStr = replaceAll(replaceStr,  "\\", "\\\\");
-    returnStr = replaceAll(replaceStr, "\"", "\\\"");
-    return replaceStr;
-}
-
-std::string Daemon::getJsonForCall(LinphoneCall *call) {
-    char ost[4096];
-    LinphoneCallState call_state = LinphoneCallIdle;
-    call_state = linphone_call_get_state(call);
-
-    LinphoneCallLog *callLog = linphone_call_get_call_log(call);
-    const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
-    const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
-    std::string toStr;
-    std::string fromStr;
-    toStr = linphone_address_as_string(toAddr);
-    fromStr = linphone_address_as_string(fromAddr);
-    replaceEscapeChar(toStr);
-    replaceEscapeChar(fromStr);
-
-    const char * errorMessage;
-    if(call_state != LinphoneCallState::LinphoneCallStateError) {
-        errorMessage = "";
-    } else {
-        errorMessage = linphone_reason_to_string(linphone_call_get_reason(call));
-    }
-    replaceEscapeChar(errorMessage);
-
-    const char *flag;
-    bool_t in_conference;
-    in_conference=(linphone_call_get_conference(call) != NULL);
-    flag=in_conference ? "true" : "false";
-
-    sprintf(ost, "{ \"id\": %d, \"state\": \"%s\", \"addressFrom\": \"%s\", \"addressTo\": \"%s\", \"direction\": \"%s\", \"duration\": %d, \"inConference\": %s, \"errorMessage\": \"%s\"}",
-            updateCallId(call),
-            linphone_call_state_to_string(call_state),
-            fromStr.c_str(),
-            toStr.c_str(),
-            ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in"),
-            linphone_call_get_duration(call),
-            flag,
-            errorMessage);
-    string returnStr;
-    returnStr = ost;
-    return returnStr;
-}
-
 std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg){
-    char ost[4096];
+    std::string ost;
     string returnStr;
     std::string serverAddr = linphone_proxy_config_get_server_addr(cfg);
     std::string identity = linphone_proxy_config_get_identity(cfg);
     const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
-    sprintf(ost, "{ \"id\": %d, \"address\": \"%s\", \"identity\": \"%s\", \"state\": \"%s\", \"errorMessage\": \"%s\"}",
+    string_format(ost, "{ \"id\": %d, \"address\": \"%s\", \"identity\": \"%s\", \"state\": \"%s\", \"errorMessage\": \"%s\"}",
             updateProxyId(cfg),
             serverAddr.c_str(),
             identity.c_str(),

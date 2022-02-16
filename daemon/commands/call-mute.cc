@@ -43,26 +43,26 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
     LinphoneCore *lc = app->getCore();
     int muted;
     int get;
+    string ost;
     LinphoneCall *call = linphone_core_get_current_call(lc);
     string param;
     istringstream ist(args);
     istringstream paramStringStream(args);
     paramStringStream >> param;
     ist >> muted;
-    char ost[1024];
     if (param != "get"){
         get = false;
         if (ist.fail() || (muted != 0)) {
             muted = TRUE;
             if (call == NULL) {
-                sprintf(ost, "\"No call in progress. Can't mute.\"");
+                string_format(ost, "\"No call in progress. Can't mute.\"");
                 app->sendResponse(Response(COMMANDNAME_CAll_MUTE, ost, Response::Error));
                 return;
             }
         } else {
             muted = FALSE;
             if (call == NULL) {
-                sprintf(ost, "\"No call in progress. Can't unmute.\"");
+                string_format(ost, "\"No call in progress. Can't unmute.\"");
                 app->sendResponse(Response(COMMANDNAME_CALL_MUTE_0, ost, Response::Error));
                 return;
             }
@@ -77,17 +77,17 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
         else {
             buf << unmutedStr << "\n";
         }
-        sprintf(ost, "\"%s\"", buf.str().c_str());
+        string_format(ost, "\"%s\"", buf.str().c_str());
         app->sendResponse(Response(muted ? COMMANDNAME_CAll_MUTE : COMMANDNAME_CALL_MUTE_0 ,ost, Response::Ok));
     }
 
     if (param == "get") {
         get = true;
-        sprintf(ost, "\"%s\"",  linphone_core_mic_enabled(app->getCore()) ? "Muted: no\n" : "Muted: yes");
+        string_format(ost, "\"%s\"",  linphone_core_mic_enabled(app->getCore()) ? "Muted: no\n" : "Muted: yes");
         app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost, Response::Ok));
     }
     if(param != "get" && get == true){
-        sprintf(ost, "\"Wrong parameter\"");
+        string_format(ost, "\"Wrong parameter\"");
         app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost, Response::Error));
     }
 }

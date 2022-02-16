@@ -83,6 +83,7 @@ cmake_dependent_option(ENABLE_ASSISTANT "Turn on assistant compiling." YES "ENAB
 # * DISABLE_SOCI_PACKAGE_SEARCH: skip find_package() for Soci.
 
 set(CMAKE_CXX_STANDARD 14)
+#set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS NO)
 
 if(NOT CMAKE_BUILD_TYPE)
