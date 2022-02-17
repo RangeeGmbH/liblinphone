@@ -54,17 +54,17 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 	istringstream ist(args);
 	ist >> subcommand;
 	ist >> id;
-	string ost;
+	ostringstream ost;
 	if (ist.fail()) {
-	    string_format(ost, "\"Invalid command format.\"");
-	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Error));
+	    ost << "\"Invalid command format.\"\"";
+	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
 		return;
 	}
 
 	LinphoneCall *call=app->findCall(id);
 	if (call == NULL) {
-	    string_format(ost, "\"No call with such id.\"");
-	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Error));
+	    ost << "\"No call with such id.\"";
+	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
 		return;
 	}
 
@@ -77,8 +77,8 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 	} else if (subcommand.compare("leave") == 0) {
 		ret = linphone_core_leave_conference(lc);
 	} else {
-	    string_format(ost, "\"Invalid command format.\"");
-	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Error));
+	    ost << "\"Invalid command format.\"";
+	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
 		return;
 	}
 
@@ -86,10 +86,10 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 		ostringstream ostr;
 		ostr << "Call ID: " << id << "\n";
 		ostr << "Conference: " << subcommand << " OK" << "\n";
-		string_format(ost, "{ \"Call ID\": \"%d\", \"Conference\": \"%s OK\" }",  id, subcommand.c_str());
-		app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Ok));
+		ostr << "{ \"Call ID\": " << "\"" << id << "\"" << ", \"Conference\": "  << "\"" << subcommand.c_str() << " OK" << "\"" << " } ";
+		app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Ok));
 		return;
 	}
-	string_format(ost, "\"Command failed\"");
-	app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost, Response::Error));
+	ost << "\"Command failed\"";
+	app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
 }

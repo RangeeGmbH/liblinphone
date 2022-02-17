@@ -57,18 +57,6 @@
 
 #define COMMANDNAME_POP_EVENT "pop-event"
 
-template<typename ... Args>
-inline std::string string_format( const std::string& format, Args ... args )
-{
-    int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
-    if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
-    auto size = static_cast<size_t>( size_s );
-    auto buf = std::make_unique<char[]>( size );
-    std::snprintf( buf.get(), size, format.c_str(), args ... );
-    return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
-}
-
-
 class Daemon;
 
 class DaemonCommandExample {
@@ -148,18 +136,15 @@ public:
 	}
 
 	virtual std::string toBuf() const {
-	    std::string ost;
-
-	    std::ostringstream bufStr;
+	    std::ostringstream stringStream;
 	    std::string status = (mStatus == Ok) ? "true" : "false";
 	    //QString testFromJSON = "{"
         //                       "\"command\": { "
         //                       "\"description\": \"Version\""
         //                       "}"
         //                       "}";
-        string_format(ost, "{ \"type\": \"command\", \"name\": \"%s\", \"data\": %s, \"success\": %s, \"message\": \"%s\" }\n", this->commandName.c_str(), this->mBody.c_str(), status.c_str(), this->mReason.c_str());
-	    std::string str(ost);
-	    return str;
+        stringStream << "{ \"type\": \"command\", \"name\":" << "\"" << this->commandName.c_str() << "\"" << ", \"data\":" <<  this->mBody.c_str() << ", \"success\":" << status.c_str() << ", \"message\":" << "\"" << this->mReason.c_str() << "\"" << " } \n";
+	    return stringStream.str();
 	}
 private:
 	Status mStatus;
@@ -184,14 +169,13 @@ public:
 	virtual std::string toBuf() const {
 	    std::string ost;
 		std::ostringstream buf;
-		string_format(ost, "{ \"type\": \"event\", \"name\": \"%s\", \"data\": { %s } }\n", this->mEventType.c_str(), this->mBody.c_str());
+		buf << "{ \"type\": \"event\", \"name\": " << "\"" << this->mEventType.c_str() << "\"" << ", \"data\": { " << this->mBody.c_str() << " } }\n";
 
 		/*buf << "Event-type: " << mEventType;
 		if (!mBody.empty()) {
 			buf << "\n" << mBody << "\n";
 		}*/
-		std::string str(ost);
-		return str;
+		return buf.str();
 	}
 protected:
 	const std::string mEventType;
@@ -279,9 +263,10 @@ public:
 	std::string join(const std::vector<std::string>& values, std::string delimiter);
 	std::string getJsonForCall(LinphoneCall *call);
 	std::string getJsonForProxys(LinphoneProxyConfig *cfg);
-	std::string getJsonForAudioDevice(LinphoneAudioDevice* device);
+	std::string getJsonForAudioDevice(const LinphoneAudioDevice* device);
 	std::string replaceAll(std::string str, const std::string& from, const std::string& to);
 	std::string replaceEscapeChar(std::string replaceStr);
+	LinphoneAudioDevice * findAudioDevice(bctbx_list_t * deviceList, std::string driverAndName);
 	void queueEvent(Event *resp);
 	LinphoneCore *getCore();
 	LinphoneSoundDaemon *getLSD();

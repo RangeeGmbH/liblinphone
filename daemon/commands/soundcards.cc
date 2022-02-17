@@ -34,7 +34,7 @@ void SoundcardCommand::exec(Daemon *app, const string &args) {
     const char **dev;
     dev = linphone_core_get_sound_devices(lc);
     int i;
-    string ost;
+    ostringstream ost;
     vector <std::string> v;
     for (i = 0; dev[i] != NULL; ++i) {
         std::string vectorStr = "\"";
@@ -43,7 +43,6 @@ void SoundcardCommand::exec(Daemon *app, const string &args) {
         v.push_back(vectorStr);
     }
     std::string soundCards = app->join(v, ", ");
-    string_format(ost, "{ \"soundcards\": [%s] }", soundCards.c_str());
-
-    app->sendResponse(Response(COMMANDNAME_SOUNDCARDS, ost, Response::Ok));
+    ost << "{ \"soundcards\": [" << soundCards.c_str() << "] }";
+    app->sendResponse(Response(COMMANDNAME_SOUNDCARDS, ost.str(), Response::Ok));
 }

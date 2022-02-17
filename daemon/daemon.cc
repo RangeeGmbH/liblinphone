@@ -402,12 +402,29 @@ int Daemon::updateCallId(LinphoneCall *call) {
     return val;
 }
 
-std::string getJsonForAudioDevice(LinphoneAudioDevice* device) {
-    string returnStr;
+LinphoneAudioDevice * Daemon::findAudioDevice(bctbx_list_t * deviceList, std::string driverAndName) {
+    LinphoneAudioDevice * pDevice = NULL;
+    while ( deviceList != NULL ) {
+        LinphoneAudioDevice * pDevice = (LinphoneAudioDevice *) deviceList->data;
+        std::string deviceName(linphone_audio_device_get_device_name(pDevice));
+        std::string driverName(linphone_audio_device_get_driver_name(pDevice));
+        std::string deviceAndDriver = driverName + ": " + deviceName;
+        if(deviceAndDriver == driverAndName) {
+            return pDevice;
+        }
+
+        deviceList = deviceList->next;
+    }
+    return pDevice;
+}
+
+
+std::string Daemon::getJsonForAudioDevice(const LinphoneAudioDevice* device) {
+    ostringstream ost;
     std::string deviceName(linphone_audio_device_get_device_name(device));
     std::string driverName(linphone_audio_device_get_driver_name(device));
-    string_format(returnStr, "{ \"driver\": \"%s\", \"name\": \"%s\" }",  driverName.c_str(), deviceName.c_str());
-    return returnStr;
+    ost << "{ \"driver\": " << "\"" << driverName.c_str() << "\"" << ", \"name\": " << "\"" << deviceName.c_str() << "\"" << " }";
+    return ost.str();
 }
 
 std::string Daemon::getJsonForCall(LinphoneCall *call) {
@@ -436,19 +453,12 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
     bool_t in_conference;
     in_conference=(linphone_call_get_conference(call) != NULL);
     flag=in_conference ? "true" : "false";
-    string ost;
-    string_format(ost, "{ \"id\": %d, \"state\": \"%s\", \"addressFrom\": \"%s\", \"addressTo\": \"%s\", \"direction\": \"%s\", \"duration\": %d, \"inConference\": %s, \"errorMessage\": \"%s\"}",
-                  updateCallId(call),
-                  linphone_call_state_to_string(call_state),
-                  fromStr.c_str(),
-                  toStr.c_str(),
-                  ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in"),
-                  linphone_call_get_duration(call),
-                  flag,
-                  errorMessage);
-    string returnStr;
-    returnStr = ost;
-    return returnStr;
+    string direction = ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in");
+    ostringstream ost;
+    ost << "{ \"id\": " << updateCallId(call) << ", \"state\": " << "\"" << linphone_call_state_to_string(call_state)
+    << "\"" << ", \"addressFrom\": " << "\"" << fromStr.c_str() << ", \"addressTo\": " << "\"" << toStr.c_str() << "\"" << ", \"direction\": " << "\"" << direction << "\""
+    << ", \"duration\":" << linphone_call_get_duration(call) << ", \"inConference\": " << flag << "\"errorMessage\": " << "\"" << errorMessage << "\"" << "}";
+    return ost.str();
 }
 
 LinphoneCall *Daemon::findCall(int id) {
@@ -780,20 +790,13 @@ std::string Daemon::join(const vector<string>& values, string delimiter) {
 }
 
 std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg){
-    std::string ost;
-    string returnStr;
+    ostringstream ost;
     std::string serverAddr = linphone_proxy_config_get_server_addr(cfg);
     std::string identity = linphone_proxy_config_get_identity(cfg);
     const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
-    string_format(ost, "{ \"id\": %d, \"address\": \"%s\", \"identity\": \"%s\", \"state\": \"%s\", \"errorMessage\": \"%s\"}",
-            updateProxyId(cfg),
-            serverAddr.c_str(),
-            identity.c_str(),
-            linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)),
-            errorMessage);
-    returnStr = ost;
-
-    return returnStr;
+    ost << "{ \"id\": " << updateProxyId(cfg) << ", \"address\": " << "\"" << serverAddr.c_str() << "\"" << ", \"identity\": " << "\"" << identity.c_str() << "\"" << ", \"state\": " << "\""
+    << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\"" << ", \"errorMessage\": " << "\"" << errorMessage << "\"" << "}";
+    return ost.str();
 }
 
 void Daemon::queueEvent(Event *ev){

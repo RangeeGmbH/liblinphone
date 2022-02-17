@@ -46,7 +46,7 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
 	istringstream iparam(args);
 	ist >> cid;
 	iparam >> param;
-	string ost;
+	ostringstream ost;
 	string callString;
 
 	if(param != "ALL") {
@@ -54,21 +54,21 @@ void CallStatusCommand::exec(Daemon *app, const string& args) {
 	    if (ist.fail()) {
 	        call = linphone_core_get_current_call(lc);
 	        if (call == NULL) {
-	            string_format(ost, "\"No current call available.\"");
-	            app->sendResponse(Response(COMMANDNAME_CALL_STATUS, ost, Response::Error));
+	            ost << "\"No current call available.\"";
+	            app->sendResponse(Response(COMMANDNAME_CALL_STATUS, ost.str(), Response::Error));
 	            return;
 	        }
 	    } else {
 	        call = app->findCall(cid);
 	        if (call == NULL) {
-	            string_format(ost, "\"No call with such id.\"");
-	            app->sendResponse(Response(COMMANDNAME_CALL_STATUS, ost, Response::Error));
+	            ost << "\"No call with such id.\"";
+	            app->sendResponse(Response(COMMANDNAME_CALL_STATUS, ost.str(), Response::Error));
 	            return;
 	        }
 	    }
 	    callString += "{ \"isALL\": false, \"calls\": [ ";
 	    callString += app->getJsonForCall(call);
-	    callString += " ]";
+	    callString += " ] }";
 
 	    app->sendResponse(Response(COMMANDNAME_CALL_STATUS, callString, Response::Ok));
 	}

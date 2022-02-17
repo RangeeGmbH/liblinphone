@@ -43,7 +43,7 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
     istringstream ist(args);
     const MSList *elem;
     LinphoneCall *call = NULL;
-    string ost;
+    ostringstream ost;
     ist >> param;
     // terminate
     if (ist.fail()) {
@@ -52,14 +52,13 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            string_format(ost, "\"No active call.\"");
-            app->sendResponse(Response(COMMANDNAME_TERMINATE, ost, Response::Error));
+            ost << "\"No active call.\"";
+            app->sendResponse(Response(COMMANDNAME_TERMINATE, ost.str(), Response::Error));
             return;
         }
         linphone_call_terminate(call);
-        //ost << "CallId: " << app->updateCallId(call);
-        string_format(ost, "{ \"CallId\": \"%s\" }",  to_string(app->updateCallId(call)).c_str());
-        app->sendResponse(Response(COMMANDNAME_TERMINATE, ost, Response::Ok));
+        ost << "{ \"CallId\": " << "\"" << app->updateCallId(call) << "\"" << " }";
+        app->sendResponse(Response(COMMANDNAME_TERMINATE, ost.str(), Response::Ok));
         return;
     }
     // terminate ALL
@@ -69,8 +68,8 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             call = (LinphoneCall*)elem->data;
         }
         if (call == NULL) {
-            string_format(ost, "\"No active call.\"");
-            app->sendResponse(Response(COMMANDNAME_TERMINATE, ost, Response::Error));
+            ost << "\"No active call.\"";
+            app->sendResponse(Response(COMMANDNAME_TERMINATE, ost.str(), Response::Error));
             return;
         }
         else{
@@ -85,8 +84,8 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
     // terminate 1
     call = app->findCall(cid);
     if (call == NULL) {
-        string_format(ost, "\"No call with such id. CallId: %s\"", to_string(cid).c_str());
-        app->sendResponse(Response(COMMANDNAME_TERMINATE, ost, Response::Error));
+        ost << "\"No call with such id. CallId: %s\"";
+        app->sendResponse(Response(COMMANDNAME_TERMINATE, ost.str(), Response::Error));
         return;
     }
     linphone_call_terminate(call);

@@ -44,15 +44,15 @@ void AnswerCommand::exec(Daemon *app, const string& args) {
 	LinphoneCall *call;
 	istringstream ist(args);
 	ist >> cid;
-	string ost;
+	std::ostringstream stringStream;
 	if (ist.fail()) {
 		for (const MSList* elem = linphone_core_get_calls(lc); elem != NULL; elem = elem->next) {
 			call = (LinphoneCall*)elem->data;
 			LinphoneCallState cstate = linphone_call_get_state(call);
 			if (cstate == LinphoneCallIncomingReceived || cstate == LinphoneCallIncomingEarlyMedia) {
 				if (linphone_call_accept(call) == 0) {
-				    string_format(ost, "%s", "\"\"");
-				    app->sendResponse(Response(COMMANDNAME_ANSWER, ost, Response::Ok));
+				    stringStream << "\"\"";
+				    app->sendResponse(Response(COMMANDNAME_ANSWER, stringStream.str(), Response::Ok));
 					return;
 				}
 			}
@@ -60,8 +60,8 @@ void AnswerCommand::exec(Daemon *app, const string& args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-		    string_format(ost, "\"No call with such id\"");
-		    app->sendResponse(Response(COMMANDNAME_ANSWER, ost, Response::Error));
+		    stringStream << "\"No call with such id\"";
+		    app->sendResponse(Response(COMMANDNAME_ANSWER, stringStream.str(), Response::Error));
 			return;
 		}
 

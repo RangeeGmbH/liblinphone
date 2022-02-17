@@ -43,7 +43,7 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
     LinphoneCore *lc = app->getCore();
     int muted;
     int get;
-    string ost;
+    ostringstream ost;
     LinphoneCall *call = linphone_core_get_current_call(lc);
     string param;
     istringstream ist(args);
@@ -55,15 +55,15 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
         if (ist.fail() || (muted != 0)) {
             muted = TRUE;
             if (call == NULL) {
-                string_format(ost, "\"No call in progress. Can't mute.\"");
-                app->sendResponse(Response(COMMANDNAME_CAll_MUTE, ost, Response::Error));
+                ost << "\"No call in progress. Can't mute.\"";
+                app->sendResponse(Response(COMMANDNAME_CAll_MUTE, ost.str(), Response::Error));
                 return;
             }
         } else {
             muted = FALSE;
             if (call == NULL) {
-                string_format(ost, "\"No call in progress. Can't unmute.\"");
-                app->sendResponse(Response(COMMANDNAME_CALL_MUTE_0, ost, Response::Error));
+                ost << "\"No call in progress. Can't unmute.\"";
+                app->sendResponse(Response(COMMANDNAME_CALL_MUTE_0, ost.str(), Response::Error));
                 return;
             }
         }
@@ -77,17 +77,18 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
         else {
             buf << unmutedStr << "\n";
         }
-        string_format(ost, "\"%s\"", buf.str().c_str());
-        app->sendResponse(Response(muted ? COMMANDNAME_CAll_MUTE : COMMANDNAME_CALL_MUTE_0 ,ost, Response::Ok));
+        ost << "\"" <<  buf.str().c_str() << "\"";
+        app->sendResponse(Response(muted ? COMMANDNAME_CAll_MUTE : COMMANDNAME_CALL_MUTE_0 ,ost.str(), Response::Ok));
     }
 
     if (param == "get") {
         get = true;
-        string_format(ost, "\"%s\"",  linphone_core_mic_enabled(app->getCore()) ? "Muted: no\n" : "Muted: yes");
-        app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost, Response::Ok));
+        string mutedStr = linphone_core_mic_enabled(app->getCore()) ? "Muted: no\n" : "Muted: yes";
+        ost << "\"" << mutedStr << "\"";
+        app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost.str(), Response::Ok));
     }
     if(param != "get" && get == true){
-        string_format(ost, "\"Wrong parameter\"");
-        app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost, Response::Error));
+        ost << "\"Wrong parameter\"";
+        app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost.str(), Response::Error));
     }
 }

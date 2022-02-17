@@ -47,29 +47,30 @@ void CallPauseCommand::exec(Daemon* app, const string& args)
 	bool current = false;
 	istringstream ist(args);
 	ist >> cid;
-	string ost;
+	ostringstream ost;
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		current = true;
 		if (call == NULL) {
-		    string_format(ost, "\"No current call available.\"");
-		    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost,  Response::Error));
+		    ost << "\"No current call available.\"";
+		    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost.str(),  Response::Error));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-		    string_format(ost, "\"No call with such id.\"");
-		    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost, Response::Error));
+		    ost << "\"No call with such id.\"";
+		    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost.str(), Response::Error));
 			return;
 		}
 	}
 
 	if (linphone_call_pause(call) == 0) {
-	    string_format(ost, "\"%s\"", current ? "Current call was paused" : "Call was paused");
-	    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost, Response::Ok));
+	    string curStr = current ? "Current call was paused" : "Call was paused";
+	    ost << "\""  << curStr << "\"";
+	    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost.str(), Response::Ok));
 	} else {
-	    string_format(ost, "\"Error pausing \"");
-	    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost, Response::Error));
+	    ost << "\"Error pausing \"";
+	    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost.str(), Response::Error));
 	}
 }

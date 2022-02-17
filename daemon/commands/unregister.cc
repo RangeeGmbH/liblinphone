@@ -36,14 +36,14 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
     LinphoneProxyConfig *cfg = NULL;
     string param;
     int pid;
-    string ost;
+    ostringstream ost;
     string proxysStr;
 
     istringstream ist(args);
     ist >> param;
     if (ist.fail()) {
-        string_format(ost, "\"Missing parameter\"");
-        app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost, Response::Error));
+        ost << "\"Missing parameter\"";
+        app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Error));
         return;
     }
     if (param.compare("ALL") == 0) {
@@ -66,14 +66,14 @@ void UnregisterCommand::exec(Daemon *app, const string& args) {
         ist.str(param);
         ist >> pid;
         if (ist.fail()) {
-            string_format(ost, "\"Incorrect parameter\"");
-            app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost, Response::Error));
+            ost << "\"Incorrect parameter\"";
+            app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Error));
             return;
         }
         cfg = app->findProxy(pid);
         if (cfg == NULL) {
-            string_format(ost, "\"Incorrect parameter\"");
-            app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost, Response::Error));
+            ost << "\"Incorrect parameter\"";
+            app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Error));
             return;
         } else {
             cfg = app->findProxy(pid);
