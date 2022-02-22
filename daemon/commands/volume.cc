@@ -96,7 +96,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
 
     if(playbackVolumeFloat >=0 && recordVolumeFloat >=0){
         Response resp;
-        string volumePlayback = to_string(recordVolumeFloat);
+        string volumePlayback = to_string(playbackVolumeFloat);
         string volumeErgPlayback = "Current playback volume: ";
         volumeErgPlayback = volumeErgPlayback + volumePlayback + "\n";
         string volumeRecord = to_string(recordVolumeFloat);

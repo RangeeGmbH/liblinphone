@@ -31,17 +31,23 @@ SoundcardCommand::SoundcardCommand() :
 void SoundcardCommand::exec(Daemon *app, const string &args) {
     LinphoneCore *lc = app->getCore();
     linphone_core_reload_sound_devices(lc);
-    const char **dev;
-    dev = linphone_core_get_sound_devices(lc);
-    int i;
     ostringstream ost;
+    bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
     vector <std::string> v;
-    for (i = 0; dev[i] != NULL; ++i) {
+    while ( deviceIt != NULL ) {
+        LinphoneAudioDevice * pDevice = (LinphoneAudioDevice *) deviceIt->data;
+        std::string deviceName(linphone_audio_device_get_device_name(pDevice));
+        std::string driverName(linphone_audio_device_get_driver_name(pDevice));
+        std::string deviceAndDriver = driverName + ": " + deviceName;
+
         std::string vectorStr = "\"";
-        vectorStr = vectorStr += dev[i];
+        vectorStr = vectorStr += app->getJsonForAudioDevice(pDevice);
         vectorStr = vectorStr += "\"";
         v.push_back(vectorStr);
+
+        deviceIt = deviceIt->next;
     }
+
     std::string soundCards = app->join(v, ", ");
     ost << "{ \"soundcards\": [" << soundCards.c_str() << "] }";
     app->sendResponse(Response(COMMANDNAME_SOUNDCARDS, ost.str(), Response::Ok));

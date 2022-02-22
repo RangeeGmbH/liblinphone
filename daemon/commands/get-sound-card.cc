@@ -32,45 +32,136 @@
 using namespace std;
 
 GetSoundCard::GetSoundCard() :
-DaemonCommand("get-sound-card", "get-sound-card",
-              "set the sound device for ringer_dev, or capture_dev, or playback_dev") {
-    addExample(new DaemonCommandExample("get-sound-card playback_dev",
+DaemonCommand("get-sound-card", "get-sound-card default|CallID output|input|ringer",
+              "get the sound card for default or Call of ringer, input, or output sound card") {
+    addExample(new DaemonCommandExample("get-sound-card default output <Sound Card Name>",
                                         "Status: OK\n"));
-    addExample(new DaemonCommandExample("get-sound-card ringer_dev",
+    addExample(new DaemonCommandExample("get-sound-card default input <Sound Card Name>",
                                         "Status: OK\n"));
-    addExample(new DaemonCommandExample("get-sound-card capture_dev",
+    addExample(new DaemonCommandExample("get-sound-card default ringer <Sound Card Name>",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("get-sound-card <CallID> output <Sound Card Name>",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("get-sound-card <CallID> input <Sound Card Name>",
                                         "Status: OK\n"));
 }
 void GetSoundCard::exec(Daemon *app, const string &args) {
     istringstream ist(args);
+    string ost;
+    ostringstream ostStr;
     string param;
     ist >> param;
     if (ist.fail()) {
         app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Missing parameter", Response::Error));
     }
-    if(param == "playback_dev"){
-        Response resp;
-        string playbackCardName = linphone_core_get_playback_device(app->getCore());
-        string outputStr = "Current Playback Device: ";
-        outputStr = outputStr + playbackCardName + "\n";
-        app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, outputStr.c_str(), Response::Ok));
-    }
-    if (param == "ringer_dev") {
-        Response resp;
-        string ringerCardName = linphone_core_get_ringer_device(app->getCore());
-        string outputStr = "Current Ringer Device: ";
-        outputStr = outputStr + ringerCardName + "\n";
-        app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, outputStr.c_str(), Response::Ok));
-    }
-    if(param == "capture_dev"){
-        Response resp;
-        string captureCardName = linphone_core_get_capture_device(app->getCore());
-        string outputStr = "Current Capture Device: ";
-        outputStr = outputStr + captureCardName + "\n";
-        app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, outputStr.c_str(), Response::Ok));
-    }
+    if(param == "default"){
+        ist >> param;
+        if (ist.fail()) {
+            app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Missing parameter", Response::Error));
+        }
+        else {
+            if(param == "output"){
+                if (ist.fail()) {
+                    app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Missing parameter", Response::Error));
+                } else {
+                    // get default output card
+                    const LinphoneAudioDevice *output_device = linphone_core_get_default_output_audio_device(app->getCore());
+                    ost = app->getJsonForAudioDevice(output_device);
 
-    if (param != "playback_dev" && param != "ringer_dev" && param != "capture_dev"){
-        app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Wrong parameter", Response::Error));
+                    if (!ist.str().empty() && ist.str() != "") {
+                        app->sendResponse(
+                                Response(COMMANDNAME_GETSOUNDCARD, ost, Response::Ok));
+                    }
+                }
+            }
+            if(param == "input"){
+                if (ist.fail()) {
+                    app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Missing or wrong value", Response::Error));
+                } else {
+                    // get default input card
+                    const LinphoneAudioDevice *input_device = linphone_core_get_default_input_audio_device(app->getCore());
+
+                    ost = app->getJsonForAudioDevice(input_device);
+
+                    if (!ist.str().empty() && ist.str() != "") {
+                        app->sendResponse(
+                                Response(COMMANDNAME_GETSOUNDCARD, ost, Response::Ok));
+                    }
+                }
+            }
+            if(param == "ringer") {
+                if (ist.fail()) {
+                    app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Missing or wrong value", Response::Error));
+                } else {
+                    string ringer_dev = "default ringer";
+                    // get ringer
+                    const std::string& soundCard =linphone_core_get_ringer_device(app->getCore());
+                    //const std::string& soundCard = ist.str().substr(ringer_dev.length()+1, ist.str().length());
+                    bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
+                    ost = app->getJsonForAudioDevice(app->findAudioDevice(deviceIt, soundCard));
+                    bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
+
+                    if (!ist.str().empty() && ist.str() != "") {
+                        app->sendResponse(
+                                Response(COMMANDNAME_GETSOUNDCARD, ost, Response::Ok));
+                    }
+                    param = ringer_dev;
+                }
+            }
+        }
+    }
+    else {
+        LinphoneCall *call = NULL;
+        stringstream ss;
+        ss << param;
+        int cid;
+        ss >> cid;
+        ist >> param;
+        call = app->findCall(cid);
+        if (call == NULL) {
+            ostStr << "\"No call with such id.\"";
+            app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, ostStr.str(), Response::Error));
+            return;
+        }
+        if(param == "output"){
+            if (ist.fail()) {
+                app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Missing parameter", Response::Error));
+            } else {
+                const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
+                ost = app->getJsonForAudioDevice(output_device);
+
+                string callString;
+                callString += "{ \"isALL\": false, \"calls\": [ ";
+                callString += app->getJsonForCall(call);
+                callString += " ] ";
+                callString += ost;
+                callString += " }";
+
+                if (!ist.str().empty() && ist.str() != "") {
+                    app->sendResponse(
+                            Response(COMMANDNAME_GETSOUNDCARD, callString, Response::Ok));
+                }
+            }
+        }
+        if(param == "input"){
+            if (ist.fail()) {
+                app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Missing parameter", Response::Error));
+            } else {
+                const LinphoneAudioDevice *input_device = linphone_call_get_input_audio_device(call);
+                ost = app->getJsonForAudioDevice(input_device);
+
+                string callString;
+                callString += "{ \"isALL\": false, \"calls\": [ ";
+                callString += app->getJsonForCall(call);
+                callString += " ] ";
+                callString += ost;
+                callString += " }";
+
+                if (!ist.str().empty() && ist.str() != "") {
+                    app->sendResponse(
+                            Response(COMMANDNAME_GETSOUNDCARD, callString, Response::Ok));
+                }
+            }
+        }
     }
 }

@@ -32,13 +32,17 @@
 using namespace std;
 
 SetSoundCard::SetSoundCard() :
-DaemonCommand("set-sound-card", "set-sound-card",
-              "set the sound card for ringer_dev, or capture_dev, or playback_dev") {
-    addExample(new DaemonCommandExample("set-sound-card set playback_dev <Sound Card Name>",
+DaemonCommand("set-sound-card", "set-sound-card default|CallID output|input|ringer <Sound Card Name>",
+              "set the sound card for default or Call of ringer, input, or output sound card") {
+    addExample(new DaemonCommandExample("set-sound-card default output <Sound Card Name>",
                                         "Status: OK\n"));
-    addExample(new DaemonCommandExample("set-sound-card set ringer_dev <Sound Card Name>",
+    addExample(new DaemonCommandExample("set-sound-card default input <Sound Card Name>",
                                         "Status: OK\n"));
-    addExample(new DaemonCommandExample("set-sound-card set capture_dev <Sound Card Name>",
+    addExample(new DaemonCommandExample("set-sound-card default ringer <Sound Card Name>",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("set-sound-card <CallID> output <Sound Card Name>",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("set-sound-card <CallID> input <Sound Card Name>",
                                         "Status: OK\n"));
 }
 void SetSoundCard::exec(Daemon *app, const string &args) {
@@ -92,7 +96,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                     app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing or wrong value", Response::Error));
                 } else {
                     // search card to set default input /////////////////////////////
-                    string input_dev = "input";
+                    string input_dev = "default input";
                     const std::string& soundCard = ist.str().substr(input_dev.length()+1, ist.str().length());
 
                     bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
@@ -115,7 +119,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 if (ist.fail()) {
                     app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing or wrong value", Response::Error));
                 } else {
-                    string ringer_dev = "ringer_dev";
+                    string ringer_dev = "default ringer";
                     // set ringer ( old set device function )
                     const std::string& soundCard = ist.str().substr(ringer_dev.length()+1, ist.str().length());
                     linphone_core_set_ringer_device(app->getCore(), soundCard.c_str());
@@ -157,8 +161,12 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 const std::string& soundCard = ist.str().substr(ist.str().find(output_dev)+output_dev.length()+1, ist.str().length());
 
                 bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
-
-                linphone_call_set_output_audio_device(call, app->findAudioDevice(deviceIt, soundCard));
+                LinphoneAudioDevice * pDevice = app->findAudioDevice(deviceIt, soundCard);
+                if ( pDevice == NULL ) {
+                    app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Card not found", Response::Error));
+                }
+                //linphone_call_set_output_audio_device(call, app->findAudioDevice(deviceIt, soundCard));
+                linphone_call_set_output_audio_device(call, pDevice);
                 bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
                 ////////////
 

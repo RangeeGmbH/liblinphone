@@ -423,7 +423,25 @@ std::string Daemon::getJsonForAudioDevice(const LinphoneAudioDevice* device) {
     ostringstream ost;
     std::string deviceName(linphone_audio_device_get_device_name(device));
     std::string driverName(linphone_audio_device_get_driver_name(device));
-    ost << "{ \"driver\": " << "\"" << driverName.c_str() << "\"" << ", \"name\": " << "\"" << deviceName.c_str() << "\"" << " }";
+    std::string canPlay;
+    std::string canRecord;
+    switch (linphone_audio_device_get_capabilities(device)) {
+        case LinphoneAudioDeviceCapabilityAll:
+            canPlay = "true";
+            canRecord = "true";
+            break;
+            case LinphoneAudioDeviceCapabilityPlay:
+                canPlay = "true";
+                canRecord = "false";
+            break;
+                case LinphoneAudioDeviceCapabilityRecord:
+                    canPlay = "false";
+                    canRecord = "true";
+            break;
+    }
+    std::string canPlayStrTrue = "true";
+    ost << "{ \"driver\": " << "\"" << driverName.c_str() << "\"" << ", \"name\": " << "\"" << deviceName.c_str() << "\""
+    << ", \"canRecord\": " << canRecord << ", \"canPlay\": " << canPlay <<" }";
     return ost.str();
 }
 
@@ -457,7 +475,7 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
     ostringstream ost;
     ost << "{ \"id\": " << updateCallId(call) << ", \"state\": " << "\"" << linphone_call_state_to_string(call_state)
     << "\"" << ", \"addressFrom\": " << "\"" << fromStr.c_str() << ", \"addressTo\": " << "\"" << toStr.c_str() << "\"" << ", \"direction\": " << "\"" << direction << "\""
-    << ", \"duration\":" << linphone_call_get_duration(call) << ", \"inConference\": " << flag << "\"errorMessage\": " << "\"" << errorMessage << "\"" << "}";
+    << ", \"duration\":" << linphone_call_get_duration(call) << ", \"inConference\": " << flag << ", \"errorMessage\": " << "\"" << errorMessage << "\"" << "}";
     return ost.str();
 }
 
