@@ -131,7 +131,7 @@ void GetSoundCard::exec(Daemon *app, const string &args) {
                 ost = app->getJsonForAudioDevice(output_device);
 
                 string callString;
-                callString += "{ \"isALL\": false, \"calls\": [ ";
+                callString += "{ \"isAll\": false, \"calls\": [ ";
                 callString += app->getJsonForCall(call);
                 callString += " ] ";
                 callString += ost;
@@ -151,7 +151,7 @@ void GetSoundCard::exec(Daemon *app, const string &args) {
                 ost = app->getJsonForAudioDevice(input_device);
 
                 string callString;
-                callString += "{ \"isALL\": false, \"calls\": [ ";
+                callString += "{ \"isAll\": false, \"calls\": [ ";
                 callString += app->getJsonForCall(call);
                 callString += " ] ";
                 callString += ost;

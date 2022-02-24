@@ -41,72 +41,108 @@ DaemonCommand("volume", "volume <call-iD> [<value for speaker volume> <value for
 }
 void VolumeCommand::exec(Daemon *app, const string &args) {
     string callId;
-    string playbackVolume;
-    string recordVolume;
+    float playbackVolume;
+    float recordVolume;
     istringstream ist(args);
-    ist >> callId;
-    ist >> playbackVolume;
-    ist >> recordVolume;
+
+    //ist >> playbackVolume;
+    //ist >> recordVolume;
+
+    string param;
+    ist >> param;
+
     ostringstream ost;
 
-    if(callId.empty()) {
-        ost << "Missing parameter.";
-        std::string commandName = COMMANDNAME_VOLUME;
-        app->sendResponse(Response(commandName, ost.str(), Response::Error));
-        return;
+    if (ist.fail()) {
+        app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing parameter", Response::Error));
     }
-    LinphoneCall *call = NULL;
-    call = app->findCall(std::stoi(callId));
-    if (call == NULL) {
-        ost << "No call with such id.";
-        std::string commandName = COMMANDNAME_VOLUME;
-        app->sendResponse(Response(commandName, ost.str(), Response::Error));
-        return;
+    if(param == "default"){
+        ist >> playbackVolume;
+        ist >> recordVolume;
+        if (ist.fail()) {
+            app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing parameter", Response::Error));
+        }
+        else {
+            //output
+            linphone_core_set_playback_gain_db(app->getCore(), playbackVolume);
+            linphone_core_set_mic_gain_db(app->getCore(), recordVolume);
+            /*app->getCore()->sound_conf.soft_play_lev=app->linearToDb(playbackVolume);
+            if (linphone_core_ready(app->getCore())){
+                linphone_config_set_float(app->getCore()->config,"sound","playback_gain_db",app->getCore()->sound_conf.soft_play_lev);
+            }*/
+            //input
+            /*app->getCore()->sound_conf.soft_mic_lev=app->linearToDb(recordVolume);
+            if (linphone_core_ready(app->getCore())){
+                linphone_config_set_float(app->getCore()->config,"sound","mic_gain_db",app->getCore()->sound_conf.soft_mic_lev);
+            }*/
+        }
     }
-    if(!playbackVolume.empty() && !recordVolume.empty()) {
-        int speakerVolume;
-        speakerVolume = std::stoi(playbackVolume);
-        if( speakerVolume == 100 ) {
-            playbackVolume = "1.00";
-        }
-        else if ( speakerVolume < 100 ) {
-            playbackVolume = "0." + to_string(speakerVolume);
-        }
+    else {
+        ist >> callId;
+        ist >> playbackVolume;
+        ist >> recordVolume;
 
-        int micVolume;
-        micVolume = std::stoi(recordVolume);
-        if( micVolume == 100 ) {
-            recordVolume = "1.00";
+        if(callId.empty()) {
+            ost << "Missing parameter.";
+            std::string commandName = COMMANDNAME_VOLUME;
+            app->sendResponse(Response(commandName, ost.str(), Response::Error));
+            return;
         }
-        else if ( micVolume < 100 ) {
-            recordVolume = "0." + to_string(micVolume);
+        LinphoneCall *call = NULL;
+        call = app->findCall(std::stoi(callId));
+        if (call == NULL) {
+            ost << "No call with such id.";
+            std::string commandName = COMMANDNAME_VOLUME;
+            app->sendResponse(Response(commandName, ost.str(), Response::Error));
+            return;
         }
+#ifdef test
+        if(!playbackVolume.empty() && !recordVolume.empty()) {
+            int speakerVolume;
+            speakerVolume = std::stoi(playbackVolume);
+            if( speakerVolume == 100 ) {
+                playbackVolume = "1.00";
+            }
+            else if ( speakerVolume < 100 ) {
+                playbackVolume = "0." + to_string(speakerVolume);
+            }
 
-        linphone_call_set_speaker_volume_gain(call, std::stof(playbackVolume));
-        linphone_call_set_microphone_volume_gain(call, std::stof(recordVolume));
-    }
-    float playbackVolumeFloat = linphone_call_get_speaker_volume_gain(call);
-    char strPlayback[40];
-    sprintf(strPlayback, "%.2f", playbackVolumeFloat);
-    sscanf(strPlayback, "%f", &playbackVolumeFloat);
-    float recordVolumeFloat = linphone_call_get_microphone_volume_gain(call);
-    char strRecord[40];
-    sprintf(strRecord, "%.2f", recordVolumeFloat);
-    sscanf(strRecord, "%f", &recordVolumeFloat);
+            int micVolume;
+            micVolume = std::stoi(recordVolume);
+            if( micVolume == 100 ) {
+                recordVolume = "1.00";
+            }
+            else if ( micVolume < 100 ) {
+                recordVolume = "0." + to_string(micVolume);
+            }
 
-    if(playbackVolumeFloat >=0 && recordVolumeFloat >=0){
-        Response resp;
-        string volumePlayback = to_string(playbackVolumeFloat);
-        string volumeErgPlayback = "Current playback volume: ";
-        volumeErgPlayback = volumeErgPlayback + volumePlayback + "\n";
-        string volumeRecord = to_string(recordVolumeFloat);
-        string volumeErgRecord = "Current record volume: ";
-        volumeErgRecord = volumeErgRecord + volumeRecord + "\n";
-        string callId = "CallID: ";
-        string callIdErg = callId + to_string(app->updateCallId(call)) + "\n";
+            linphone_call_set_speaker_volume_gain(call, std::stof(playbackVolume));
+            linphone_call_set_microphone_volume_gain(call, std::stof(recordVolume));
+        }
+        float playbackVolumeFloat = linphone_call_get_speaker_volume_gain(call);
+        char strPlayback[40];
+        sprintf(strPlayback, "%.2f", playbackVolumeFloat);
+        sscanf(strPlayback, "%f", &playbackVolumeFloat);
+        float recordVolumeFloat = linphone_call_get_microphone_volume_gain(call);
+        char strRecord[40];
+        sprintf(strRecord, "%.2f", recordVolumeFloat);
+        sscanf(strRecord, "%f", &recordVolumeFloat);
 
-        ost << "{ \"Current playback volume\": " << "\"" << volumePlayback.c_str() << "\"" << ", \"Current record volume\": " << "\"" << volumeRecord.c_str()
-        << "\"" << ",  \"CallID\": " << "\"" << to_string(app->updateCallId(call)).c_str() << "\"" << " }";
-        app->sendResponse(Response(COMMANDNAME_VOLUME, ost.str(), Response::Ok));
+        if(playbackVolumeFloat >=0 && recordVolumeFloat >=0){
+            Response resp;
+            string volumePlayback = to_string(playbackVolumeFloat);
+            string volumeErgPlayback = "Current playback volume: ";
+            volumeErgPlayback = volumeErgPlayback + volumePlayback + "\n";
+            string volumeRecord = to_string(recordVolumeFloat);
+            string volumeErgRecord = "Current record volume: ";
+            volumeErgRecord = volumeErgRecord + volumeRecord + "\n";
+            string callId = "CallID: ";
+            string callIdErg = callId + to_string(app->updateCallId(call)) + "\n";
+
+            ost << "{ \"Current playback volume\": " << "\"" << volumePlayback.c_str() << "\"" << ", \"Current record volume\": " << "\"" << volumeRecord.c_str()
+            << "\"" << ",  \"CallID\": " << "\"" << to_string(app->updateCallId(call)).c_str() << "\"" << " }";
+            app->sendResponse(Response(COMMANDNAME_VOLUME, ost.str(), Response::Ok));
+        }
+#endif
     }
 }

@@ -169,7 +169,7 @@ public:
 	virtual std::string toBuf() const {
 	    std::string ost;
 		std::ostringstream buf;
-		buf << "{ \"type\": \"event\", \"name\": " << "\"" << this->mEventType.c_str() << "\"" << ", \"data\": { " << this->mBody.c_str() << " } }\n";
+		buf << "{ \"type\": \"event\", \"name\": " << "\"" << this->mEventType.c_str() << "\"" << ", \"data\": " << this->mBody.c_str() << " }\n";
 
 		/*buf << "Event-type: " << mEventType;
 		if (!mBody.empty()) {
@@ -266,6 +266,7 @@ public:
 	std::string getJsonForAudioDevice(const LinphoneAudioDevice* device);
 	std::string replaceAll(std::string str, const std::string& from, const std::string& to);
 	std::string replaceEscapeChar(std::string replaceStr);
+	float linearToDb(float volume);
 	LinphoneAudioDevice * findAudioDevice(bctbx_list_t * deviceList, std::string driverAndName);
 	void queueEvent(Event *resp);
 	LinphoneCore *getCore();

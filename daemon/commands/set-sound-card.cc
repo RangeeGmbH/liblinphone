@@ -174,7 +174,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 ost = app->getJsonForAudioDevice(output_device);
 
                 string callString;
-                callString += "{ \"isALL\": false, \"calls\": [ ";
+                callString += "{ \"isAll\": false, \"calls\": [ ";
                 callString += app->getJsonForCall(call);
                 callString += " ] ";
                 callString += ost;
@@ -206,7 +206,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 ost = app->getJsonForAudioDevice(input_device);
 
                 string callString;
-                callString += "{ \"isALL\": false, \"calls\": [ ";
+                callString += "{ \"isAll\": false, \"calls\": [ ";
                 callString += app->getJsonForCall(call);
                 callString += " ] ";
                 callString += ost;
@@ -219,9 +219,5 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 param = input_dev;
             }
         }
-    }
-
-    if (param != "default output" && param != "default input" && param != "capture_dev"){
-        app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Wrong parameter", Response::Error));
     }
 }
