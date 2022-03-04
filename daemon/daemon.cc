@@ -184,16 +184,14 @@ std::string Daemon::replaceEscapeChar(std::string replaceStr) {
     in_conference=(linphone_call_get_conference(call) != NULL);
     flag=in_conference ? "true" : "false";
     string direction = ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in");
-    int outputVolumeFloat = -1;
-    int inputVolumeFloat = -1;
+    float outputVolumeFloat = -1;
+    float inputVolumeFloat = -1;
     std::string output_Device_Str = "";
     std::string input_Device_Str = "";
     if(call_state == LinphoneCallState::LinphoneCallStateStreamsRunning) {
+        outputVolumeFloat = linphone_call_get_speaker_volume_gain(call);
+        inputVolumeFloat = linphone_call_get_microphone_volume_gain(call);
 
-        outputVolumeFloat = static_cast<int>(round(linphone_config_get_float(getCore()->config,"sound","playback_gain_db",0)/100));
-        inputVolumeFloat = static_cast<int>(round(linphone_config_get_float(getCore()->config,"sound","mic_gain_db",0)/100));
-        //outputVolumeFloat = static_cast<int>(round(linphone_call_get_speaker_volume_gain(call)*100));
-        //inputVolumeFloat = static_cast<int>(round(linphone_call_get_microphone_volume_gain(call)*100));
         const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
         output_Device_Str = getJsonForAudioDevice(output_device);
         const LinphoneAudioDevice *input_device = linphone_call_get_input_audio_device(call);
@@ -208,8 +206,18 @@ std::string Daemon::replaceEscapeChar(std::string replaceStr) {
     return ost.str();
 }
 
-CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
-	string callStr;
+CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {;
+    float outputVolumeFloat = -1;
+    float inputVolumeFloat = -1;
+    std::string output_Device_Str = "";
+    std::string input_Device_Str = "";
+    if(state == LinphoneCallState::LinphoneCallStateStreamsRunning) {
+        outputVolumeFloat = linphone_config_get_float(daemon->getCore()->config,"sound","output_volume",0);
+        linphone_call_set_speaker_volume_gain(call,outputVolumeFloat);
+        inputVolumeFloat = linphone_config_get_float(daemon->getCore()->config,"sound","input_volume",0);
+        linphone_call_set_microphone_volume_gain(call,inputVolumeFloat);
+    }
+    string callStr;
 	callStr = "{ \"calls\": [ ";
 	callStr += daemon->getJsonForCall(call);
 	callStr += " ] }";
