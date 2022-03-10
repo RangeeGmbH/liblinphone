@@ -40,9 +40,8 @@ void SoundcardCommand::exec(Daemon *app, const string &args) {
         std::string driverName(linphone_audio_device_get_driver_name(pDevice));
         std::string deviceAndDriver = driverName + ": " + deviceName;
 
-        std::string vectorStr = "\"";
-        vectorStr = vectorStr += app->getJsonForAudioDevice(pDevice);
-        vectorStr = vectorStr += "\"";
+        std::string vectorStr = "";
+        vectorStr = app->getJsonForAudioDevice(pDevice);
         v.push_back(vectorStr);
 
         deviceIt = deviceIt->next;

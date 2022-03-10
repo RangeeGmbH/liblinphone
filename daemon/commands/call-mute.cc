@@ -55,14 +55,14 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
         if (ist.fail() || (muted != 0)) {
             muted = TRUE;
             if (call == NULL) {
-                ost << "\"No call in progress. Can't mute.\"";
+                ost << "No call in progress. Can't mute.";
                 app->sendResponse(Response(COMMANDNAME_CAll_MUTE, ost.str(), Response::Error));
                 return;
             }
         } else {
             muted = FALSE;
             if (call == NULL) {
-                ost << "\"No call in progress. Can't unmute.\"";
+                ost << "No call in progress. Can't unmute.";
                 app->sendResponse(Response(COMMANDNAME_CALL_MUTE_0, ost.str(), Response::Error));
                 return;
             }
@@ -83,7 +83,7 @@ void CallMuteCommand::exec(Daemon* app, const string& args)
 
     if (param == "get") {
         get = true;
-        string mutedStr = linphone_core_mic_enabled(app->getCore()) ? "Muted: no\n" : "Muted: yes";
+        string mutedStr = linphone_core_mic_enabled(app->getCore()) ? "Muted: no" : "Muted: yes";
         ost << "\"" << mutedStr << "\"";
         app->sendResponse(Response(COMMANDNAME_CALL_MUTE_GET, ost.str(), Response::Ok));
     }

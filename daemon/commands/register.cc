@@ -85,7 +85,7 @@ void RegisterCommand::exec(Daemon *app, const string& args) {
 	linphone_core_add_proxy_config(lc, cfg);
 
 	cfg = app->findProxy(app->updateProxyId(cfg));
-	proxysStr += "{ \"isALL\": false, \"proxies\": [ ";
+	proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
 	proxysStr += app->getJsonForProxys(cfg);
 	proxysStr += " ]  }";
 

@@ -51,8 +51,11 @@ void AnswerCommand::exec(Daemon *app, const string& args) {
 			LinphoneCallState cstate = linphone_call_get_state(call);
 			if (cstate == LinphoneCallIncomingReceived || cstate == LinphoneCallIncomingEarlyMedia) {
 				if (linphone_call_accept(call) == 0) {
-				    stringStream << "\"\"";
-				    app->sendResponse(Response(COMMANDNAME_ANSWER, stringStream.str(), Response::Ok));
+				    string callString;
+				    callString += "{ \"isAll\": false, \"calls\": [ ";
+				    callString += app->getJsonForCall(call);
+				    callString += " ] }";
+				    app->sendResponse(Response(COMMANDNAME_ANSWER, callString, Response::Ok));
 					return;
 				}
 			}

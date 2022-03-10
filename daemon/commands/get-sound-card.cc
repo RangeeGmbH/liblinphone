@@ -57,7 +57,7 @@ void GetSoundCard::exec(Daemon *app, const string &args) {
     if(param == "default"){
         // get default output card
         const LinphoneAudioDevice *output_device = linphone_core_get_default_output_audio_device(app->getCore());
-        ost = "{ \"output\": " + app->getJsonForAudioDevice(output_device) + ", ";
+        ost = "{ \"isDefault\": true, \"output\": " + app->getJsonForAudioDevice(output_device) + ", ";
 
         // get default input card
         const LinphoneAudioDevice *input_device = linphone_core_get_default_input_audio_device(app->getCore());
@@ -113,7 +113,8 @@ void GetSoundCard::exec(Daemon *app, const string &args) {
                 app->sendResponse(Response(COMMANDNAME_GETSOUNDCARD, "Missing parameter", Response::Error));
             } else {
                 const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
-                ost = app->getJsonForAudioDevice(output_device);
+
+                ost = "{ \"isDefault\": false, \"output\": " + app->getJsonForAudioDevice(output_device);
 
                 string callString;
                 callString += "{ \"isAll\": false, \"calls\": [ ";
