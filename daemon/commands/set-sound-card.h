@@ -15,7 +15,7 @@ class SetSoundCard: public DaemonCommand  {
 public:
     SetSoundCard();
     void exec(Daemon *app, const std::string &args) override;
+private:
+    LinphoneAudioDevice * getLinphoneAudioDevice(Daemon *app, std::string idString);
 };
-
-
 #endif //LINPHONE_SDK_ADDSOUNDCARDS_H

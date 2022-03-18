@@ -267,7 +267,8 @@ public:
 	std::string replaceAll(std::string str, const std::string& from, const std::string& to);
 	std::string replaceEscapeChar(std::string replaceStr);
 	float linearToDb(float volume);
-	LinphoneAudioDevice * findAudioDevice(bctbx_list_t * deviceList, std::string driverAndName);
+	LinphoneAudioDevice * findAudioDevice(std::string idString);
+	std::string linphoneAudioDeviceTypeToString(LinphoneAudioDeviceType linphoneAudioDeviceType) const;
 	void queueEvent(Event *resp);
 	LinphoneCore *getCore();
 	LinphoneSoundDaemon *getLSD();

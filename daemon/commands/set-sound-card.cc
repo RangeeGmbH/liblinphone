@@ -31,6 +31,17 @@
 
 using namespace std;
 
+
+LinphoneAudioDevice * SetSoundCard::getLinphoneAudioDevice(Daemon *app, std::string idString) {
+    string ost;
+    LinphoneAudioDevice * pDevice = app->findAudioDevice(idString);
+    if(pDevice == nullptr) {
+        ost = "Try to set card: " + idString + " for default was not found in device list";
+        app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Error));
+    }
+    return pDevice;
+}
+
 SetSoundCard::SetSoundCard() :
 DaemonCommand("set-sound-card", "set-sound-card default|CallID output|input|ringer <Sound Card Name>",
               "set the sound card for default or Call of ringer, input, or output sound card") {
@@ -54,108 +65,66 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
     if (ist.fail()) {
         app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing parameter", Response::Error));
     }
-    if(param == "default"){
+    if(param == "default") {
         ist >> param;
         if (ist.fail()) {
             app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing parameter", Response::Error));
         }
         else {
-            if(param == "output"){
-                if (ist.fail()) {
-                    app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing parameter", Response::Error));
-                } else {
-                    ist >> param;
-                    if (ist.fail()) {
-                        app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing or wrong value", Response::Error));
-                    }
-                    else {
-                        // set default output /////////////////////////////
-                        string output_dev = "default output";
-                        std::string test = ist.str();
-                        const std::string& soundCard = ist.str().substr(output_dev.length()+1, ist.str().length());
+            LinphoneAudioDevice * pDevice_Output;
+            LinphoneAudioDevice * pDevice_Input;
+            LinphoneAudioDevice * pDevice_Ringer;
 
-                        bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
-                        LinphoneAudioDevice * pDevice = app->findAudioDevice(deviceIt, soundCard);
-                        if(pDevice == nullptr) {
-                            ost = "Try to set card: " + soundCard + " default output was not found in device list";
-                            app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Error));
-                        }
-                        else {
-                            linphone_core_set_default_output_audio_device(app->getCore(), pDevice);
-                            bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
+            // search
+            if(param == "output") {
+                string output_dev = "default output";
+                const std::string& soundCard_Output = ist.str().substr(output_dev.length()+1, ist.str().length());
 
-                            // get default output card
-                            const LinphoneAudioDevice *output_device = linphone_core_get_default_output_audio_device(app->getCore());
-                            ost = app->getJsonForAudioDevice(output_device);
+                pDevice_Output = getLinphoneAudioDevice(app, soundCard_Output);
 
-                            if (!ist.str().empty() && ist.str() != "") {
-                                app->sendResponse(
-                                        Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Ok));
-                            }
-                            param = output_dev;
-                        }
-                    }
+                if(pDevice_Output == nullptr)  {
+                    return;
                 }
+                linphone_core_set_default_output_audio_device(app->getCore(), pDevice_Output);
             }
-            if(param == "input"){
-                if (ist.fail()) {
-                    app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing or wrong value", Response::Error));
-                } else {
-                    // search card to set default input /////////////////////////////
-                    string input_dev = "default input";
-                    const std::string& soundCard = ist.str().substr(input_dev.length()+1, ist.str().length());
+            else if(param == "input") {
+                string input_dev = "default input";
+                const std::string& soundCard_Input = ist.str().substr(input_dev.length()+1, ist.str().length());
 
-                    bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
-                    LinphoneAudioDevice * pDevice = app->findAudioDevice(deviceIt, soundCard);
-                    if(pDevice == nullptr) {
-                        ost = "Try to set card: " + soundCard + " for default input was not found in device list";
-                        app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Error));
-                    }
-                    else {
-                        linphone_core_set_default_input_audio_device(app->getCore(), pDevice);
-                        bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
-
-                        // get default input card
-                        const LinphoneAudioDevice *input_device = linphone_core_get_default_input_audio_device(app->getCore());
-
-                        ost = app->getJsonForAudioDevice(input_device);
-
-                        if (!ist.str().empty() && ist.str() != "") {
-                            app->sendResponse(
-                                    Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Ok));
-                        }
-                        param = input_dev;
-                    }
+                pDevice_Input = getLinphoneAudioDevice(app, soundCard_Input);
+                if(pDevice_Input == nullptr)  {
+                    return;
                 }
+                linphone_core_set_default_input_audio_device(app->getCore(), pDevice_Input);;
             }
-            if(param == "ringer") {
-                if (ist.fail()) {
-                    app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing or wrong value", Response::Error));
-                } else {
-                    string ringer_dev = "default ringer";
-                    // set ringer ( old set device function )
-                    const std::string& soundCard = ist.str().substr(ringer_dev.length()+1, ist.str().length());
-                    linphone_core_set_ringer_device(app->getCore(), soundCard.c_str());
+            else if(param == "ringer") {
+                string ringer_dev = "default ringer";
+                const std::string& soundCard_Ringer = ist.str().substr(ringer_dev.length()+1, ist.str().length());
 
-                    // get ringer
-                    bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
-                    LinphoneAudioDevice * pDevice = app->findAudioDevice(deviceIt, soundCard);
-                    if(pDevice == nullptr) {
-                        ost = "Try to set card: " + soundCard + " for default ringer was not found in device list";
-                        app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Error));
-                    }
-                    else {
-                        ost = app->getJsonForAudioDevice(pDevice);
-                        bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
+                pDevice_Ringer = getLinphoneAudioDevice(app, soundCard_Ringer);
 
-                        if (!ist.str().empty() && ist.str() != "") {
-                            app->sendResponse(
-                                    Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Ok));
-                        }
-                        param = ringer_dev;
-                    }
+                if(pDevice_Ringer == nullptr)  {
+                    return;
                 }
+                linphone_core_set_ringer_device(app->getCore(), linphone_audio_device_get_id(pDevice_Ringer));
             }
+
+            // get...
+            bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
+            vector <std::string> v;
+            while ( deviceIt != NULL ) {
+                LinphoneAudioDevice * pDevice = (LinphoneAudioDevice *) deviceIt->data;
+                std::string vectorStr = "";
+                vectorStr = app->getJsonForAudioDevice(pDevice);
+                v.push_back(vectorStr);
+
+                deviceIt = deviceIt->next;
+            }
+            bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
+
+            std::string soundCards = app->join(v, ", ");
+            ost = "{ \"soundcards\": [" + soundCards + "] }";
+            app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Ok));
         }
     }
     else {
@@ -179,9 +148,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 //set.....
                 string output_dev = "output";
                 const std::string& soundCard = ist.str().substr(ist.str().find(output_dev)+output_dev.length()+1, ist.str().length());
-
-                bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
-                LinphoneAudioDevice * pDevice = app->findAudioDevice(deviceIt, soundCard);
+                LinphoneAudioDevice * pDevice = app->findAudioDevice(soundCard);
                 if ( pDevice == nullptr ) {
                     ost = "Try to set card: " + soundCard +  " for output was not found in device list";
                     string callString;
@@ -194,7 +161,6 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 }
                 //linphone_call_set_output_audio_device(call, app->findAudioDevice(deviceIt, soundCard));
                 linphone_call_set_output_audio_device(call, pDevice);
-                bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
                 ////////////
 
                 const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
@@ -222,9 +188,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 //set.....
                 string input_dev = "input";
                 const std::string& soundCard = ist.str().substr(ist.str().find(input_dev)+input_dev.length()+1, ist.str().length());
-
-                bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
-                LinphoneAudioDevice * pDevice = app->findAudioDevice(deviceIt, soundCard);
+                LinphoneAudioDevice * pDevice = app->findAudioDevice(soundCard);
                 if ( pDevice == nullptr ) {
                     ost = "Try to set card: " + soundCard +  " for input was not found in device list";
                     string callString;
@@ -236,7 +200,6 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                     app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, callString, Response::Error));
                 }
                 linphone_call_set_input_audio_device(call, pDevice);
-                bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
                 ////////////
 
                 const LinphoneAudioDevice *input_device = linphone_call_get_input_audio_device(call);

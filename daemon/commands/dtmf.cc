@@ -34,12 +34,12 @@ DtmfCommand::DtmfCommand() :
 void DtmfCommand::exec(Daemon *app, const string& args) {
 	string digit_str;
 	char digit;
-	char ost[240];
+	ostringstream ost;
 	istringstream ist(args);
 	ist >> digit_str;
 	if (ist.fail()) {
-	    sprintf(ost, "\"Incorrect digit parameter.\"");
-	    app->sendResponse(Response(COMMANDNAME_DTMF, ost, Response::Error));
+	    ost << "Incorrect digit parameter.";
+	    app->sendResponse(Response(COMMANDNAME_DTMF, ost.str(), Response::Error));
 		return;
 	}
 
@@ -50,9 +50,10 @@ void DtmfCommand::exec(Daemon *app, const string& args) {
 		if (call != NULL) {
 			linphone_call_send_dtmf(call, digit);
 		}
-		app->sendResponse(Response(COMMANDNAME_DTMF, "", Response::Ok));
+		ost << "{ " << " }";
+		app->sendResponse(Response(COMMANDNAME_DTMF, ost.str(), Response::Ok));
 	} else {
-	    sprintf(ost, "\"Incorrect digit parameter.\"");
-	    app->sendResponse(Response(COMMANDNAME_DTMF, ost, Response::Error));
+	    ost << "Incorrect digit parameter.";
+	    app->sendResponse(Response(COMMANDNAME_DTMF, ost.str(), Response::Error));
 	}
 }

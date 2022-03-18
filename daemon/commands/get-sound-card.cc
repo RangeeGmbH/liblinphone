@@ -66,33 +66,12 @@ void GetSoundCard::exec(Daemon *app, const string &args) {
 
         string ringer_dev = "default ringer";
         // get ringer
-        const std::string& soundCard =linphone_core_get_ringer_device(app->getCore());
-        if(soundCard.find("Unknown") != std::string::npos) {
-            std::string soundCardStrDriver = "";
-            std::string soundCardStrName = "";
-            std::string soundCardStrDriverAndName = "";
-            soundCardStrDriverAndName = soundCard;
-            soundCardStrDriver = soundCardStrDriverAndName.substr(0, soundCard.find("Unknown")-1);
-            soundCardStrName = soundCardStrDriverAndName.substr(soundCard.find("Unknown")+7, soundCardStrDriverAndName.length());
-            soundCardStrDriverAndName = soundCardStrDriver + soundCardStrName;
-            bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
-            ost += "\"ringer\": " + app->getJsonForAudioDevice(app->findAudioDevice(deviceIt, soundCardStrDriverAndName)) + " }";
-            bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
+        const std::string& idString_Ringer = linphone_core_get_ringer_device(app->getCore());
+        ost += "\"ringer\": " + app->getJsonForAudioDevice(app->findAudioDevice(idString_Ringer)) +  "  } ";
 
-            if (!ist.str().empty() && ist.str() != "") {
-                app->sendResponse(
-                        Response(COMMANDNAME_GETSOUNDCARD, ost, Response::Ok));
-            }
-        }
-        else {
-            bctbx_list_t * deviceIt = linphone_core_get_extended_audio_devices(app->getCore());
-            ost += "\"ringer\": " + app->getJsonForAudioDevice(app->findAudioDevice(deviceIt, soundCard)) +  "  } ";
-            bctbx_list_free_with_data(deviceIt, (void (*)(void *))linphone_audio_device_unref);
-
-            if (!ist.str().empty() && ist.str() != "") {
-                app->sendResponse(
-                        Response(COMMANDNAME_GETSOUNDCARD, ost, Response::Ok));
-            }
+        if (!ist.str().empty() && ist.str() != "") {
+            app->sendResponse(
+                    Response(COMMANDNAME_GETSOUNDCARD, ost, Response::Ok));
         }
     }
     else {

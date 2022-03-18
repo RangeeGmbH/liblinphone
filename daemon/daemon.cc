@@ -193,14 +193,23 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
     float inputVolumeFloat = -1;
     std::string output_Device_Str = "";
     std::string input_Device_Str = "";
+    const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
+    if( output_device == nullptr ) {
+        output_Device_Str = "\"\"";
+    }
+    else  {
+        output_Device_Str = getJsonForAudioDevice(output_device);
+    }
+    const LinphoneAudioDevice *input_device = linphone_call_get_input_audio_device(call);
+    if( input_device == nullptr ) {
+        input_Device_Str = "\"\"";
+    }
+    else  {
+        input_Device_Str = getJsonForAudioDevice(output_device);
+    }
     if (call_state == LinphoneCallState::LinphoneCallStateStreamsRunning) {
         outputVolumeFloat = linphone_call_get_speaker_volume_gain(call);
         inputVolumeFloat = linphone_call_get_microphone_volume_gain(call);
-
-        const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
-        output_Device_Str = getJsonForAudioDevice(output_device);
-        const LinphoneAudioDevice *input_device = linphone_call_get_input_audio_device(call);
-        input_Device_Str = getJsonForAudioDevice(input_device);
     }
 
     ostringstream ost;
@@ -210,7 +219,7 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
         << ", \"duration\":" << linphone_call_get_duration(call) << ", \"inConference\": " << flag
         << ", \"errorMessage\": " << "\"" << errorMessage << "\"" <<
         ", \"volumes\": { \"output\": " << outputVolumeFloat << ", \"input\": " << inputVolumeFloat << " }"
-        << ", \"soundcards\": { \"output\": " << "\"" << output_Device_Str << "\"" << ", \"input\": " << "\"" << input_Device_Str << "\"" << " } }";
+        << ", \"soundcards\": { \"output\": " << output_Device_Str << ", \"input\": " << input_Device_Str << " } }";
     return ost.str();
 }
 
@@ -488,29 +497,91 @@ int Daemon::updateCallId(LinphoneCall *call) {
     return val;
 }
 
-LinphoneAudioDevice *Daemon::findAudioDevice(bctbx_list_t *deviceList, std::string driverAndName) {
+LinphoneAudioDevice *Daemon::findAudioDevice(std::string idString) {
+    bctbx_list_t * deviceList = linphone_core_get_extended_audio_devices(getCore());
     LinphoneAudioDevice *pDevice = NULL;
     while (deviceList != NULL) {
         LinphoneAudioDevice *pDevice = (LinphoneAudioDevice *) deviceList->data;
-        std::string deviceName(linphone_audio_device_get_device_name(pDevice));
-        std::string driverName(linphone_audio_device_get_driver_name(pDevice));
-        std::string deviceAndDriver = driverName + ": " + deviceName;
-        if (deviceAndDriver == driverAndName) {
+        if (linphone_audio_device_get_id(pDevice) == idString) {
+            bctbx_list_free_with_data(deviceList, (void (*)(void *))linphone_audio_device_unref);
             return pDevice;
         }
 
         deviceList = deviceList->next;
     }
+    bctbx_list_free_with_data(deviceList, (void (*)(void *))linphone_audio_device_unref);
     return pDevice;
+}
+
+std::string Daemon::linphoneAudioDeviceTypeToString(LinphoneAudioDeviceType linphoneAudioDeviceType) const {
+    std::string type;
+    switch (linphoneAudioDeviceType) {
+        case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeMicrophone:
+            type = "Microphone";
+            break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeEarpiece:
+                type = "Earpiece";
+            break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeSpeaker:
+                type = "Speaker";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeBluetooth:
+                type = "Bluetooth";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeBluetoothA2DP:
+                type = "BluetoothA2DP";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeTelephony:
+                type = "Telephony";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeAuxLine:
+                type = "AuxLine";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeGenericUsb:
+                type = "Generic USB";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeHeadset:
+                type = "Headset";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeHeadphones:
+                type = "Headphones";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeUnknown:
+                default:
+                type = "Unknown";
+                break;
+    }
+    return type;
 }
 
 
 std::string Daemon::getJsonForAudioDevice(const LinphoneAudioDevice *device) {
     ostringstream ost;
+    std::string deviceId(linphone_audio_device_get_id(device));
+    std::string deviceType(linphoneAudioDeviceTypeToString(linphone_audio_device_get_type(device)));
     std::string deviceName(linphone_audio_device_get_device_name(device));
     std::string driverName(linphone_audio_device_get_driver_name(device));
     std::string canPlay;
     std::string canRecord;
+    /*std::string isDefaultOutputString;
+    std::string isDefaultInputString;
+    std::string isDefaultRingerString;*/
+
+    bool isDefaultOutput = false;
+    bool isDefaultInput = false;
+    bool isDefaultRinger = false;
+
+    const LinphoneAudioDevice *output_device = linphone_core_get_default_output_audio_device(getCore());
+    isDefaultOutput = device == output_device;
+
+    const LinphoneAudioDevice *input_device = linphone_core_get_default_input_audio_device(getCore());
+    isDefaultInput = device == input_device;
+
+    const LinphoneAudioDevice *ringer_device;
+    const std::string& ringer_Device_Str = linphone_core_get_ringer_device(getCore());
+    ringer_device = findAudioDevice(ringer_Device_Str);
+    isDefaultRinger = device == ringer_device;
+
     switch (linphone_audio_device_get_capabilities(device)) {
         case LinphoneAudioDeviceCapabilityAll:
             canPlay = "true";
@@ -526,9 +597,10 @@ std::string Daemon::getJsonForAudioDevice(const LinphoneAudioDevice *device) {
             break;
     }
     std::string canPlayStrTrue = "true";
-    ost << "{ \"driver\": " << "\"" << driverName.c_str() << "\"" << ", \"name\": " << "\"" << deviceName.c_str()
-        << "\""
-        << ", \"canRecord\": " << canRecord << ", \"canPlay\": " << canPlay << " }";
+    ost << "{ \"id\": " << "\"" << deviceId << "\"" << ", \"driver\": " << "\"" << driverName.c_str() << "\"" << ", \"type\": " << "\""
+    << deviceType << "\"" << ", \"name\": " << "\"" << deviceName.c_str() << "\""
+    << ", \"canRecord\": " << canRecord << ", \"canPlay\": " << canPlay
+    << ", \"isDefaultOutput\": " <<  (isDefaultOutput ? "true" : "false") << ", \"isDefaultInput\": " << (isDefaultInput ? "true" : "false") << ", \"isDefaultRinger\": " << (isDefaultRinger ? "true" : "false") << " }";
     return ost.str();
 }
 

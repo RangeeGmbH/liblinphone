@@ -36,10 +36,6 @@ void SoundcardCommand::exec(Daemon *app, const string &args) {
     vector <std::string> v;
     while ( deviceIt != NULL ) {
         LinphoneAudioDevice * pDevice = (LinphoneAudioDevice *) deviceIt->data;
-        std::string deviceName(linphone_audio_device_get_device_name(pDevice));
-        std::string driverName(linphone_audio_device_get_driver_name(pDevice));
-        std::string deviceAndDriver = driverName + ": " + deviceName;
-
         std::string vectorStr = "";
         vectorStr = app->getJsonForAudioDevice(pDevice);
         v.push_back(vectorStr);
