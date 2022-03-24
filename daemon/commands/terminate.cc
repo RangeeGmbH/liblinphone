@@ -73,9 +73,20 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             return;
         }
         else{
+            string callString;
+            callString += "{ \"isAll\": true, \"calls\": [ ";
+            for (int index = 0; index < ms_list_size(elem); index++) {
+                LinphoneCall* lCall = (LinphoneCall*) bctbx_list_nth_data(elem,index);
+                callString += app->getJsonForCall(lCall);
+
+                if(index < ms_list_size(elem)-1) {
+                    callString += ",";
+                }
+            }
+            callString += " ] }";
             LinphoneCore *lc = app->getCore();
             linphone_core_terminate_all_calls(lc);
-            app->sendResponse(Response(COMMANDNAME_TERMINATE, "", Response::Ok));
+            app->sendResponse(Response(COMMANDNAME_TERMINATE, callString, Response::Ok));
         }
         return;
     }

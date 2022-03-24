@@ -148,29 +148,19 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 //set.....
                 string output_dev = "output";
                 const std::string& soundCard = ist.str().substr(ist.str().find(output_dev)+output_dev.length()+1, ist.str().length());
-                LinphoneAudioDevice * pDevice = app->findAudioDevice(soundCard);
-                if ( pDevice == nullptr ) {
-                    ost = "Try to set card: " + soundCard +  " for output was not found in device list";
-                    string callString;
-                    callString += "{ \"isAll\": false, \"calls\": [ ";
-                    callString += app->getJsonForCall(call);
-                    callString += " ] ";
-                    callString += ost;
-                    callString += " }";
-                    app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, callString, Response::Error));
+                LinphoneAudioDevice * pDevice;
+                pDevice = getLinphoneAudioDevice(app,soundCard);
+                if(pDevice == nullptr)  {
+                    return;
                 }
-                //linphone_call_set_output_audio_device(call, app->findAudioDevice(deviceIt, soundCard));
                 linphone_call_set_output_audio_device(call, pDevice);
                 ////////////
-
-                const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
-                ost = app->getJsonForAudioDevice(output_device);
+                //get.....
 
                 string callString;
                 callString += "{ \"isAll\": false, \"calls\": [ ";
                 callString += app->getJsonForCall(call);
-                callString += " ] ";
-                callString += ost;
+                callString += " ]";
                 callString += " }";
 
                 if (!ist.str().empty() && ist.str() != "") {
@@ -188,28 +178,18 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 //set.....
                 string input_dev = "input";
                 const std::string& soundCard = ist.str().substr(ist.str().find(input_dev)+input_dev.length()+1, ist.str().length());
-                LinphoneAudioDevice * pDevice = app->findAudioDevice(soundCard);
-                if ( pDevice == nullptr ) {
-                    ost = "Try to set card: " + soundCard +  " for input was not found in device list";
-                    string callString;
-                    callString += "{ \"isAll\": false, \"calls\": [ ";
-                    callString += app->getJsonForCall(call);
-                    callString += " ] ";
-                    callString += ost;
-                    callString += " }";
-                    app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, callString, Response::Error));
+                LinphoneAudioDevice * pDevice;
+                pDevice = getLinphoneAudioDevice(app,soundCard);
+                if(pDevice == nullptr)  {
+                    return;
                 }
-                linphone_call_set_input_audio_device(call, pDevice);
                 ////////////
-
-                const LinphoneAudioDevice *input_device = linphone_call_get_input_audio_device(call);
-                ost = app->getJsonForAudioDevice(input_device);
+                //get....
 
                 string callString;
                 callString += "{ \"isAll\": false, \"calls\": [ ";
                 callString += app->getJsonForCall(call);
-                callString += " ] ";
-                callString += ost;
+                callString += " ]";
                 callString += " }";
 
                 if (!ist.str().empty() && ist.str() != "") {
