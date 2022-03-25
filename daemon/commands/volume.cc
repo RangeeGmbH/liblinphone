@@ -54,9 +54,16 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
     }
     if(param == "set") {
         ist >> param;
-        if(param == "default"){
+        if(param == "default") {
             ist >> inputVolume;
             ist >> outputVolume;
+            if(inputVolume > 1) {
+                inputVolume = 1.00;
+            }
+            if(outputVolume > 1) {
+                outputVolume = 1.00;
+            }
+
             //output
             app->getCore()->sound_conf.soft_play_lev=outputVolume;
             if (linphone_core_ready(app->getCore())){
@@ -77,6 +84,13 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
             callId = param;
             ist >> inputVolume;
             ist >> outputVolume;
+
+            if(inputVolume > 1) {
+                inputVolume = 1.00;
+            }
+            if(outputVolume > 1) {
+                outputVolume = 1.00;
+            }
 
             if(callId.empty()) {
                 ost << "Missing parameter.";
