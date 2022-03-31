@@ -2721,6 +2721,8 @@ LINPHONE_PUBLIC void linphone_core_reload_sound_devices(LinphoneCore *core);
 **/
 LINPHONE_PUBLIC void linphone_core_set_mic_gain_db(LinphoneCore *core, float level);
 
+LINPHONE_PUBLIC void linphone_core_set_ring_gain_db (LinphoneCore *lc, float gaindb);
+
 /**
  * Get microphone gain in db.
  * @param core #LinphoneCore object @notnil

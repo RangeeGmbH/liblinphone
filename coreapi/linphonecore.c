@@ -5120,6 +5120,21 @@ void linphone_core_set_mic_gain_db (LinphoneCore *lc, float gaindb){
 	audio_stream_set_mic_gain_db(st,gain);
 }
 
+void linphone_core_set_ring_gain_db (LinphoneCore *lc, float gaindb) {
+    RingStream *st;
+    LinphoneRingtonePlayer *linphoneRingtonePlayer;
+    linphoneRingtonePlayer = linphone_core_get_ringtoneplayer(lc);
+
+    st = linphone_ringtoneplayer_get_stream(linphoneRingtonePlayer);
+    if (st == NULL) {
+        ms_message("linphone_core_set_ring_gain_db: LinphoneRingtonePlayer Stream");
+        return;
+    }
+    else {
+        ring_stream_set_sound_card_output_gain(st,gaindb);
+    }
+}
+
 bool_t linphone_core_get_disable_record_on_mute(LinphoneCore *lc) {
 	return lc->sound_conf.disable_record_on_mute;
 }
