@@ -224,19 +224,6 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
 }
 
 CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
-    float outputVolumeFloat = -1;
-    float inputVolumeFloat = -1;
-    float ringerVolumeFloat = -1;
-    if (state == LinphoneCallState::LinphoneCallStateStreamsRunning) {
-        outputVolumeFloat = linphone_config_get_float(daemon->getCore()->config, "sound", "output_volume", 0);
-        linphone_call_set_speaker_volume_gain(call, outputVolumeFloat);
-        inputVolumeFloat = linphone_config_get_float(daemon->getCore()->config, "sound", "input_volume", 0);
-        linphone_call_set_microphone_volume_gain(call, inputVolumeFloat);
-    }
-    if (state == LinphoneCallState::LinphoneCallIncomingReceived) {
-        ringerVolumeFloat = linphone_config_get_float(daemon->getCore()->config, "sound", "ringer_volume", 0);
-        linphone_core_set_ring_gain_db(daemon->getCore(), ringerVolumeFloat/100);
-    }
     string callStr;
     callStr = "{ \"calls\": [ ";
     callStr += daemon->getJsonForCall(call);

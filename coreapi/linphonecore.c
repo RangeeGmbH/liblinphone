@@ -1475,8 +1475,9 @@ static void sound_config_read(LinphoneCore *lc) {
 	linphone_core_enable_echo_limiter(lc, !!linphone_config_get_int(lc->config,"sound","echolimiter",0));
 	linphone_core_enable_agc(lc, !!linphone_config_get_int(lc->config,"sound","agc",0));
 
-	linphone_core_set_playback_gain_db (lc,linphone_config_get_float(lc->config,"sound","playback_gain_db",0));
-	linphone_core_set_mic_gain_db (lc,linphone_config_get_float(lc->config,"sound","mic_gain_db",0));
+	linphone_core_set_playback_gain_db (lc,linphone_config_get_float(lc->config,"sound","playback_gain_db",1.0f));
+	linphone_core_set_mic_gain_db (lc,linphone_config_get_float(lc->config,"sound","mic_gain_db",1.0f));
+	linphone_core_set_ringer_gain_db (lc,linphone_config_get_float(lc->config,"sound","ringer_gain_db",1.0f));
 	linphone_core_set_disable_record_on_mute(lc, linphone_config_get_bool(lc->config,"sound","disable_record_on_mute", FALSE));
 	linphone_core_set_remote_ringback_tone (lc,linphone_config_get_string(lc->config,"sound","ringback_tone",NULL));
 
@@ -5120,19 +5121,26 @@ void linphone_core_set_mic_gain_db (LinphoneCore *lc, float gaindb){
 	audio_stream_set_mic_gain_db(st,gain);
 }
 
-void linphone_core_set_ring_gain_db (LinphoneCore *lc, float gaindb) {
+void linphone_core_set_ringer_gain_db (LinphoneCore *lc, float gaindb) {
     RingStream *st;
     LinphoneRingtonePlayer *linphoneRingtonePlayer;
     linphoneRingtonePlayer = linphone_core_get_ringtoneplayer(lc);
 
+    lc->sound_conf.soft_ring_lev=gaindb;
+    if (linphone_core_ready(lc)){
+        linphone_config_set_float(lc->config,"sound","ringer_gain_db",lc->sound_conf.soft_ring_lev);
+    }
+
     st = linphone_ringtoneplayer_get_stream(linphoneRingtonePlayer);
     if (st == NULL) {
-        ms_message("linphone_core_set_ring_gain_db: LinphoneRingtonePlayer Stream");
+        ms_message("linphone_core_set_ringer_gain_db: No LinphoneRingtonePlayer stream");
         return;
     }
-    else {
-        ring_stream_set_sound_card_output_gain(st,gaindb);
-    }
+    ring_stream_set_output_volume(st,gaindb);
+}
+
+float linphone_core_get_ringer_gain_db(LinphoneCore *lc) {
+    return lc->sound_conf.soft_ring_lev;
 }
 
 bool_t linphone_core_get_disable_record_on_mute(LinphoneCore *lc) {
@@ -7076,6 +7084,7 @@ static void sound_config_uninit(LinphoneCore *lc)
 	linphone_config_set_string(lc->config,"sound","remote_ring",config->remote_ring);
 	linphone_config_set_float(lc->config,"sound","playback_gain_db",config->soft_play_lev);
 	linphone_config_set_float(lc->config,"sound","mic_gain_db",config->soft_mic_lev);
+	linphone_config_set_float(lc->config,"sound","ringer_gain_db",config->soft_ring_lev);
 	linphone_config_set_bool(lc->config,"sound","disable_record_on_mute",config->disable_record_on_mute);
 
 	if (config->local_ring) ms_free(config->local_ring);

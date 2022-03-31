@@ -125,14 +125,19 @@ void ToneManager::stopRingbackTone() {
 }
 
 void ToneManager::startRingtone() {
-	LinphoneCore *lc = getCore().getCCore();
-	lInfo() << "[ToneManager] " << __func__;
-	mStats.number_of_startRingtone++;
-	MSSndCard *ringcard = lc->sound_conf.lsd_card ? lc->sound_conf.lsd_card : lc->sound_conf.ring_sndcard;
-	if (ringcard) {
-		ms_snd_card_set_stream_type(ringcard, MS_SND_CARD_STREAM_RING);
-		linphone_ringtoneplayer_start(lc->factory, lc->ringtoneplayer, ringcard, lc->sound_conf.local_ring, 2000);
-	}
+    LinphoneCore *lc = getCore().getCCore();
+    lInfo() << "[ToneManager] " << __func__;
+    mStats.number_of_startRingtone++;
+    MSSndCard *ringcard = lc->sound_conf.lsd_card ? lc->sound_conf.lsd_card : lc->sound_conf.ring_sndcard;
+    if (ringcard) {
+        ms_snd_card_set_stream_type(ringcard, MS_SND_CARD_STREAM_RING);
+        linphone_ringtoneplayer_start(lc->factory, lc->ringtoneplayer, ringcard, lc->sound_conf.local_ring, 2000);
+
+        RingStream *ringstream = linphone_ringtoneplayer_get_stream(linphone_core_get_ringtoneplayer(lc));
+        if (ringstream != NULL) {
+            ring_stream_set_output_volume(ringstream, lc->sound_conf.soft_ring_lev);
+        }
+    }
 }
 
 void ToneManager::stopRingtone(){

@@ -2721,8 +2721,6 @@ LINPHONE_PUBLIC void linphone_core_reload_sound_devices(LinphoneCore *core);
 **/
 LINPHONE_PUBLIC void linphone_core_set_mic_gain_db(LinphoneCore *core, float level);
 
-LINPHONE_PUBLIC void linphone_core_set_ring_gain_db (LinphoneCore *lc, float gaindb);
-
 /**
  * Get microphone gain in db.
  * @param core #LinphoneCore object @notnil
@@ -2730,6 +2728,22 @@ LINPHONE_PUBLIC void linphone_core_set_ring_gain_db (LinphoneCore *lc, float gai
  * @ingroup media_parameters
 **/
 LINPHONE_PUBLIC float linphone_core_get_mic_gain_db(LinphoneCore *core);
+
+/**
+ * Allow to control ringer level: gain in db.
+ * @param core #LinphoneCore object @notnil
+ * @param level The new ringer level
+ * @ingroup media_parameters
+**/
+LINPHONE_PUBLIC void linphone_core_set_ringer_gain_db (LinphoneCore *lc, float gaindb);
+
+/**
+ * Get ringer gain in db.
+ * @param core #LinphoneCore object @notnil
+ * @return The current microphone gain
+ * @ingroup media_parameters
+**/
+LINPHONE_PUBLIC float linphone_core_get_ringer_gain_db (LinphoneCore *lc);
 
 /**
  * Calling this method with disable=true will cause the microhone to be completely deactivated when muted,

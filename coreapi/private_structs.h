@@ -246,9 +246,10 @@ struct sound_config
 	struct _MSSndCard * lsd_card; /* dummy playback card for Linphone Sound Daemon extension */
 	const char **cards;
 	int latency;	/* latency in samples of the current used sound device */
-	float soft_play_lev; /*playback gain in db.*/
-	float soft_mic_lev; /*mic gain in db.*/
-	char rec_lev;
+    float soft_play_lev; /*playback gain in db.*/
+    float soft_mic_lev; /*mic gain in db.*/
+    float soft_ring_lev; /*ringer gain in db.*/
+    char rec_lev;
 	char play_lev;
 	char ring_lev;
 	char media_lev;

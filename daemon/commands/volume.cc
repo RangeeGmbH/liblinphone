@@ -32,13 +32,14 @@
 using namespace std;
 
 VolumeCommand::VolumeCommand() :
-DaemonCommand("volume", "volume <call-iD> [<value for speaker volume> <value for record volume>]",
-              "set or get the volume around value for speaker volume and record volume") {
+        DaemonCommand("volume", "volume <call-iD> [<value for speaker volume> <value for record volume>]",
+                      "set or get the volume around value for speaker volume and record volume") {
     addExample(new DaemonCommandExample("volume 1",
                                         "Status: OK\n"));
     addExample(new DaemonCommandExample("volume 1 0.xx or 1.00 0.xx or 1.00",
                                         "Status: OK\n"));
 }
+
 void VolumeCommand::exec(Daemon *app, const string &args) {
     string callId;
     float inputVolume;
@@ -53,61 +54,55 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
     if (ist.fail()) {
         app->sendResponse(Response(COMMANDNAME_VOLUME, "Missing parameter", Response::Error));
     }
-    if(param == "set") {
+    if (param == "set") {
         ist >> param;
-        if(param == "default") {
-            ist >> inputVolume;
+        if (param == "default") {
             ist >> outputVolume;
+            ist >> inputVolume;
             ist >> ringerVolume;
-            if(inputVolume > 1) {
-                inputVolume = 1.00;
+            if (outputVolume > 1.0f) {
+                outputVolume = 1.0f;
             }
-            if(outputVolume > 1) {
-                outputVolume = 1.00;
+            if (inputVolume > 1.0f) {
+                inputVolume = 1.0f;
             }
-            if(ringerVolume > 1) {
-                ringerVolume = 1.00;
-            }
-
-            //output
-            app->getCore()->sound_conf.soft_play_lev=outputVolume;
-            if (linphone_core_ready(app->getCore())){
-                linphone_config_set_float(app->getCore()->config,"sound","output_volume",app->getCore()->sound_conf.soft_play_lev);
-            }
-            //input
-            app->getCore()->sound_conf.soft_mic_lev=inputVolume;
-            if (linphone_core_ready(app->getCore())){
-                linphone_config_set_float(app->getCore()->config,"sound","input_volume",app->getCore()->sound_conf.soft_mic_lev);
-            }
-            //ringer
-            int ringerVolumeAsInt;
-            ringerVolumeAsInt = static_cast<int>(ringerVolume*100);
-
-            app->getCore()->sound_conf.ring_lev=(char)ringerVolumeAsInt;
-            if (linphone_core_ready(app->getCore())){
-                linphone_config_set_float(app->getCore()->config,"sound","ringer_volume",app->getCore()->sound_conf.ring_lev);
+            if (ringerVolume > 1.0f) {
+                ringerVolume = 1.0f;
             }
 
-            ost << "{ \"isdefault\": true, \"volumes\" : {" << "\"output\": " <<  linphone_config_get_float(app->getCore()->config,"sound","output_volume",0)
-            << ", \"input\": " << linphone_config_get_float(app->getCore()->config,"sound","input_volume",0)
-            << ", \"ringer\": " << (linphone_config_get_float(app->getCore()->config, "sound", "ringer_volume", 0)/100) << "  }  }";
+            if (linphone_core_ready(app->getCore())) {
+                //output
+                linphone_core_set_playback_gain_db(app->getCore(), outputVolume);
+
+                //input
+                linphone_core_set_mic_gain_db(app->getCore(), inputVolume);
+
+                //ringer
+                linphone_core_set_ringer_gain_db(app->getCore(), ringerVolume);
+            }
+
+            ost << "{ \"isdefault\": true, \"volumes\": {"
+                << "\"output\": " << linphone_core_get_playback_gain_db(app->getCore())
+                << ", \"input\": " << linphone_core_get_mic_gain_db(app->getCore())
+                << ", \"ringer\": " << linphone_core_get_ringer_gain_db(app->getCore())
+                << " } }";
 
             app->sendResponse(Response(COMMANDNAME_VOLUME, ost.str(), Response::Ok));
         }
-        if(param == "call"){
+        if (param == "call") {
             ist >> param;
             callId = param;
             ist >> inputVolume;
             ist >> outputVolume;
 
-            if(inputVolume > 1) {
-                inputVolume = 1.00;
+            if (inputVolume > 1) {
+                inputVolume = 1.0f;
             }
-            if(outputVolume > 1) {
-                outputVolume = 1.00;
+            if (outputVolume > 1) {
+                outputVolume = 1.0f;
             }
 
-            if(callId.empty()) {
+            if (callId.empty()) {
                 ost << "Missing parameter.";
                 std::string commandName = COMMANDNAME_VOLUME;
                 app->sendResponse(Response(commandName, ost.str(), Response::Error));
@@ -127,7 +122,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
             outputVolume = linphone_call_get_speaker_volume_gain(call);
             inputVolume = linphone_call_get_microphone_volume_gain(call);
 
-            if(outputVolume >=0.0 && inputVolume >=0.0) {
+            if (outputVolume >= 0.0f && inputVolume >= 0.0f) {
                 std::string setCall;
                 setCall = "{ \"isDefault\": false, \"call\": ";
                 setCall += app->getJsonForCall(call);
@@ -136,17 +131,21 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
             }
         }
     }
-    if(param == "get") {
+    if (param == "get") {
         ist >> param;
-        if(param == "default") {
-            ost << "{ \"isdefault\": true, \"volumes\" : {" << "\"output\": " <<  linphone_config_get_float(app->getCore()->config,"sound","output_volume",0)
-            << ", \"input\": " << linphone_config_get_float(app->getCore()->config,"sound","input_volume",0)
-            << ", \"ringer\": " << (linphone_config_get_float(app->getCore()->config, "sound", "ringer_volume", 0)/100) << "  }  }";
+        if (param == "default") {
+            ost << "{ \"isdefault\": true, \"volumes\": {"
+            << "\"output\": " << linphone_core_get_playback_gain_db(app->getCore())
+            << ", \"input\": " << linphone_core_get_mic_gain_db(app->getCore())
+            << ", \"ringer\": " << linphone_core_get_ringer_gain_db(app->getCore())
+            << " } }";
+
+            app->sendResponse(Response(COMMANDNAME_VOLUME, ost.str(), Response::Ok));
         }
-        if(param == "call") {
+        if (param == "call") {
             ist >> param;
             callId = param;
-            if(callId.empty()) {
+            if (callId.empty()) {
                 ost << "Missing parameter.";
                 std::string commandName = COMMANDNAME_VOLUME;
                 app->sendResponse(Response(commandName, ost.str(), Response::Error));
@@ -163,7 +162,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
             outputVolume = linphone_call_get_speaker_volume_gain(call);
             inputVolume = linphone_call_get_microphone_volume_gain(call);
 
-            if(outputVolume >=0.0 && inputVolume >=0.0) {
+            if (outputVolume >= 0.0f && inputVolume >= 0.0f) {
                 std::string getCALL;
                 getCALL = "{ \"isDefault\": false, \"call\": ";
                 getCALL += app->getJsonForCall(call);
