@@ -41,8 +41,6 @@ LINPHONE_BEGIN_NAMESPACE
 int CorePrivate::addCall (const shared_ptr<Call> &call) {
 	L_Q();
 	L_ASSERT(call);
-	if (!canWeAddCall())
-		return -1;
 
 	if (!hasCalls()){
 		/* 
