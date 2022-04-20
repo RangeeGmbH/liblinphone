@@ -5103,7 +5103,6 @@ void linphone_core_set_ring_level(LinphoneCore *lc, int level){
 void linphone_core_set_mic_gain_db (LinphoneCore *lc, float gaindb){
 	float gain=gaindb;
 	LinphoneCall *call=linphone_core_get_current_call (lc);
-	AudioStream *st;
 
 	lc->sound_conf.soft_mic_lev=gaindb;
 
@@ -5111,11 +5110,11 @@ void linphone_core_set_mic_gain_db (LinphoneCore *lc, float gaindb){
 		linphone_config_set_float(lc->config,"sound","mic_gain_db",lc->sound_conf.soft_mic_lev);
 	}
 
-	if (!call || !(st = reinterpret_cast<AudioStream *>(linphone_call_get_stream(call, LinphoneStreamTypeAudio)))) {
+	if (!call) {
 		ms_message("linphone_core_set_mic_gain_db(): no active call.");
 		return;
 	}
-	audio_stream_set_mic_gain_db(st,gain);
+	linphone_call_set_microphone_volume_gain(call,gain);
 }
 
 void linphone_core_set_ringer_gain_db (LinphoneCore *lc, float gaindb) {
@@ -5159,18 +5158,17 @@ float linphone_core_get_mic_gain_db(LinphoneCore *lc) {
 void linphone_core_set_playback_gain_db (LinphoneCore *lc, float gaindb){
 	float gain=gaindb;
 	LinphoneCall *call=linphone_core_get_current_call (lc);
-	AudioStream *st;
 
 	lc->sound_conf.soft_play_lev=gaindb;
 	if (linphone_core_ready(lc)){
 		linphone_config_set_float(lc->config,"sound","playback_gain_db",lc->sound_conf.soft_play_lev);
 	}
 
-	if (!call || !(st = reinterpret_cast<AudioStream *>(linphone_call_get_stream(call, LinphoneStreamTypeAudio)))) {
+	if (!call) {
 		ms_message("linphone_core_set_playback_gain_db(): no active call.");
 		return;
 	}
-	set_playback_gain_db(st,gain);
+	linphone_call_set_speaker_volume_gain(call, gain);
 }
 
 float linphone_core_get_playback_gain_db(LinphoneCore *lc) {
