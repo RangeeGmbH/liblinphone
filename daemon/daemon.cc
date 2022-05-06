@@ -205,7 +205,7 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
         input_Device_Str = "\"\"";
     }
     else  {
-        input_Device_Str = getJsonForAudioDevice(output_device);
+        input_Device_Str = getJsonForAudioDevice(input_device);
     }
     if (call_state == LinphoneCallState::LinphoneCallStateStreamsRunning) {
         outputVolumeFloat = linphone_call_get_speaker_volume_gain(call);

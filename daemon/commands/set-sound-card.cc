@@ -183,6 +183,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
                 if(pDevice == nullptr)  {
                     return;
                 }
+                linphone_call_set_input_audio_device(call, pDevice);
                 ////////////
                 //get....
 
