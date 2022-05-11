@@ -357,6 +357,7 @@ int SalPresenceOp::subscribe (int expires) {
 	if (request) {
 		belle_sip_message_add_header(BELLE_SIP_MESSAGE(request), BELLE_SIP_HEADER(mEvent));
 		belle_sip_message_add_header(BELLE_SIP_MESSAGE(request), BELLE_SIP_HEADER(belle_sip_header_expires_create(expires)));
+		belle_sip_message_add_header(BELLE_SIP_MESSAGE(request), BELLE_SIP_HEADER(belle_sip_header_accept_create("application", "pidf+xml")));
 	}
 
 	return sendRequest(request);

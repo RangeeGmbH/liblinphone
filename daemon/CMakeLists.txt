@@ -116,6 +116,8 @@ set(DAEMON_SOURCE_FILES
 	commands/get-sound-card.h
 	commands/maxCall.cc
 	commands/maxCall.h
+	commands/friends.cc
+	commands/friends.h
 	daemon.cc
 	daemon.h
 )

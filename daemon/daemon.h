@@ -215,6 +215,11 @@ public:
 	ProxyRegistrationChangedEvent(Daemon *daemon, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
 };
 
+class FriendPresenceStateChangedEvent: public Event {
+public:
+    FriendPresenceStateChangedEvent(Daemon *daemon, LinphoneFriend *_friend);
+};
+
 class PayloadTypeResponse: public Response {
 public:
 	PayloadTypeResponse(LinphoneCore *core, const PayloadType *payloadType, int index = -1, const std::string &prefix = std::string(), bool enabled_status = true);
@@ -264,6 +269,9 @@ public:
 	std::string getJsonForCall(LinphoneCall *call);
 	std::string getJsonForProxys(LinphoneProxyConfig *cfg);
 	std::string getJsonForAudioDevice(const LinphoneAudioDevice* device);
+	std::string getJsonForFriend(LinphoneFriend *_friend);
+	std::string getJsonForPresenceService(const LinphonePresenceModel* model);
+	std::string getJsonForPresenceActivities(const LinphonePresenceModel* model);
 	std::string replaceAll(std::string str, const std::string& from, const std::string& to);
 	std::string replaceEscapeChar(std::string replaceStr);
 	float linearToDb(float volume);
@@ -301,11 +309,13 @@ private:
 	static void dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf);
 	static void messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg);
 	static void proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
+	static void friendPresenceStateChanged(LinphoneCore *lc, LinphoneFriend *_friend);
 	void callStateChanged(LinphoneCall *call, LinphoneCallState state, const char *msg);
 	void callStatsUpdated(LinphoneCall *call, const LinphoneCallStats *stats);
 	void dtmfReceived(LinphoneCall *call, int dtmf);
 	void messageReceived(LinphoneChatRoom *cr, LinphoneChatMessage *msg);
 	void proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
+	void friendPresenceStateChanged(LinphoneFriend *_friend);
 	void execCommand(const std::string &command);
 	std::string readLine(const std::string&, bool*);
 	std::string readPipe();

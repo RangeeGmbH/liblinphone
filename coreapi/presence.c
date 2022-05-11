@@ -452,7 +452,7 @@ LinphonePresenceActivity * linphone_presence_model_get_nth_activity(const Linpho
 	struct _get_activity_st st;
 
 	if ((model == NULL) || (idx >= linphone_presence_model_get_nb_activities(model)))
-		return NULL;
+	    return NULL;
 
 	memset(&st, 0, sizeof(st));
 	st.requested_idx = idx;

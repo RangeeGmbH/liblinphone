@@ -97,6 +97,7 @@
 #include "commands/set-sound-card.h"
 #include "commands/get-sound-card.h"
 #include "commands/maxCall.h"
+#include "commands/friends.h"
 
 
 #include "private.h"
@@ -252,6 +253,18 @@ ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, Lin
     setBody(proxysStr);
     if (linphone_proxy_config_get_state(cfg) == LinphoneRegistrationCleared) {
         linphone_core_clear_all_auth_info(daemon->getCore());
+    }
+}
+
+FriendPresenceStateChangedEvent::FriendPresenceStateChangedEvent(Daemon *daemon, LinphoneFriend *_friend)
+                                                             : Event("friend-presence-state-changed") {
+    if( !daemon->getJsonForFriend(_friend).empty()) {
+        string friendStr;
+        friendStr = "{ \"friend\": ";
+        friendStr += daemon->getJsonForFriend(_friend);
+        friendStr += " }";
+
+        setBody(friendStr);
     }
 }
 
@@ -451,6 +464,7 @@ Daemon::Daemon(const char *config_path, const char *factory_config_path, const c
     vtable.call_stats_updated = callStatsUpdated;
     vtable.dtmf_received = dtmfReceived;
     vtable.message_received = messageReceived;
+    vtable.notify_presence_received = friendPresenceStateChanged;
     mLc = linphone_core_new(&vtable, config_path, factory_config_path, this);
     linphone_core_set_user_data(mLc, this);
     linphone_core_enable_video_capture(mLc, capture_video);
@@ -541,6 +555,96 @@ std::string Daemon::linphoneAudioDeviceTypeToString(LinphoneAudioDeviceType linp
                 break;
     }
     return type;
+}
+
+std::string Daemon::getJsonForPresenceActivities(const LinphonePresenceModel* model) {
+    const char *activityStr = "";
+    std::string vectorStr = "";
+    vector <std::string> v;
+
+    unsigned int nbActivities = linphone_presence_model_get_nb_activities(model);
+    for (unsigned int i = 0; i < nbActivities; i++) {
+        LinphonePresenceActivity *activity = linphone_presence_model_get_nth_activity(model, i);
+        if (activity == NULL) {
+            activityStr = linphone_presence_activity_to_string(activity);
+            vectorStr = activityStr;
+            v.push_back(vectorStr);
+        }
+    }
+
+    ostringstream ost;
+    std::string activities = this->join(v, ", ");
+    if(activities.empty()) {
+        activities = "";
+    }
+
+    ost << "\"activities\": [" << activities.c_str() << "] ";
+
+    return ost.str();
+}
+
+std::string Daemon::getJsonForPresenceService(const LinphonePresenceModel* model) {
+    vector <std::string> v;
+
+    unsigned int nbServices = linphone_presence_model_get_nb_services(model);
+    for (unsigned int i = 0; i < nbServices; i++) {
+        LinphonePresenceService *service = linphone_presence_model_get_nth_service(model, i);
+        if (!service) continue;
+
+        bctbx_list_t *services_descriptions = linphone_presence_service_get_service_descriptions(service);
+        while (services_descriptions) {
+            char *description = (char *)bctbx_list_get_data(services_descriptions);
+            std::string vectorStr = "";
+            vectorStr = description;
+            v.push_back(vectorStr);
+        }
+    }
+    ostringstream ost;
+    std::string descriptions = this->join(v, ", ");
+    if(descriptions.empty()) {
+        descriptions = "";
+    }
+
+    ost << "\"descriptions\": [" << descriptions.c_str() << "] ";
+
+    return ost.str();
+}
+
+std::string Daemon::getJsonForFriend(LinphoneFriend *_friend) {
+    const LinphonePresenceModel* model = linphone_friend_get_presence_model(_friend);
+    if(model == NULL) {
+        return NULL;
+    }
+    else {
+        const LinphoneAddress * address = linphone_friend_get_address(_friend);
+        char *friendAddress = linphone_address_as_string(address);
+
+        const char *note_content = "";
+        const char *isOnlineStr = "";
+
+        // Notes
+        LinphonePresenceNote *note = linphone_presence_model_get_note(model, NULL);
+        if (note) {
+            note_content = linphone_presence_note_get_content(note);
+        }
+
+        // IsOnline
+        switch (linphone_presence_model_is_online(model)) {
+            case true:
+                isOnlineStr = "TRUE";
+                break;
+            case false:
+                isOnlineStr = "FALSE";
+                break;
+        }
+
+        ostringstream ost;
+
+        ost << "{ \"friendAddress\": " << "\"" << friendAddress << "\"" << ", \"Note\": " << "\"" << note_content << "\"" << ", " << this->getJsonForPresenceActivities(model) << ", " << this->getJsonForPresenceService(model) << ", \"IsOnline\": " << isOnlineStr << " }";
+
+        return ost.str();
+    }
+
 }
 
 
@@ -689,6 +793,7 @@ void Daemon::initCommands() {
     mCommands.push_back(new SetSoundCard());
     mCommands.push_back(new VolumeCommand());
     mCommands.push_back(new MaxCallsCommand());
+    mCommands.push_back(new Friends());
     mCommands.push_back(new CallStatusCommand());
     mCommands.push_back(new CallStatsCommand());
     mCommands.push_back(new CallPauseCommand());
@@ -800,6 +905,10 @@ void Daemon::proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistra
     queueEvent(new ProxyRegistrationChangedEvent(this, cfg, cstate, message));
 }
 
+void Daemon::friendPresenceStateChanged(LinphoneFriend *_friend) {
+    queueEvent(new FriendPresenceStateChangedEvent(this, _friend));
+}
+
 
 void Daemon::callStateChanged(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState state, const char *msg) {
     Daemon *app = (Daemon *) linphone_core_get_user_data(lc);
@@ -820,6 +929,11 @@ void Daemon::proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg
                                       const char *message) {
     Daemon *app = (Daemon *) linphone_core_get_user_data(lc);
     app->proxyRegistrationChanged(cfg, cstate, message);
+}
+
+void Daemon::friendPresenceStateChanged(LinphoneCore *lc, LinphoneFriend *_friend) {
+    Daemon *app = (Daemon *) linphone_core_get_user_data(lc);
+    app->friendPresenceStateChanged(_friend);
 }
 
 void Daemon::messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg) {
