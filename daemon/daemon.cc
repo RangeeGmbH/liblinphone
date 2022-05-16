@@ -1275,21 +1275,33 @@ int Daemon::run() {
     mRunning = true;
     startThread();
     while (mRunning) {
-        string line;
         bool eof = false;
         if (mServerFd == (ortp_pipe_t) - 1) {
-            line = readLine(prompt, &eof);
+            // Read from console
+            string line = readLine(prompt, &eof);
             if (!line.empty()) {
 #ifdef HAVE_READLINE
                 add_history(line.c_str());
 #endif
+                execCommand(line + "\n");
             }
         } else {
-            line = readPipe();
+            // Read from pipe and split lines on \n
+            string lines = readPipe();
+            if (!lines.empty()) {
+                lines = replaceAll(lines, "\r\n", "\n");
+
+                size_t pos = 0;
+                string delimiter = "\n";
+                while ((pos = lines.find(delimiter)) != std::string::npos) {
+                    string line = lines.substr(0, pos);
+                    lines.erase(0, pos + delimiter.length());
+
+                    execCommand(line + "\n");
+                }
+            }
         }
-        if (!line.empty()) {
-            execCommand(line);
-        }
+
         if (eof && mRunning) {
             mRunning = false; // ctrl+d
             cout << "Quitting..." << endl;
