@@ -5,11 +5,13 @@
 #include "friends.h"
 
 Friends::Friends() :
-DaemonCommand("friends", "friends",
-              "set or get the maximum number of simultaneous calls Linphone core can manage at a time.") {
-    addExample(new DaemonCommandExample("maxcalls",
+DaemonCommand("friends", "friends add|delete <sip address> | clear",
+              "add or delete a friend with an sip address to an subscriber list ( used for blf ).\n Also the List can be clear") {
+    addExample(new DaemonCommandExample("friends add <sip address>",
                                         "Status: OK\n"));
-    addExample(new DaemonCommandExample("maxcalls 1",
+    addExample(new DaemonCommandExample("friends delete <sip address>",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("friends clear",
                                         "Status: OK\n"));
 }
 
@@ -34,26 +36,26 @@ void Friends::exec(Daemon *app, const string &args) {
                 friendStatus = linphone_friend_list_remove_friend(linphone_core_get_default_friend_list(app->getCore()), _friend);
                 switch (friendStatus) {
                     case LinphoneFriendListStatus::LinphoneFriendListOK:
-                        ost = "\"OK\"";
+                        ost = "\"delete friend with address: " + param + "is Ok\"";
                         app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Ok));
                         break;
                     case LinphoneFriendListStatus::LinphoneFriendListNonExistentFriend:
-                        ost = "\"friend does not exists\"";
+                        ost = "friend with address: " + param + " does not exists";
                         app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Error));
                         break;
                     case LinphoneFriendListStatus::LinphoneFriendListInvalidFriend:
-                        ost = "\"friend is invalid\"";
+                        ost = "friend with address: " +param + " is invalid";
                         app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Error));
                         break;
                 }
             }
             else {
-                ost = "\"can't find LinphoneFriend witch address: " + param + "\"";
+                ost = "can't find LinphoneFriend witch address: " + param;
                 app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Error));
             }
         }
         else {
-            ost = "\"can't create LinphoneAddress: " + param + "\"";
+            ost = "can't create LinphoneAddress: " + param;
             app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Error));
         }
     }
@@ -67,6 +69,10 @@ void Friends::exec(Daemon *app, const string &args) {
 
         // add new friend "default" list to friend lists
         linphone_core_add_friend_list(app->getCore(), lfl);
+
+        //OK
+        ost = "\"clear friend list Ok ( this will stop listen on notify )\"";
+        app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Ok));
     }
     if (param == "add") {
         string friendsName;
@@ -81,7 +87,7 @@ void Friends::exec(Daemon *app, const string &args) {
                 LinphoneFriend *new_friend;
                 new_friend = linphone_core_create_friend_with_address(app->getCore(), param.c_str());
                 if(new_friend == NULL) {
-                    ost = "\"create friend with address: " + param + " failed. \"";
+                    ost = "create friend with address: " + param + " failed.";
                     app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Error));
                 }
                 else {
@@ -91,16 +97,18 @@ void Friends::exec(Daemon *app, const string &args) {
 
                     linphone_friend_list_add_friend(linphone_core_get_default_friend_list(app->getCore()), new_friend);
 
-                    linphone_core_add_friend_list(app->getCore(), linphone_core_get_default_friend_list(app->getCore()));
+                    //OK
+                    ost = "\"add friend with address: " + param + "to friend list is Ok\"";
+                    app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Ok));
                 }
             }
             else {
-                ost = "\"can't find LinphoneFriend witch address: " + param + "\"";
+                ost = "LinphoneFriend witch address: " + param + " is already in list";
                 app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Error));
             }
         }
         else {
-            ost = "\"can't create LinphoneAddress: " + param + "\"";
+            ost = "can't create LinphoneAddress: " + param;
             app->sendResponse(Response(COMMANDNAME_FRIENDS, ost, Response::Error));
         }
     }

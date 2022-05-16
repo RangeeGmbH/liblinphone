@@ -575,7 +575,7 @@ std::string Daemon::getJsonForPresenceActivities(const LinphonePresenceModel* mo
     ostringstream ost;
     std::string activities = this->join(v, ", ");
     if(activities.empty()) {
-        activities = "";
+        activities = " ";
     }
 
     ost << "\"activities\": [" << activities.c_str() << "] ";
@@ -602,7 +602,7 @@ std::string Daemon::getJsonForPresenceService(const LinphonePresenceModel* model
     ostringstream ost;
     std::string descriptions = this->join(v, ", ");
     if(descriptions.empty()) {
-        descriptions = "";
+        descriptions = " ";
     }
 
     ost << "\"descriptions\": [" << descriptions.c_str() << "] ";
@@ -631,16 +631,16 @@ std::string Daemon::getJsonForFriend(LinphoneFriend *_friend) {
         // IsOnline
         switch (linphone_presence_model_is_online(model)) {
             case true:
-                isOnlineStr = "TRUE";
+                isOnlineStr = "true";
                 break;
             case false:
-                isOnlineStr = "FALSE";
+                isOnlineStr = "false";
                 break;
         }
 
         ostringstream ost;
 
-        ost << "{ \"friendAddress\": " << "\"" << friendAddress << "\"" << ", \"Note\": " << "\"" << note_content << "\"" << ", " << this->getJsonForPresenceActivities(model) << ", " << this->getJsonForPresenceService(model) << ", \"IsOnline\": " << isOnlineStr << " }";
+        ost << "{ \"friendAddress\": " << "\"" << friendAddress << "\"" << ", \"note\": " << "\"" << note_content << "\"" << ", " << this->getJsonForPresenceActivities(model) << ", " << this->getJsonForPresenceService(model) << ", \"isOnline\": " << isOnlineStr << " }";
 
         return ost.str();
     }
