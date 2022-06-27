@@ -73,10 +73,14 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
             return;
         }
         else{
+            LinphoneCore *lc = app->getCore();
             string callString;
             callString += "{ \"isAll\": true, \"calls\": [ ";
             for (int index = 0; index < ms_list_size(elem); index++) {
                 LinphoneCall* lCall = (LinphoneCall*) bctbx_list_nth_data(elem,index);
+
+                linphone_core_remove_from_conference(lc, call);
+
                 callString += app->getJsonForCall(lCall);
 
                 if(index < ms_list_size(elem)-1) {
@@ -84,7 +88,6 @@ void TerminateCommand::exec(Daemon *app, const string& args) {
                 }
             }
             callString += " ] }";
-            LinphoneCore *lc = app->getCore();
             linphone_core_terminate_all_calls(lc);
             app->sendResponse(Response(COMMANDNAME_TERMINATE, callString, Response::Ok));
         }

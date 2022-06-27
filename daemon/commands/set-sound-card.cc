@@ -43,8 +43,8 @@ LinphoneAudioDevice * SetSoundCard::getLinphoneAudioDevice(Daemon *app, std::str
 }
 
 SetSoundCard::SetSoundCard() :
-DaemonCommand("set-sound-card", "set-sound-card default|CallID output|input|ringer <Sound Card Name>",
-              "set the sound card for default or Call of ringer, input, or output sound card") {
+DaemonCommand("set-sound-card", "set-sound-card default|CallID|conference output|input|ringer <Sound Card Name>",
+              "set the sound card for default or Call or for conference of ringer, input, or output sound card") {
     addExample(new DaemonCommandExample("set-sound-card default output <Sound Card Name>",
                                         "Status: OK\n"));
     addExample(new DaemonCommandExample("set-sound-card default input <Sound Card Name>",
@@ -54,6 +54,10 @@ DaemonCommand("set-sound-card", "set-sound-card default|CallID output|input|ring
     addExample(new DaemonCommandExample("set-sound-card <CallID> output <Sound Card Name>",
                                         "Status: OK\n"));
     addExample(new DaemonCommandExample("set-sound-card <CallID> input <Sound Card Name>",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("set-sound-card conference output <Sound Card Name>",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("set-sound-card conference input <Sound Card Name>",
                                         "Status: OK\n"));
 }
 void SetSoundCard::exec(Daemon *app, const string &args) {
@@ -127,7 +131,58 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
             app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, ost, Response::Ok));
         }
     }
-    else {
+    if(param == "conference") {
+        ist >> param;
+        if (ist.fail()) {
+            app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "Missing parameter", Response::Error));
+        }
+        LinphoneConference *conference = linphone_core_get_conference(app->getCore());
+        if(conference != NULL) {
+            if(param == "output") {
+                string output_dev = "output";
+                const std::string& soundCard = ist.str().substr(ist.str().find(output_dev)+output_dev.length()+1, ist.str().length());
+                LinphoneAudioDevice * pDevice;
+                pDevice = getLinphoneAudioDevice(app,soundCard);
+                if(pDevice == nullptr)  {
+                    return;
+                }
+                linphone_conference_set_output_audio_device(conference, pDevice);
+                ////////////
+            }
+            if(param == "input") {
+                string input_dev = "input";
+                const std::string& soundCard = ist.str().substr(ist.str().find(input_dev)+input_dev.length()+1, ist.str().length());
+                LinphoneAudioDevice * pDevice;
+                pDevice = getLinphoneAudioDevice(app,soundCard);
+                if(pDevice == nullptr)  {
+                    return;
+                }
+                linphone_conference_set_input_audio_device(conference, pDevice);
+                ////////////
+            }
+            // get...
+            const LinphoneAudioDevice * pDevice_Output = linphone_conference_get_input_audio_device(conference);
+            const LinphoneAudioDevice * pDevice_Input = linphone_conference_get_input_audio_device(conference);
+
+            std::string device_Str = "";
+            device_Str = "{ \"isAll\": false, \"conference\": { \"soundcards\": {";
+
+            device_Str += "\"output\": ";
+            device_Str += app->getJsonForAudioDevice(pDevice_Output);
+            device_Str += ",";
+            device_Str += "\"input\": ";
+            device_Str += app->getJsonForAudioDevice(pDevice_Input);
+            device_Str += " }";
+            device_Str += " }";
+            device_Str += " }";
+
+            app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, device_Str, Response::Ok));
+        }
+        else {
+            return;
+        }
+    }
+    else if(param != "conference" || param != "default") {
         LinphoneCall *call = NULL;
         stringstream ss;
         ss << param;

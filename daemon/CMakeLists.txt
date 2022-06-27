@@ -45,6 +45,8 @@ set(DAEMON_SOURCE_FILES
 	commands/call.h
 	commands/call-mute.cc
 	commands/call-mute.h
+	commands/conference-mute.cc
+	commands/conference-mute.h
 	commands/call-pause.cc
 	commands/call-pause.h
 	commands/call-resume.cc

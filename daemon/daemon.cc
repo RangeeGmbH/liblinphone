@@ -65,6 +65,7 @@
 #include "commands/call-status.h"
 #include "commands/call-pause.h"
 #include "commands/call-mute.h"
+#include "commands/conference-mute.h"
 #include "commands/call-resume.h"
 #include "commands/video.h"
 #include "commands/call-transfer.h"
@@ -650,7 +651,6 @@ std::string Daemon::getJsonForFriend(LinphoneFriend *_friend) {
     return ost.str();
 }
 
-
 std::string Daemon::getJsonForAudioDevice(const LinphoneAudioDevice *device) {
     ostringstream ost;
     std::string deviceId(linphone_audio_device_get_id(device));
@@ -803,6 +803,7 @@ void Daemon::initCommands() {
     mCommands.push_back(new CallMuteCommand());
     mCommands.push_back(new CallResumeCommand());
     mCommands.push_back(new CallTransferCommand());
+    mCommands.push_back(new ConferenceMuteCommand());
     mCommands.push_back(new Video());
     mCommands.push_back(new Video::Preview());
     mCommands.push_back(new VideoSource());
