@@ -213,6 +213,9 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
         outputVolumeFloat = linphone_call_get_speaker_volume_gain(call);
         inputVolumeFloat = linphone_call_get_microphone_volume_gain(call);
     }
+    if(call_state == LinphoneCallState::LinphoneCallStateEnd || call_state == LinphoneCallState::LinphoneCallStateError || call_state == LinphoneCallState::LinphoneCallStateReleased) {
+        linphone_core_remove_from_conference(this->getCore(), call);
+    }
 
     ostringstream ost;
     ost << "{ \"id\": " << updateCallId(call) << ", \"state\": " << "\"" << linphone_call_state_to_string(call_state)

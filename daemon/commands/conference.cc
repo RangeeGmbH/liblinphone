@@ -69,7 +69,16 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 	}
 
 	if (subcommand.compare("add") == 0) {
-		ret = linphone_core_add_to_conference(lc, call);
+	    bool_t in_conference;
+	    in_conference = (linphone_call_get_conference(call) != NULL);
+	    if(!in_conference) {
+	        ret = linphone_core_add_to_conference(lc, call);
+	    }
+	    else {
+	        ost << "Call ID: " << id << " is already in conference, can't add the same call";
+	        app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
+            return;
+	    }
 	} else if (subcommand.compare("rm") == 0) {
 		ret = linphone_core_remove_from_conference(lc, call);
 	} else if (subcommand.compare("enter") == 0) {

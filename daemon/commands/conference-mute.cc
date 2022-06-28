@@ -52,7 +52,7 @@ void ConferenceMuteCommand::exec(Daemon* app, const string& args)
                 return;
             }
         }
-        linphone_conference_mute_microphone(conference, !muted);
+        linphone_core_enable_mic(lc, !muted);
         std::ostringstream buf;
         string mutedStr = "\"Muted\": \"yes\"";
         string unmutedStr = "\"Muted\": \"no\"";

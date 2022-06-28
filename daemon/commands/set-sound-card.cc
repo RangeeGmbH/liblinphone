@@ -164,19 +164,24 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
             const LinphoneAudioDevice * pDevice_Output = linphone_conference_get_input_audio_device(conference);
             const LinphoneAudioDevice * pDevice_Input = linphone_conference_get_input_audio_device(conference);
 
-            std::string device_Str = "";
-            device_Str = "{ \"isAll\": false, \"conference\": { \"soundcards\": {";
+            if(pDevice_Output != NULL && pDevice_Input != NULL) {
+                std::string device_Str = "";
+                device_Str = "{ \"isAll\": false, \"conference\": { \"soundcards\": {";
 
-            device_Str += "\"output\": ";
-            device_Str += app->getJsonForAudioDevice(pDevice_Output);
-            device_Str += ",";
-            device_Str += "\"input\": ";
-            device_Str += app->getJsonForAudioDevice(pDevice_Input);
-            device_Str += " }";
-            device_Str += " }";
-            device_Str += " }";
+                device_Str += "\"output\": ";
+                device_Str += app->getJsonForAudioDevice(pDevice_Output);
+                device_Str += ",";
+                device_Str += "\"input\": ";
+                device_Str += app->getJsonForAudioDevice(pDevice_Input);
+                device_Str += " }";
+                device_Str += " }";
+                device_Str += " }";
 
-            app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, device_Str, Response::Ok));
+                app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, device_Str, Response::Ok));
+            }
+            else {
+                app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, "cant get conference Soundcard for input and output", Response::Error));
+            }
         }
         else {
             return;
