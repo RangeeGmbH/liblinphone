@@ -8597,7 +8597,7 @@ int linphone_core_get_conference_size(LinphoneCore *lc) {
 }
 
 float linphone_core_get_conference_local_input_volume(LinphoneCore *lc) {
-	if(lc->conf_ctx) return linphone_conference_get_input_volume(lc->conf_ctx);
+	if(lc->conf_ctx) return linphone_conference_get_input_volume_gain(lc->conf_ctx);
 	else return -1.0;
 }
 

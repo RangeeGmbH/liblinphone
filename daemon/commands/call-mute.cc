@@ -22,73 +22,89 @@
 using namespace std;
 
 CallMuteCommand::CallMuteCommand() :
-	DaemonCommand("call-mute", "call-mute 0|1", "Mute/unmute the microphone (1 to mute, 0 to unmute). No argument means MUTE.")
+    DaemonCommand("call-mute", "call-mute [CALLID] [get|set] [input|output] ([0|1])", "Mute/unmute the microphone or speaker for call with CallID.")
 {
-	addExample(new DaemonCommandExample("call-mute 1",
+	addExample(new DaemonCommandExample("call-mute set input 1 1",
 										"Status: Ok\n\n"
 										"Microphone Muted"));
-	addExample(new DaemonCommandExample("call-mute",
+	addExample(new DaemonCommandExample("call-mute set output 1 1",
+                                        "Status: Ok\n\n"
+                                        "Microphone Muted"));
+	addExample(new DaemonCommandExample("call-mute get 1",
 										"Status: Ok\n\n"
 										"Microphone Muted"));
-	addExample(new DaemonCommandExample("call-mute 0",
+	addExample(new DaemonCommandExample("call-mute set input 1 0",
 										"Status: Ok\n\n"
 										"Microphone Unmuted"));
-	addExample(new DaemonCommandExample("call-mute 1",
+	addExample(new DaemonCommandExample("call-mute set output 1 0",
+                                        "Status: Ok\n\n"
+                                        "Microphone Unmuted"));
+	addExample(new DaemonCommandExample("call-mute set input 1 1",
 										"Status: Error\n\n"
-										"Reason: No call in progress. Can't mute."));
+                                        "Reason: No call with such id."));
 }
 
 void CallMuteCommand::exec(Daemon* app, const string& args)
 {
-    LinphoneCore *lc = app->getCore();
+    int callId;
     int muted;
-    int get;
+    bool findCall;
     ostringstream ost;
-    LinphoneCall *call = linphone_core_get_current_call(lc);
-    string param;
     istringstream ist(args);
-    istringstream paramStringStream(args);
-    paramStringStream >> param;
-    ist >> muted;
-    if (param != "get"){
-        get = false;
-        if (ist.fail() || (muted != 0)) {
-            muted = TRUE;
-            if (call == NULL) {
-                ost << "No call in progress. Can't mute.";
-                app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Error));
-                return;
-            }
-        } else {
-            muted = FALSE;
-            if (call == NULL) {
-                ost << "No call in progress. Can't unmute.";
-                app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Error));
-                return;
-            }
-        }
-        linphone_core_enable_mic(lc, !muted);
-        std::ostringstream buf;
-        string mutedStr = "\"Muted\": \"yes\"";
-        string unmutedStr = "\"Muted\": \"no\"";
-        if(muted == TRUE) {
-            buf << mutedStr;
+    string param;
+    ist >> param;
+    LinphoneCall *call;
+
+    if (ist.fail()) {
+        app->sendResponse(Response(COMMANDNAME_CALL_MUTE, "Missing parameter", Response::Error));
+    }
+    if (param == "set") {
+        ist >> param;
+        ist >> callId;
+        ist >> muted;
+        call = app->findCall(callId);
+        if (call == NULL) {
+            findCall = false;
         }
         else {
-            buf << unmutedStr;
+            findCall = true;
+            if (param == "input") {
+                ////set
+                linphone_call_set_microphone_muted(call, (bool_t)muted);
+            }
+            if (param == "output") {
+                ////set
+                linphone_call_set_speaker_muted(call, (bool_t)muted);
+            }
         }
-        ost << "{ " <<  buf.str().c_str() << " }";
-        app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Ok));
+        if(findCall) {
+            ////get
+            std::string callStr;
+            callStr = "{ \"call\": ";
+            callStr += app->getJsonForCall(call);
+            callStr += " }";
+            app->sendResponse(Response(COMMANDNAME_CALL_MUTE, callStr, Response::Ok));
+        }
+        else {
+            ost << "No call with such id.";
+            app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Error));
+            return;
+        }
     }
-
     if (param == "get") {
-        get = true;
-        string mutedStr = linphone_core_mic_enabled(app->getCore()) ? "\"Muted\": \"no\"" : "\"Muted\": \"yes\"";
-        ost << "{ " << mutedStr << " }";
-        app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Ok));
-    }
-    if(param != "get" && get == true){
-        ost << "\"Wrong parameter\"";
-        app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Ok));
+        ist >> callId;
+        call = app->findCall(callId);
+        if (call == NULL) {
+            ost << "No call with such id.";
+            app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Error));
+            return;
+        }
+        else {
+            std::string callStr;
+            callStr = "{ \"call\": ";
+            callStr += app->getJsonForCall(call);
+            callStr += " }";
+            app->sendResponse(Response(COMMANDNAME_CALL_MUTE, callStr, Response::Ok));
+        }
     }
 }

@@ -32,12 +32,21 @@
 using namespace std;
 
 VolumeCommand::VolumeCommand() :
-        DaemonCommand("volume", "volume <call-iD> [<value for speaker volume> <value for record volume>]",
+DaemonCommand("volume", "volume [get|set] [call <callid>|default|conference] [<value for speaker volume> <value for record volume>]",
                       "set or get the volume around value for speaker volume and record volume") {
-    addExample(new DaemonCommandExample("volume 1",
+    addExample(new DaemonCommandExample("volume set default 0.55 0.55",
                                         "Status: OK\n"));
-    addExample(new DaemonCommandExample("volume 1 0.xx or 1.00 0.xx or 1.00",
+    addExample(new DaemonCommandExample("volume get default",
                                         "Status: OK\n"));
+    addExample(new DaemonCommandExample("volume set call 1 0.55 0.55",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("volume get call 1",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("volume set conference 0.55 0.55",
+                                        "Status: OK\n"));
+    addExample(new DaemonCommandExample("volume get conference",
+                                        "Status: OK\n"));
+
 }
 
 void VolumeCommand::exec(Daemon *app, const string &args) {
@@ -130,6 +139,38 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
                 app->sendResponse(Response(COMMANDNAME_VOLUME, setCall, Response::Ok));
             }
         }
+        if (param == "conference") {
+            ist >> inputVolume;
+            ist >> outputVolume;
+
+            if (inputVolume > 1) {
+                inputVolume = 1.0f;
+            }
+            if (outputVolume > 1) {
+                outputVolume = 1.0f;
+            }
+            LinphoneConference *conference =linphone_core_get_conference(app->getCore());
+            if (conference == NULL) {
+                ost << "No conference in progress. Can't mute.";
+                app->sendResponse(Response(COMMANDNAME_VOLUME, ost.str(), Response::Error));
+                return;
+            }
+            else {
+                linphone_conference_set_output_volume_gain(conference, outputVolume);
+                linphone_conference_set_input_volume_gain(conference, inputVolume);
+
+                outputVolume = linphone_conference_get_output_volume_gain(conference);
+                inputVolume = linphone_conference_get_input_volume_gain(conference);
+
+                if (outputVolume >= 0.0f && inputVolume >= 0.0f) {
+                    std::string conferenceJSON;
+                    conferenceJSON = "{ \"isDefault\": false, \"conference\": ";
+                    conferenceJSON += app->getJsonForConference(conference);
+                    conferenceJSON += " }";
+                    app->sendResponse(Response(COMMANDNAME_VOLUME, conferenceJSON, Response::Ok));
+                }
+            }
+        }
     }
     if (param == "get") {
         ist >> param;
@@ -168,6 +209,26 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
                 getCALL += app->getJsonForCall(call);
                 getCALL += " }";
                 app->sendResponse(Response(COMMANDNAME_VOLUME, getCALL, Response::Ok));
+            }
+        }
+        if (param == "conference") {
+            LinphoneConference *conference =linphone_core_get_conference(app->getCore());
+            if (conference == NULL) {
+                ost << "No conference in progress. Can't mute.";
+                app->sendResponse(Response(COMMANDNAME_VOLUME, ost.str(), Response::Error));
+                return;
+            }
+            else {
+                outputVolume = linphone_conference_get_output_volume_gain(conference);
+                inputVolume = linphone_conference_get_input_volume_gain(conference);
+
+                if (outputVolume >= 0.0f && inputVolume >= 0.0f) {
+                    std::string conferenceJSON;
+                    conferenceJSON = "{ \"isDefault\": false, \"conference\": ";
+                    conferenceJSON += app->getJsonForConference(conference);
+                    conferenceJSON += " }";
+                    app->sendResponse(Response(COMMANDNAME_VOLUME, conferenceJSON, Response::Ok));
+                }
             }
         }
     }

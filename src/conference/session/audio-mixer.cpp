@@ -170,7 +170,7 @@ void MS2AudioMixer::enableSpeaker(bool value){
 }
 
 bool MS2AudioMixer::speakerEnabled()const{
-	return false;
+	return true;
 }
 
 bool MS2AudioMixer::startRecording(){
@@ -222,17 +222,23 @@ float MS2AudioMixer::getRecordVolume(){
 }
 
 float MS2AudioMixer::getMicGain(){
-	return 0.0;
+    AudioStream *st = mLocalParticipantStream;
+    return audio_stream_get_sound_card_input_gain(st);
 }
 
 void MS2AudioMixer::setMicGain(float value){
+    AudioStream *st = mLocalParticipantStream;
+    audio_stream_set_sound_card_input_gain(st, value);
 }
 
 float MS2AudioMixer::getSpeakerGain(){
-	return 0.0;
+    AudioStream *st = mLocalParticipantStream;
+    return audio_stream_get_sound_card_output_gain(st);
 }
 
 void MS2AudioMixer::setSpeakerGain(float value){
+    AudioStream *st = mLocalParticipantStream;
+    audio_stream_set_sound_card_output_gain(st, value);
 }
 
 void MS2AudioMixer::sendDtmf(int dtmf){

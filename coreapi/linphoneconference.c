@@ -194,17 +194,53 @@ int linphone_conference_mute_microphone (LinphoneConference *conference, bool_t 
 	return 0;
 }
 
+int linphone_conference_mute_speaker (LinphoneConference *conference, bool_t val) {
+    AudioControlInterface *aci = MediaConference::Conference::toCpp(conference)->getAudioControlInterface();
+    if (!aci) return -1;
+    aci->enableSpeaker(!val);
+    return 0;
+}
+
 bool_t linphone_conference_microphone_is_muted (const LinphoneConference *conference) {
 	AudioControlInterface *aci = MediaConference::Conference::toCpp(conference)->getAudioControlInterface();
 	if (!aci) return FALSE;
 	return aci->micEnabled() ? FALSE : TRUE;
 }
 
-float linphone_conference_get_input_volume (const LinphoneConference *conference) {
+bool_t linphone_conference_speaker_is_muted (const LinphoneConference *conference) {
+    AudioControlInterface *aci = MediaConference::Conference::toCpp(conference)->getAudioControlInterface();
+    if (!aci) return FALSE;
+    return aci->speakerEnabled() ? FALSE : TRUE;
+}
+
+float linphone_conference_get_input_volume_gain (const LinphoneConference *conference) {
 	AudioControlInterface *aci = MediaConference::Conference::toCpp(conference)->getAudioControlInterface();
 	if (!aci) return 0.0;
-	return aci->getRecordVolume();
+	return aci->getMicGain();
 }
+
+void linphone_conference_set_input_volume_gain(const LinphoneConference *conference, float value) {
+    AudioControlInterface *aci = MediaConference::Conference::toCpp(conference)->getAudioControlInterface();
+    if (aci)
+        aci->setMicGain(value);
+    else
+        lError() << "Could not set input volume: no audio stream";
+}
+
+float linphone_conference_get_output_volume_gain (const LinphoneConference *conference) {
+    AudioControlInterface *aci = MediaConference::Conference::toCpp(conference)->getAudioControlInterface();
+    if (!aci) return 0.0;
+    return aci->getSpeakerGain();
+}
+
+void linphone_conference_set_output_volume_gain(const LinphoneConference *conference, float value) {
+    AudioControlInterface *aci = MediaConference::Conference::toCpp(conference)->getAudioControlInterface();
+    if (aci)
+        aci->setSpeakerGain(value);
+    else
+        lError() << "Could not set input volume: no audio stream";
+}
+
 
 int linphone_conference_get_participant_count (const LinphoneConference *conference) {
 	return MediaConference::Conference::toCpp(conference)->getParticipantCount();

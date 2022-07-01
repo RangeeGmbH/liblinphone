@@ -7,7 +7,7 @@
 using namespace std;
 
 ConferenceMuteCommand::ConferenceMuteCommand() :
-DaemonCommand("conference-mute", "conference-mute 0|1", "Mute/unmute the microphone in conference (1 to mute, 0 to unmute). No argument means MUTE.")
+DaemonCommand("conference-mute", "conference-mute [get|set] [input|output] ([0|1])", "Mute/unmute the microphone or speaker in conference (1 to mute, 0 to unmute).")
 {
     addExample(new DaemonCommandExample("conference-mute 1",
                                         "Status: Ok\n\n"
@@ -27,53 +27,54 @@ void ConferenceMuteCommand::exec(Daemon* app, const string& args)
 {
     LinphoneCore *lc = app->getCore();
     int muted;
-    int get;
+    bool getConference;
     ostringstream ost;
-    LinphoneConference *conference =linphone_core_get_conference(lc);
+    LinphoneConference *conference = linphone_core_get_conference(lc);
     string param;
     istringstream ist(args);
     istringstream paramStringStream(args);
     paramStringStream >> param;
     ist >> muted;
-    if (param != "get"){
-        get = false;
-        if (ist.fail() || (muted != 0)) {
-            muted = TRUE;
-            if (conference == NULL) {
-                ost << "No conference in progress. Can't mute.";
-                app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, ost.str(), Response::Error));
-                return;
+
+    if (ist.fail()) {
+        app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, "Missing parameter", Response::Error));
+    }
+    if (param == "set") {
+        ist >> param;
+        ist >> muted;
+        if (conference == NULL) {
+            getConference = false;
+        }
+        else{
+            getConference = true;
+            if (param == "input") {
+                ////set
+                linphone_conference_mute_microphone(conference, !muted);;
             }
-        } else {
-            muted = FALSE;
-            if (conference == NULL) {
-                ost << "No conference in progress. Can't unmute.";
-                app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, ost.str(), Response::Error));
-                return;
+            if (param == "output") {
+                ////set
+                linphone_conference_mute_speaker(conference, (bool_t)muted);
             }
         }
-        linphone_core_enable_mic(lc, !muted);
-        std::ostringstream buf;
-        string mutedStr = "\"Muted\": \"yes\"";
-        string unmutedStr = "\"Muted\": \"no\"";
-        if(muted == TRUE) {
-            buf << mutedStr;
+        if(getConference) {
+            ////get
+            std::string conferenceJSON;
+            conferenceJSON = "{ \"conference\": ";
+            conferenceJSON += app->getJsonForConference(conference);
+            conferenceJSON += " }";
+            app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, conferenceJSON, Response::Ok));
         }
         else {
-            buf << unmutedStr;
+            ost << "No conference in progress. Can't mute.";
+            app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, ost.str(), Response::Error));
+            return;
         }
-        ost << "{ " <<  buf.str().c_str() << " }";
-        app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, ost.str(), Response::Ok));
     }
-
     if (param == "get") {
-        get = true;
-        string mutedStr = linphone_conference_microphone_is_muted(conference) ? "\"Muted\": \"no\"" : "\"Muted\": \"yes\"";
-        ost << "{ " << mutedStr << " }";
-        app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, ost.str(), Response::Ok));
-    }
-    if(param != "get" && get == true){
-        ost << "\"Wrong parameter\"";
-        app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, ost.str(), Response::Ok));
+        std::string conferenceJSON;
+        conferenceJSON = "{ \"conference\": ";
+        conferenceJSON += app->getJsonForConference(conference);
+        conferenceJSON += " }";
+        app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, conferenceJSON, Response::Ok));
     }
 }

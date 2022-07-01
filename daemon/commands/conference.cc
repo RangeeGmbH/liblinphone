@@ -55,10 +55,39 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 	ist >> subcommand;
 	ist >> id;
 	ostringstream ost;
-	if (ist.fail()) {
-	    ost << "\"Invalid command format.\"\"";
-	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
-		return;
+
+	if (subcommand.compare("list") == 0) {
+	    LinphoneConference *conference = linphone_core_get_conference(lc);
+	    if (conference == NULL) {
+	        ost << "No conference in progress. Can't list conference.";
+	        app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
+            return;
+	    } else {
+	        const MSList *elem;
+	        elem = linphone_conference_get_participant_list(conference);
+	        string conferenceString;
+	        conferenceString += "{ \"isAll\": true, \"conference\": { \"participants\": [ ";
+	        conferenceString += "\"";
+	        for (int index = 0; index < ms_list_size(elem); index++) {
+	            LinphoneParticipant* lLinphoneParticipant = (LinphoneParticipant*) bctbx_list_nth_data(elem,index);
+	            char * address;
+	            const LinphoneAddress *lLinphoneAddress = linphone_participant_get_address(lLinphoneParticipant);
+	            address = linphone_address_as_string(lLinphoneAddress);
+	            conferenceString += address;
+	            conferenceString += "\"";
+
+	            if(index < ms_list_size(elem)-1) {
+	                conferenceString += ",";
+	            }
+	        }
+
+	        //conferenceString += " ] }";
+	        conferenceString += " ],";
+	        conferenceString += app->getJsonForConference(conference);
+	        conferenceString += " }";
+	        app->sendResponse(Response(COMMANDNAME_CONFERENCE, conferenceString, Response::Ok));
+            return;
+	    }
 	}
 
 	LinphoneCall *call=app->findCall(id);

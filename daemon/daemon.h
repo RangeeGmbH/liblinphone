@@ -187,6 +187,11 @@ public:
 	CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state);
 };
 
+class ConferenceEvent : public Event {
+public:
+    ConferenceEvent(Daemon *daemon, LinphoneConference *conference, LinphoneConferenceState state);
+};
+
 class CallStatsEvent: public Event {
 public:
 	CallStatsEvent(Daemon *daemon, LinphoneCall *call, const LinphoneCallStats *stats);
@@ -267,6 +272,8 @@ public:
 	void sendResponse(const Response &resp);
 	std::string join(const std::vector<std::string>& values, std::string delimiter);
 	std::string getJsonForCall(LinphoneCall *call);
+	std::string getJsonForConference(LinphoneConference *conference);
+	std::string getJsonForConferenceParticipant(LinphoneParticipant *linphoneParticipant);
 	std::string getJsonForProxys(LinphoneProxyConfig *cfg);
 	std::string getJsonForAudioDevice(const LinphoneAudioDevice* device);
 	std::string getJsonForFriend(LinphoneFriend *_friend);
@@ -306,11 +313,13 @@ private:
 	static void* iterateThread(void *arg);
 	static void callStateChanged(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState state, const char *msg);
 	static void callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const LinphoneCallStats *stats);
+	static void conference_state_changed(LinphoneCore *lc, LinphoneConference *conference, LinphoneConferenceState state);
 	static void dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf);
 	static void messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg);
 	static void proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
 	static void friendPresenceStateChanged(LinphoneCore *lc, LinphoneFriend *_friend);
 	void callStateChanged(LinphoneCall *call, LinphoneCallState state, const char *msg);
+	void conference_state_changed(LinphoneConference *conference, LinphoneConferenceState state);
 	void callStatsUpdated(LinphoneCall *call, const LinphoneCallStats *stats);
 	void dtmfReceived(LinphoneCall *call, int dtmf);
 	void messageReceived(LinphoneChatRoom *cr, LinphoneChatMessage *msg);

@@ -164,6 +164,59 @@ std::string Daemon::replaceEscapeChar(std::string replaceStr) {
     return returnStr;
 }
 
+std::string Daemon::getJsonForConferenceParticipant(LinphoneParticipant *linphoneParticipant) {
+    string linphoneAddress;
+    const LinphoneAddress *lLinphoneAddress = linphone_participant_get_address(linphoneParticipant);
+    linphoneAddress = linphone_address_as_string(lLinphoneAddress);
+    linphoneAddress += "\"";
+    return linphoneAddress;
+}
+
+std::string Daemon::getJsonForConference(LinphoneConference *conference) {
+    float outputVolumeFloat = -1;
+    float inputVolumeFloat = -1;
+    std::string output_Device_Str = "";
+    std::string input_Device_Str = "";
+    const LinphoneAudioDevice *output_device = linphone_conference_get_output_audio_device(conference);
+    if( output_device == nullptr ) {
+        output_Device_Str = "\"\"";
+    }
+    else  {
+        output_Device_Str = getJsonForAudioDevice(output_device);
+    }
+    const LinphoneAudioDevice *input_device = linphone_conference_get_input_audio_device(conference);
+    if( input_device == nullptr ) {
+        input_Device_Str = "\"\"";
+    }
+    else  {
+        input_Device_Str = getJsonForAudioDevice(input_device);
+    }
+
+    outputVolumeFloat = linphone_conference_get_output_volume_gain(conference);
+    inputVolumeFloat = linphone_conference_get_input_volume_gain(conference);
+
+    string micMutedStrForConference = linphone_conference_microphone_is_muted(conference) ? "true" : "false";
+    string speakerMutedStrForConference = linphone_conference_speaker_is_muted(conference) ? "true" : "false";
+
+    string participants_string;
+    const bctbx_list_t *elem;
+    elem = linphone_conference_get_participant_list(conference);
+    for (int index = 0; index < bctbx_list_size(elem); index++) {
+        LinphoneParticipant* lLinphoneParticipant = (LinphoneParticipant*) bctbx_list_nth_data(elem,index);
+
+        participants_string = this->getJsonForConferenceParticipant(lLinphoneParticipant);
+        if(index < ms_list_size(elem)-1) {
+            participants_string += ",";
+        }
+    }
+
+    ostringstream ost;
+    ost << "{ \"muted\": { " << "\"input\": " << micMutedStrForConference << ", \"output\": " << speakerMutedStrForConference << " }" <<
+    ", \"volumes\": { \"output\": " << outputVolumeFloat << ", \"input\": " << inputVolumeFloat << " }"
+    << ", \"soundcards\": { \"output\": " << output_Device_Str << ", \"input\": " << input_Device_Str << " } }";
+    return ost.str();
+}
+
 std::string Daemon::getJsonForCall(LinphoneCall *call) {
     LinphoneCallState call_state = LinphoneCallIdle;
     call_state = linphone_call_get_state(call);
@@ -213,15 +266,15 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
         outputVolumeFloat = linphone_call_get_speaker_volume_gain(call);
         inputVolumeFloat = linphone_call_get_microphone_volume_gain(call);
     }
-    if(call_state == LinphoneCallState::LinphoneCallStateEnd || call_state == LinphoneCallState::LinphoneCallStateError || call_state == LinphoneCallState::LinphoneCallStateReleased) {
-        linphone_core_remove_from_conference(this->getCore(), call);
-    }
+    string micMutedStrForCall = linphone_call_get_microphone_muted(call) ? "true" : "false";
+    string speakerMutedStrForCall = linphone_call_get_speaker_muted(call) ? "true" : "false";
 
     ostringstream ost;
     ost << "{ \"id\": " << updateCallId(call) << ", \"state\": " << "\"" << linphone_call_state_to_string(call_state)
         << "\"" << ", \"addressFrom\": " << "\"" << fromStr.c_str() << "\"" << ", \"addressTo\": " << "\""
         << toStr.c_str() << "\"" << ", \"direction\": " << "\"" << direction << "\""
         << ", \"duration\":" << linphone_call_get_duration(call) << ", \"inConference\": " << flag
+        << ", \"muted\": { " << "\"input\": " << micMutedStrForCall << ", \"output\": " << speakerMutedStrForCall << " }"
         << ", \"errorMessage\": " << "\"" << errorMessage << "\"" <<
         ", \"volumes\": { \"output\": " << outputVolumeFloat << ", \"input\": " << inputVolumeFloat << " }"
         << ", \"soundcards\": { \"output\": " << output_Device_Str << ", \"input\": " << input_Device_Str << " } }";
@@ -229,11 +282,18 @@ std::string Daemon::getJsonForCall(LinphoneCall *call) {
 }
 
 CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
+    if(state == LinphoneCallState::LinphoneCallStateEnd || state == LinphoneCallState::LinphoneCallStateError || state == LinphoneCallState::LinphoneCallStateReleased) {
+        linphone_core_remove_from_conference(daemon->getCore(), call);
+    }
     string callStr;
     callStr = "{ \"calls\": [ ";
     callStr += daemon->getJsonForCall(call);
     callStr += " ] }";
     setBody(callStr);
+}
+
+ConferenceEvent::ConferenceEvent(Daemon *daemon, LinphoneConference *conference, LinphoneConferenceState state) : Event("conference-state-changed") {
+    setBody(daemon->getJsonForConference(conference));
 }
 
 DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("receiving-tone") {
@@ -469,6 +529,7 @@ Daemon::Daemon(const char *config_path, const char *factory_config_path, const c
     vtable.dtmf_received = dtmfReceived;
     vtable.message_received = messageReceived;
     vtable.notify_presence_received = friendPresenceStateChanged;
+    vtable.conference_state_changed = conference_state_changed;
     mLc = linphone_core_new(&vtable, config_path, factory_config_path, this);
     linphone_core_set_user_data(mLc, this);
     linphone_core_enable_video_capture(mLc, capture_video);
@@ -887,6 +948,10 @@ void Daemon::callStateChanged(LinphoneCall *call, LinphoneCallState state, const
     }
 }
 
+void Daemon::conference_state_changed(LinphoneConference *conference, LinphoneConferenceState state) {
+    queueEvent(new ConferenceEvent(this, conference, state));
+}
+
 void Daemon::messageReceived(LinphoneChatRoom *cr, LinphoneChatMessage *msg) {
     queueEvent(new IncomingMessageEvent(msg));
 }
@@ -920,6 +985,11 @@ void Daemon::friendPresenceStateChanged(LinphoneFriend *_friend) {
 void Daemon::callStateChanged(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState state, const char *msg) {
     Daemon *app = (Daemon *) linphone_core_get_user_data(lc);
     app->callStateChanged(call, state, msg);
+}
+
+void Daemon::conference_state_changed(LinphoneCore *lc, LinphoneConference *conference, LinphoneConferenceState state) {
+    Daemon *app = (Daemon *) linphone_core_get_user_data(lc);
+    app->conference_state_changed(conference, state);
 }
 
 void Daemon::callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const LinphoneCallStats *stats) {
