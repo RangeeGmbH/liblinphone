@@ -223,7 +223,12 @@ float MS2AudioMixer::getRecordVolume(){
 
 float MS2AudioMixer::getMicGain(){
     AudioStream *st = mLocalParticipantStream;
-    return audio_stream_get_sound_card_input_gain(st);
+    if(st == NULL){
+        return 0.0;
+    }
+    else {
+        return audio_stream_get_sound_card_input_gain(st);
+    }
 }
 
 void MS2AudioMixer::setMicGain(float value){
@@ -233,7 +238,12 @@ void MS2AudioMixer::setMicGain(float value){
 
 float MS2AudioMixer::getSpeakerGain(){
     AudioStream *st = mLocalParticipantStream;
-    return audio_stream_get_sound_card_output_gain(st);
+    if(st == NULL){
+        return 0.0;
+    }
+    else {
+        return audio_stream_get_sound_card_output_gain(st);
+    }
 }
 
 void MS2AudioMixer::setSpeakerGain(float value){

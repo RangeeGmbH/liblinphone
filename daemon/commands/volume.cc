@@ -164,9 +164,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
 
                 if (outputVolume >= 0.0f && inputVolume >= 0.0f) {
                     std::string conferenceJSON;
-                    conferenceJSON = "{ \"isDefault\": false, \"conference\": ";
-                    conferenceJSON += app->getJsonForConference(conference);
-                    conferenceJSON += " }";
+                    conferenceJSON = app->getJsonForConference(conference);
                     app->sendResponse(Response(COMMANDNAME_VOLUME, conferenceJSON, Response::Ok));
                 }
             }
@@ -224,9 +222,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
 
                 if (outputVolume >= 0.0f && inputVolume >= 0.0f) {
                     std::string conferenceJSON;
-                    conferenceJSON = "{ \"isDefault\": false, \"conference\": ";
-                    conferenceJSON += app->getJsonForConference(conference);
-                    conferenceJSON += " }";
+                    conferenceJSON = app->getJsonForConference(conference);
                     app->sendResponse(Response(COMMANDNAME_VOLUME, conferenceJSON, Response::Ok));
                 }
             }

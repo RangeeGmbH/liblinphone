@@ -63,28 +63,8 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 	        app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
             return;
 	    } else {
-	        const MSList *elem;
-	        elem = linphone_conference_get_participant_list(conference);
 	        string conferenceString;
-	        conferenceString += "{ \"isAll\": true, \"conference\": { \"participants\": [ ";
-	        conferenceString += "\"";
-	        for (int index = 0; index < ms_list_size(elem); index++) {
-	            LinphoneParticipant* lLinphoneParticipant = (LinphoneParticipant*) bctbx_list_nth_data(elem,index);
-	            char * address;
-	            const LinphoneAddress *lLinphoneAddress = linphone_participant_get_address(lLinphoneParticipant);
-	            address = linphone_address_as_string(lLinphoneAddress);
-	            conferenceString += address;
-	            conferenceString += "\"";
-
-	            if(index < ms_list_size(elem)-1) {
-	                conferenceString += ",";
-	            }
-	        }
-
-	        //conferenceString += " ] }";
-	        conferenceString += " ],";
-	        conferenceString += app->getJsonForConference(conference);
-	        conferenceString += " }";
+	        conferenceString = app->getJsonForConference(conference);
 	        app->sendResponse(Response(COMMANDNAME_CONFERENCE, conferenceString, Response::Ok));
             return;
 	    }
@@ -123,9 +103,17 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 	if (ret == 0 || ret == 1) {
 		//ost << "Call ID: " << id << "\n";
 		//ost << "Conference: " << subcommand << " OK" <<;
-		ost << "{ \"Call ID\": " << id << ", \"Conference\": "  << "\"" << subcommand.c_str() << " OK" << "\"" << " } ";
-		app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Ok));
-		return;
+		LinphoneConference *conference = linphone_core_get_conference(lc);
+		if (conference == NULL) {
+		    ost << "No conference in progress. Can't list conference.";
+		    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
+		    return;
+		} else {
+		    string conferenceString;
+		    conferenceString = app->getJsonForConference(conference);
+		    app->sendResponse(Response(COMMANDNAME_CONFERENCE, conferenceString, Response::Ok));
+		    return;
+		}
 	}
 	ost << "Command failed";
 	app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));

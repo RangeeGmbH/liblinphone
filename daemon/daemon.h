@@ -25,6 +25,7 @@
 #include <mediastreamer2/mediastream.h>
 #include <mediastreamer2/mscommon.h>
 #include <bctoolbox/list.h>
+#include "conference_private.h"
 
 #include <string>
 #include <list>

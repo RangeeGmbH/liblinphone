@@ -166,17 +166,7 @@ void SetSoundCard::exec(Daemon *app, const string &args) {
 
             if(pDevice_Output != NULL && pDevice_Input != NULL) {
                 std::string device_Str = "";
-                device_Str = "{ \"isAll\": false, \"conference\": { \"soundcards\": {";
-
-                device_Str += "\"output\": ";
-                device_Str += app->getJsonForAudioDevice(pDevice_Output);
-                device_Str += ",";
-                device_Str += "\"input\": ";
-                device_Str += app->getJsonForAudioDevice(pDevice_Input);
-                device_Str += " }";
-                device_Str += " }";
-                device_Str += " }";
-
+                device_Str = app->getJsonForConference(conference);
                 app->sendResponse(Response(COMMANDNAME_SETSOUNDCARD, device_Str, Response::Ok));
             }
             else {
