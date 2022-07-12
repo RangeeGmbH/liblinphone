@@ -30,15 +30,10 @@ void ConferenceMuteCommand::exec(Daemon* app, const string& args)
     bool getConference;
     ostringstream ost;
     LinphoneConference *conference = linphone_core_get_conference(lc);
-    string param;
     istringstream ist(args);
-    istringstream paramStringStream(args);
-    paramStringStream >> param;
-    ist >> muted;
+    string param;
+    ist >> param;
 
-    if (ist.fail()) {
-        app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, "Missing parameter", Response::Error));
-    }
     if (param == "set") {
         ist >> param;
         ist >> muted;
@@ -49,7 +44,7 @@ void ConferenceMuteCommand::exec(Daemon* app, const string& args)
             getConference = true;
             if (param == "input") {
                 ////set
-                linphone_conference_mute_microphone(conference, !muted);;
+                linphone_conference_mute_microphone(conference, (bool_t)muted);;
             }
             if (param == "output") {
                 ////set
@@ -59,9 +54,7 @@ void ConferenceMuteCommand::exec(Daemon* app, const string& args)
         if(getConference) {
             ////get
             std::string conferenceJSON;
-            conferenceJSON = "{ \"conference\": ";
-            conferenceJSON += app->getJsonForConference(conference);
-            conferenceJSON += " }";
+            conferenceJSON = app->getJsonForConference(conference);
             app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, conferenceJSON, Response::Ok));
         }
         else {
@@ -72,9 +65,7 @@ void ConferenceMuteCommand::exec(Daemon* app, const string& args)
     }
     if (param == "get") {
         std::string conferenceJSON;
-        conferenceJSON = "{ \"conference\": ";
-        conferenceJSON += app->getJsonForConference(conference);
-        conferenceJSON += " }";
+        conferenceJSON = app->getJsonForConference(conference);
         app->sendResponse(Response(COMMANDNAME_CONFERENCE_MUTE, conferenceJSON, Response::Ok));
     }
 }

@@ -101,8 +101,8 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
         if (param == "call") {
             ist >> param;
             callId = param;
-            ist >> inputVolume;
             ist >> outputVolume;
+            ist >> inputVolume;
 
             if (inputVolume > 1) {
                 inputVolume = 1.0f;
@@ -140,8 +140,8 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
             }
         }
         if (param == "conference") {
-            ist >> inputVolume;
             ist >> outputVolume;
+            ist >> inputVolume;
 
             if (inputVolume > 1) {
                 inputVolume = 1.0f;
@@ -151,7 +151,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
             }
             LinphoneConference *conference =linphone_core_get_conference(app->getCore());
             if (conference == NULL) {
-                ost << "No conference in progress. Can't mute.";
+                ost << "No conference in progress. Can't set Volumes.";
                 app->sendResponse(Response(COMMANDNAME_VOLUME, ost.str(), Response::Error));
                 return;
             }
@@ -212,7 +212,7 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
         if (param == "conference") {
             LinphoneConference *conference =linphone_core_get_conference(app->getCore());
             if (conference == NULL) {
-                ost << "No conference in progress. Can't mute.";
+                ost << "No conference in progress. Can't get volumes.";
                 app->sendResponse(Response(COMMANDNAME_VOLUME, ost.str(), Response::Error));
                 return;
             }

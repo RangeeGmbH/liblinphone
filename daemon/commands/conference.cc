@@ -105,7 +105,7 @@ void ConferenceCommand::exec(Daemon* app, const string& args) {
 		//ost << "Conference: " << subcommand << " OK" <<;
 		LinphoneConference *conference = linphone_core_get_conference(lc);
 		if (conference == NULL) {
-		    ost << "No conference in progress. Can't list conference.";
+		    ost << "No conference in progress.";
 		    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
 		    return;
 		} else {

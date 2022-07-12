@@ -167,9 +167,12 @@ std::string Daemon::replaceEscapeChar(std::string replaceStr) {
 std::string Daemon::getJsonForConferenceParticipant(LinphoneParticipant *linphoneParticipant) {
     string linphoneAddress;
     const LinphoneAddress *lLinphoneAddress = linphone_participant_get_address(linphoneParticipant);
+    LinphoneCall *call = linphone_core_get_call_by_remote_address2(this->getCore(), lLinphoneAddress);
     linphoneAddress += "{ \"address\": \"";
     linphoneAddress += linphone_address_as_string(lLinphoneAddress);
-    linphoneAddress += "\" }";
+    linphoneAddress += "\", \"callId\": ";
+    linphoneAddress += std::to_string(updateCallId(call));
+    linphoneAddress += " }";
     return linphoneAddress;
 }
 
@@ -188,7 +191,10 @@ std::string Daemon::getJsonForConference(LinphoneConference *conference) {
     string micMutedStrForConference = "";
     string speakerMutedStrForConference = "";
 
-    if(conferenceState != LinphoneConferenceState::LinphoneConferenceStateCreated) {}
+    if(conferenceState != LinphoneConferenceState::LinphoneConferenceStateCreated) {
+        micMutedStrForConference = "\"\"";
+        speakerMutedStrForConference = "\"\"";
+    }
     else {
         output_device = linphone_conference_get_output_audio_device(conference);
         input_device = linphone_conference_get_input_audio_device(conference);
@@ -212,13 +218,18 @@ std::string Daemon::getJsonForConference(LinphoneConference *conference) {
     else  {
         input_Device_Str = getJsonForAudioDevice(input_device);
     }
+    if(micMutedStrForConference.empty()) {
+        micMutedStrForConference = "{ }";
+    }
+    if(speakerMutedStrForConference.empty()) {
+        speakerMutedStrForConference = "{ }";
+    }
 
     string participants_string;
     const bctbx_list_t *elem;
     elem = linphone_conference_get_participant_list(conference);
     for (int index = 0; index < (int)bctbx_list_size(elem); index++) {
         LinphoneParticipant* lLinphoneParticipant = (LinphoneParticipant*) bctbx_list_nth_data(elem,index);
-
         participants_string += this->getJsonForConferenceParticipant(lLinphoneParticipant);
         if(index < (int)bctbx_list_size(elem)-1) {
             participants_string += ",";
@@ -226,7 +237,7 @@ std::string Daemon::getJsonForConference(LinphoneConference *conference) {
     }
 
     ostringstream ost;
-    ost << "\"conference\": { \"muted\": { " << "\"input\": " << micMutedStrForConference << ", \"output\": " << speakerMutedStrForConference << " }" <<
+    ost << "{ \"conference\": { \"muted\": { " << "\"input\": " << micMutedStrForConference << ", \"output\": " << speakerMutedStrForConference << " }" <<
     ", \"participants\": [ " << participants_string << " ] " <<
     ", \"state\": " << "\"" << linphone_conference_state_to_string(conferenceState) << "\"" <<
     ", \"soundcards\": { \"output\": " << output_Device_Str << ", \"input\": " << input_Device_Str << " }" <<
