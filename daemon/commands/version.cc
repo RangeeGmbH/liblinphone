@@ -29,7 +29,10 @@ VersionCommand::VersionCommand() :
 }
 
 void VersionCommand::exec(Daemon *app, const string& args) {
+    char hostname[1024];
+    gethostname(hostname, 1024);
+
     std::ostringstream stringStream;
-    stringStream << "{ \"Version\":" << "\"" << linphone_core_get_version() << "\"" << ", \"ApiVersion\":" << "\"" << to_string(API_VERSION).c_str() << "\" }";
+    stringStream << "{ \"Version\":" << "\"" << linphone_core_get_version() << "\"" << ", \"ApiVersion\":" << "\"" << to_string(API_VERSION).c_str() << "\"" << ", \"hostName\":"  << "\"" << hostname <<  "\" }";
     app->sendResponse(Response(COMMANDNAME_VERSION, stringStream.str(), Response::Ok));
 }
