@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_MEDIA_ENCRYPTION "media-encryption"
+
 class MediaEncryptionCommand : public DaemonCommand {
 public:
 	MediaEncryptionCommand();

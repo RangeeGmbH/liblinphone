@@ -42,7 +42,7 @@ void echoResultCbs(LinphoneCore *core, LinphoneEcCalibratorStatus status, int de
 			break;
 	}
 	ost << ", delay: " << delay_ms << "ms";
-	app->sendResponse(Response(ost.str(), Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_ECHO, ost.str(), Response::Ok));
 }
 
 EchoCalibrationCommand::EchoCalibrationCommand()
@@ -59,6 +59,6 @@ void EchoCalibrationCommand::exec(Daemon *app, BCTBX_UNUSED(const string &args))
 	linphone_core_enable_echo_cancellation(lc, TRUE);
 	linphone_core_cbs_set_ec_calibration_result(cbs, echoResultCbs);
 	if (linphone_core_start_echo_canceller_calibration(lc)) {
-		app->sendResponse(Response("Calibration failed", Response::Error));
-	} else app->sendResponse(Response("Calibrating...", Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_ECHO, "Calibration failed", Response::Error));
+	} else app->sendResponse(Response(COMMANDNAME_ECHO, "Calibrating...", Response::Ok));
 }

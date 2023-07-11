@@ -46,6 +46,8 @@ set(DAEMON_SOURCE_FILES
 	commands/call.h
 	commands/call-mute.cc
 	commands/call-mute.h
+	commands/conference-mute.cc
+	commands/conference-mute.h
 	commands/call-pause.cc
 	commands/call-pause.h
 	commands/call-resume.cc
@@ -109,8 +111,25 @@ set(DAEMON_SOURCE_FILES
 	commands/video.h
 	commands/message.cc
 	commands/message.h
+	commands/soundcards.cc
+	commands/soundcards.h
+	commands/volume.cc
+	commands/volume.h
+	commands/set-sound-card.cc
+	commands/set-sound-card.h
+	commands/get-sound-card.cc
+	commands/get-sound-card.h
+	commands/maxCall.cc
+	commands/maxCall.h
+	commands/friends.cc
+	commands/friends.h
+	commands/ping.cc
+	commands/ping.h
+	commands/defaultProxy.cc
+	commands/defaultProxy.h
 	daemon.cc
 	daemon.h
+	timer.h
 )
 
 set(DAEMON_PIPETEST_SOURCE_FILES

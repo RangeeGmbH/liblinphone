@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_ECHO "echo"
+
 class EchoCalibrationCommand : public DaemonCommand {
 public:
 	EchoCalibrationCommand();

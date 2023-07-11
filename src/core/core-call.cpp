@@ -53,8 +53,6 @@ int CorePrivate::addCall(const shared_ptr<Call> &call) {
 		}
 	}
 
-	if (!canWeAddCall()) return -1;
-
 	if (!hasCalls()) {
 		/*
 		 * Free possibly used sound ressources now. Useful for iOS, because CallKit may cause any already running

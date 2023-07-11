@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_MESSAGE "message"
+
 class MessageCommand : public DaemonCommand {
 public:
 	MessageCommand();

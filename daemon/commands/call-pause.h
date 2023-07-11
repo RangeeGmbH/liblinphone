@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CALL_PAUSE "call-pause"
+
 class CallPauseCommand : public DaemonCommand {
 public:
 	CallPauseCommand();

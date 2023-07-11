@@ -23,11 +23,19 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_IPV6 "ipv6"
+
+using namespace std;
+
+
 class IPv6Command : public DaemonCommand {
 public:
 	IPv6Command();
 
 	void exec(Daemon *app, const std::string &args) override;
+
+private:
+    string getIPv6CommandResponseStr(LinphoneCore *core);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_IPV6_H_

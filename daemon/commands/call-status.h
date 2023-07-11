@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CALL_STATUS "call-status"
+
 class CallStatusCommand : public DaemonCommand {
 public:
 	CallStatusCommand();

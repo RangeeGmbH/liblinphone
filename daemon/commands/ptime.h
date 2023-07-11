@@ -23,11 +23,23 @@
 
 #include "daemon.h"
 
+using namespace std;
+
+#define COMMANDNAME_PTIME "ptime"
+
 class PtimeCommand : public DaemonCommand {
 public:
 	PtimeCommand();
+    enum Direction {
+        Upload = 0,
+        Download = 1,
+        BothDirections = 2
+    };
 
 	void exec(Daemon *app, const std::string &args) override;
+
+private:
+    string getPtimeResponseStr(LinphoneCore *core, Direction dir);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_PTIME_H_

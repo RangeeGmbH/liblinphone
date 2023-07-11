@@ -24,6 +24,8 @@
 #include "daemon.h"
 #include <string>
 
+#define COMMANDNAME_REGISTER_INFO "register-info"
+
 class RegisterInfoCommand : public DaemonCommand {
 public:
 	RegisterInfoCommand();

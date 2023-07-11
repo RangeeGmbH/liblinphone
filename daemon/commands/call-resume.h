@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_CALL_RESUME "call-resume"
+
 class CallResumeCommand : public DaemonCommand {
 public:
 	CallResumeCommand();

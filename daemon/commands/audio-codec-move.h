@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_AUDIO_CODEC_MOVE "audio-codec-move"
+
 class AudioCodecMoveCommand : public DaemonCommand {
 public:
 	AudioCodecMoveCommand();

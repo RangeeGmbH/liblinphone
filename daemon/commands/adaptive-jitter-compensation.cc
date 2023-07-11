@@ -107,7 +107,7 @@ void AdaptiveBufferCompensationCommand::exec(Daemon *app, const string &args) {
 			app->sendResponse(
 			    AdaptiveBufferCompensationResponse(app->getCore(), AdaptiveBufferCompensationResponse::VideoStream));
 		} else {
-			app->sendResponse(Response("Incorrect stream parameter.", Response::Error));
+			app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, "Incorrect stream parameter.", Response::Error));
 		}
 		return;
 	}
@@ -119,7 +119,7 @@ void AdaptiveBufferCompensationCommand::exec(Daemon *app, const string &args) {
 	} else if (stream.compare("video") == 0) {
 		type = AdaptiveBufferCompensationResponse::VideoStream;
 	} else {
-		app->sendResponse(Response("Incorrect stream parameter.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION, "Incorrect stream parameter.", Response::Error));
 		return;
 	}
 	if (state.compare("enable") == 0) {
@@ -127,7 +127,7 @@ void AdaptiveBufferCompensationCommand::exec(Daemon *app, const string &args) {
 	} else if (state.compare("disable") == 0) {
 		enabled = FALSE;
 	} else {
-		app->sendResponse(Response("Incorrect parameter.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION,"Incorrect parameter.", Response::Error));
 		return;
 	}
 	if (type == AdaptiveBufferCompensationResponse::AudioStream) {

@@ -113,7 +113,7 @@ void PortCommand::exec(Daemon *app, const string &args) {
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect type parameter.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 		return;
 	}
 	ist >> port;
@@ -125,7 +125,7 @@ void PortCommand::exec(Daemon *app, const string &args) {
 		} else if (type.compare("video") == 0) {
 			app->sendResponse(PortResponse(app->getCore(), PortResponse::VideoRTPPort));
 		} else {
-			app->sendResponse(Response("Incorrect type parameter.", Response::Error));
+			app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 		}
 		return;
 	}
@@ -141,7 +141,7 @@ void PortCommand::exec(Daemon *app, const string &args) {
 			} else if (protocol_str.compare("tls") == 0) {
 				protocol = TLSProtocol;
 			} else {
-				app->sendResponse(Response("Incorrect protocol parameter.", Response::Error));
+				app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect protocol parameter.", Response::Error));
 				return;
 			}
 		}
@@ -167,6 +167,6 @@ void PortCommand::exec(Daemon *app, const string &args) {
 		linphone_core_set_video_port(app->getCore(), port);
 		app->sendResponse(PortResponse(app->getCore(), PortResponse::VideoRTPPort));
 	} else {
-		app->sendResponse(Response("Incorrect type parameter.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_PORT, "Incorrect type parameter.", Response::Error));
 	}
 }

@@ -46,31 +46,31 @@ void MSFilterAddFmtpCommand::exec(Daemon *app, const string &args) {
 	ist >> id;
 	ist >> fmtp;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing/Incorrect parameter(s)."));
+	    app->sendResponse(Response(COMMANDNAME_MSFILTER_ADD_FMTP, "Missing/Incorrect parameter(s).", Response::Error));
 		return;
 	}
 	if (type.compare("call") == 0) {
 		LinphoneCall *call = app->findCall(id);
 		if (call == NULL) {
-			app->sendResponse(Response("No Call with such id."));
+		    app->sendResponse(Response(COMMANDNAME_MSFILTER_ADD_FMTP, "No Call with such id.", Response::Error));
 			return;
 		}
 		AudioStream *astream = reinterpret_cast<AudioStream *>(linphone_call_get_stream(call, LinphoneStreamTypeAudio));
 		if (astream == NULL || astream->ms.encoder == NULL) {
-			app->sendResponse(Response("This call doesn't have an active audio stream."));
+		    app->sendResponse(Response(COMMANDNAME_MSFILTER_ADD_FMTP, "This call doesn't have an active audio stream.", Response::Error));
 			return;
 		}
 		ms_filter_call_method(astream->ms.encoder, MS_FILTER_ADD_FMTP, (void *)fmtp.c_str());
 	} else if (type.compare("stream") == 0) {
 		AudioStream *stream = app->findAudioStream(id);
 		if (stream == NULL) {
-			app->sendResponse(Response("No Audio Stream with such id."));
+		    app->sendResponse(Response(COMMANDNAME_MSFILTER_ADD_FMTP, "No Audio Stream with such id.", Response::Error));
 			return;
 		}
 		ms_filter_call_method(stream->ms.encoder, MS_FILTER_ADD_FMTP, (void *)fmtp.c_str());
 	} else {
-		app->sendResponse(Response("Incorrect parameter(s)."));
+	    app->sendResponse(Response(COMMANDNAME_MSFILTER_ADD_FMTP, "Incorrect parameter(s).", Response::Error));
 		return;
 	}
-	app->sendResponse(Response());
+	app->sendResponse(Response(COMMANDNAME_MSFILTER_ADD_FMTP, "", Response::Ok));
 }

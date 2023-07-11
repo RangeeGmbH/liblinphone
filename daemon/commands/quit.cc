@@ -29,5 +29,5 @@ QuitCommand::QuitCommand() : DaemonCommand("quit", "quit", "Quit the application
 
 void QuitCommand::exec(Daemon *app, BCTBX_UNUSED(const string &args)) {
 	app->quit();
-	app->sendResponse(Response());
+	app->sendResponse(Response(COMMANDNAME_QUIT, "", Response::Ok));
 }

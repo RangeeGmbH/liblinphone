@@ -41,24 +41,30 @@ void CallPauseCommand::exec(Daemon *app, const string &args) {
 	bool current = false;
 	istringstream ist(args);
 	ist >> cid;
+	ostringstream ost;
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		current = true;
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available."));
+		    ost << "\"No current call available.\"";
+		    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost.str(),  Response::Error));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+		    ost << "\"No call with such id.\"";
+		    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost.str(), Response::Error));
 			return;
 		}
 	}
 
 	if (linphone_call_pause(call) == 0) {
-		app->sendResponse(Response(current ? "Current call was paused" : "Call was paused", Response::Ok));
+	    string curStr = current ? "Current call was paused" : "Call was paused";
+	    ost << "\""  << curStr << "\"";
+	    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost.str(), Response::Ok));
 	} else {
-		app->sendResponse(Response("Error pausing call"));
+	    ost << "\"Error pausing \"";
+	    app->sendResponse(Response(COMMANDNAME_CALL_PAUSE, ost.str(), Response::Error));
 	}
 }

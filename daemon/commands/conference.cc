@@ -52,19 +52,40 @@ void ConferenceCommand::exec(Daemon *app, const string &args) {
 	istringstream ist(args);
 	ist >> subcommand;
 	ist >> id;
-	if (ist.fail()) {
-		app->sendResponse(Response("Invalid command format.", Response::Error));
-		return;
+	ostringstream ost;
+
+	if (subcommand.compare("list") == 0) {
+	    LinphoneConference *conference = linphone_core_get_conference(lc);
+	    if (conference == NULL) {
+	        ost << "No conference in progress. Can't list conference.";
+	        app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
+            return;
+	    } else {
+	        string conferenceString;
+	        conferenceString = app->getJsonForConference(conference);
+	        app->sendResponse(Response(COMMANDNAME_CONFERENCE, conferenceString, Response::Ok));
+            return;
+	    }
 	}
 
 	LinphoneCall *call = app->findCall(id);
 	if (call == NULL) {
-		app->sendResponse(Response("No call with such id.", Response::Error));
+	    ost << "No call with such id.";
+	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
 		return;
 	}
 
 	if (subcommand.compare("add") == 0) {
-		ret = linphone_core_add_to_conference(lc, call);
+	    bool_t in_conference;
+	    in_conference = (linphone_call_get_conference(call) != NULL);
+	    if(!in_conference) {
+	        ret = linphone_core_add_to_conference(lc, call);
+	    }
+	    else {
+	        ost << "Call ID: " << id << " is already in conference, can't add the same call";
+	        app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
+            return;
+	    }
 	} else if (subcommand.compare("rm") == 0) {
 		ret = linphone_core_remove_from_conference(lc, call);
 	} else if (subcommand.compare("enter") == 0) {
@@ -72,18 +93,26 @@ void ConferenceCommand::exec(Daemon *app, const string &args) {
 	} else if (subcommand.compare("leave") == 0) {
 		ret = linphone_core_leave_conference(lc);
 	} else {
-		app->sendResponse(Response("Invalid command format.", Response::Error));
+	    ost << "Invalid command format.";
+	    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
 		return;
 	}
 
-	if (ret == 0) {
-		ostringstream ostr;
-		ostr << "Call ID: " << id << "\n";
-		ostr << "Conference: " << subcommand << " OK"
-		     << "\n";
-		app->sendResponse(Response(ostr.str(), Response::Ok));
-		return;
+	if (ret == 0 || ret == 1) {
+		//ost << "Call ID: " << id << "\n";
+		//ost << "Conference: " << subcommand << " OK" <<;
+		LinphoneConference *conference = linphone_core_get_conference(lc);
+		if (conference == NULL) {
+		    ost << "No conference in progress.";
+		    app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
+		    return;
+		} else {
+		    string conferenceString;
+		    conferenceString = app->getJsonForConference(conference);
+		    app->sendResponse(Response(COMMANDNAME_CONFERENCE, conferenceString, Response::Ok));
+		    return;
+		}
 	}
-
-	app->sendResponse(Response("Command failed", Response::Error));
+	ost << "Command failed";
+	app->sendResponse(Response(COMMANDNAME_CONFERENCE, ost.str(), Response::Error));
 }

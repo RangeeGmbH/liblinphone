@@ -127,7 +127,12 @@ void ToneManager::startRingtone() {
 	if (ringcard) {
 		ms_snd_card_set_stream_type(ringcard, MS_SND_CARD_STREAM_RING);
 		linphone_ringtoneplayer_start(lc->factory, lc->ringtoneplayer, ringcard, lc->sound_conf.local_ring, 2000);
-	}
+
+        RingStream *ringstream = linphone_ringtoneplayer_get_stream(linphone_core_get_ringtoneplayer(lc));
+        if (ringstream != NULL) {
+            ring_stream_set_output_volume(ringstream, lc->sound_conf.soft_ring_lev);
+        }
+    }
 }
 
 void ToneManager::stopRingtone() {
