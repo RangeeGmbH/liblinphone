@@ -60,11 +60,11 @@ void IncallPlayerStartCommand::exec(Daemon *app, const string &args) {
 
 	ist >> filename;
 	if (ist.eof() && (filename.length() == 0)) {
-		app->sendResponse(Response("Missing filename parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_START, "Missing filename parameter.", Response::Error));
 		return;
 	}
 	if (ist.fail()) {
-		app->sendResponse(Response("Incorrect filename parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_START, "Incorrect filename parameter.", Response::Error));
 		return;
 	}
 
@@ -77,12 +77,12 @@ void IncallPlayerStartCommand::exec(Daemon *app, const string &args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+		    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_START, "No call with such id.", Response::Error));
 			return;
 		}
 	}
 	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
+	    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_START, "No active call.", Response::Error));
 		return;
 	}
 	LinphonePlayer *p = linphone_call_get_player(call);
@@ -96,7 +96,7 @@ void IncallPlayerStartCommand::exec(Daemon *app, const string &args) {
 	linphone_player_cbs_set_eof_reached(cbs, onEof);
 	linphone_player_open(p, filename.c_str());
 	linphone_player_start(p);
-	app->sendResponse(Response());
+	app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_START, "", Response::Ok));
 }
 
 IncallPlayerStopCommand::IncallPlayerStopCommand()
@@ -123,12 +123,12 @@ void IncallPlayerStopCommand::exec(Daemon *app, const string &args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+		    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_STOP, "No call with such id.", Response::Error));
 			return;
 		}
 	}
 	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
+	    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_STOP, "No active call.", Response::Error));
 		return;
 	}
 
@@ -164,18 +164,18 @@ void IncallPlayerPauseCommand::exec(Daemon *app, const string &args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+		    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_PAUSE, "No call with such id.", Response::Error));
 			return;
 		}
 	}
 	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
+	    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_PAUSE, "No active call.", Response::Error));
 		return;
 	}
 
 	LinphonePlayer *p = linphone_call_get_player(call);
 	linphone_player_pause(p);
-	app->sendResponse(Response());
+	app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_PAUSE, "", Response::Ok));
 }
 
 IncallPlayerResumeCommand::IncallPlayerResumeCommand()
@@ -202,16 +202,16 @@ void IncallPlayerResumeCommand::exec(Daemon *app, const string &args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+		    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_RESUME, "No call with such id.", Response::Error));
 			return;
 		}
 	}
 	if (call == NULL) {
-		app->sendResponse(Response("No active call."));
+	    app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_RESUME, "No active call.", Response::Error));
 		return;
 	}
 
 	LinphonePlayer *p = linphone_call_get_player(call);
 	linphone_player_start(p);
-	app->sendResponse(Response());
+	app->sendResponse(Response(COMMANDNAME_INCALL_PLAYER_RESUME, "", Response::Ok));
 }

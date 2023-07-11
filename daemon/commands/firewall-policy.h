@@ -23,11 +23,18 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_FIREWALL_POLICY "firewall-policy"
+
+using namespace std;
+
 class FirewallPolicyCommand : public DaemonCommand {
 public:
 	FirewallPolicyCommand();
 
 	void exec(Daemon *app, const std::string &args) override;
+
+private:
+    string getFireWallPolicyResponseStr(LinphoneCore *core);
 };
 
 #endif // LINPHONE_DAEMON_COMMAND_FIREWALL_POLICY_H_

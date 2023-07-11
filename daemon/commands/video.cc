@@ -52,13 +52,13 @@ void Video::exec(Daemon *app, const string &args) {
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available."));
+			app->sendResponse(Response(COMMANDNAME_VIDEO, "No current call available."));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+			app->sendResponse(Response(COMMANDNAME_VIDEO, "No call with such id."));
 			return;
 		}
 	}
@@ -72,11 +72,11 @@ void Video::exec(Daemon *app, const string &args) {
 		linphone_call_params_unref(new_params);
 
 	} else {
-		app->sendResponse(Response("No streams running: can't [de]activate video"));
+		app->sendResponse(Response(COMMANDNAME_VIDEO, "No streams running: can't [de]activate video"));
 		return;
 	}
 
-	app->sendResponse(Response(activate ? "Camera activated." : "Camera deactivated", Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_VIDEO, activate ? "Camera activated." : "Camera deactivated", Response::Ok));
 }
 
 VideoSource::VideoSource()
@@ -107,20 +107,20 @@ void VideoSource::exec(Daemon *app, const string &args) {
 	istringstream ist(args);
 	ist >> subcommand;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, "Missing parameter.", Response::Error));
 		return;
 	}
 	ist >> cid;
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available."));
+			app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, "No current call available."));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+			app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, "No call with such id."));
 			return;
 		}
 	}
@@ -130,11 +130,11 @@ void VideoSource::exec(Daemon *app, const string &args) {
 	} else if (subcommand.compare("dummy") == 0) {
 		activate = false;
 	} else {
-		app->sendResponse(Response("Invalid source.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, "Invalid source.", Response::Error));
 		return;
 	}
 	linphone_call_enable_camera(call, activate);
-	app->sendResponse(Response(activate ? "Webcam source selected." : "Dummy source selected.", Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE, activate ? "Webcam source selected." : "Dummy source selected.", Response::Ok));
 }
 
 AutoVideo::AutoVideo()
@@ -154,7 +154,7 @@ void AutoVideo::exec(Daemon *app, const string &args) {
 
 	linphone_core_set_video_policy(lc, &vpol);
 	app->setAutoVideo(enable);
-	app->sendResponse(Response(enable ? "Auto video ON" : "Auto video OFF", Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_AUTOVIDEO, enable ? "Auto video ON" : "Auto video OFF", Response::Ok));
 }
 
 //--------------------------------------------------
@@ -166,7 +166,7 @@ VideoSourceGet::VideoSourceGet()
 }
 
 void VideoSourceGet::exec(Daemon *app, BCTBX_UNUSED(const string &args)) {
-	app->sendResponse(Response(linphone_core_get_video_device(app->getCore()), Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE_GET, linphone_core_get_video_device(app->getCore()), Response::Ok));
 }
 
 //--------------------------------------------------
@@ -185,9 +185,9 @@ void VideoSourceList::exec(Daemon *app, BCTBX_UNUSED(const string &args)) {
 	     node = bctbx_list_next(node))
 		ost << static_cast<char *>(node->data) << "\n";
 	if (ost.str().empty()) {
-		app->sendResponse(Response("No video source found.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE_LIST, "No video source found.", Response::Error));
 	} else {
-		app->sendResponse(Response(ost.str(), Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE_LIST, ost.str(), Response::Ok));
 	}
 }
 
@@ -206,10 +206,10 @@ void VideoSourceSet::exec(Daemon *app, const string &args) {
 	for (; node != NULL; node = bctbx_list_next(node))
 		if (static_cast<char *>(node->data) == args) break;
 	if (node == NULL) {
-		app->sendResponse(Response("No video source found.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE_SET, "No video source found.", Response::Error));
 	} else {
 		linphone_core_set_video_device(app->getCore(), args.c_str());
-		app->sendResponse(Response(args, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE_SET, args, Response::Ok));
 	}
 }
 
@@ -228,9 +228,9 @@ void VideoSourceReload::exec(Daemon *app, BCTBX_UNUSED(const string &args)) {
 	     node = bctbx_list_next(node))
 		ost << static_cast<char *>(node->data) << "\n";
 	if (ost.str().empty()) {
-		app->sendResponse(Response("No video source found.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE_RELOAD,"No video source found.", Response::Error));
 	} else {
-		app->sendResponse(Response(ost.str(), Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_VIDEOSOURCE_RELOAD, ost.str(), Response::Ok));
 	}
 }
 
@@ -247,8 +247,8 @@ void VideoDisplayGet::exec(Daemon *app, BCTBX_UNUSED(const string &args)) {
 	if (display_filter == NULL) {
 		display_filter = linphone_core_get_default_video_display_filter(app->getCore());
 	}
-	if (display_filter == NULL) app->sendResponse(Response("No filter has been set", Response::Error));
-	else app->sendResponse(Response(display_filter, Response::Ok));
+	if (display_filter == NULL) app->sendResponse(Response(COMMANDNAME_VIDEODISPLAY_GET,"No filter has been set", Response::Error));
+	else app->sendResponse(Response(COMMANDNAME_VIDEODISPLAY_GET, display_filter, Response::Ok));
 }
 
 VideoDisplaySet::VideoDisplaySet()
@@ -260,9 +260,9 @@ VideoDisplaySet::VideoDisplaySet()
 void VideoDisplaySet::exec(Daemon *app, const string &args) {
 	if (linphone_core_is_media_filter_supported(app->getCore(), args.c_str())) {
 		linphone_core_set_video_display_filter(app->getCore(), args.c_str());
-		app->sendResponse(Response(args, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_VIDEODISPLAY_SET, args, Response::Ok));
 	} else {
-		app->sendResponse(Response("No display filter found.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEODISPLAY_SET, "No display filter found.", Response::Error));
 	}
 }
 
@@ -278,11 +278,11 @@ void Video::Preview::exec(Daemon *app, const string &args) {
 		linphone_core_enable_video_preview(app->getCore(), TRUE);
 		linphone_core_set_native_preview_window_id(app->getCore(), LINPHONE_VIDEO_DISPLAY_AUTO);
 		linphone_core_set_native_video_window_id(app->getCore(), LINPHONE_VIDEO_DISPLAY_AUTO);
-		app->sendResponse(Response("Enabled", Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_VIDEOPREVIEW,"Enabled", Response::Ok));
 	} else if (args == "off") {
 		linphone_core_enable_video_preview(app->getCore(), FALSE);
-		app->sendResponse(Response("Disabled", Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_VIDEOPREVIEW, "Disabled", Response::Ok));
 	} else {
-		app->sendResponse(Response("Bad command. Use on/off.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_VIDEOPREVIEW, "Bad command. Use on/off.", Response::Error));
 	}
 }

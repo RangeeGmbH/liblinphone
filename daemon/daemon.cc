@@ -31,6 +31,8 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <vector>
+#include <math.h>
 
 #ifdef HAVE_READLINE
 #include <readline/history.h>
@@ -44,50 +46,56 @@
 #include <bctoolbox/defs.h>
 
 #include "commands/adaptive-jitter-compensation.h"
+#include "commands/jitterbuffer.h"
 #include "commands/answer.h"
 #include "commands/audio-codec-get.h"
 #include "commands/audio-codec-move.h"
 #include "commands/audio-codec-set.h"
 #include "commands/audio-codec-toggle.h"
 #include "commands/audio-stream-start.h"
-#include "commands/audio-stream-stats.h"
 #include "commands/audio-stream-stop.h"
+#include "commands/audio-stream-stats.h"
 #include "commands/auth-infos-clear.h"
-#include "commands/call-mute.h"
-#include "commands/call-pause.h"
-#include "commands/call-resume.h"
+#include "commands/call.h"
 #include "commands/call-stats.h"
 #include "commands/call-status.h"
+#include "commands/call-pause.h"
+#include "commands/call-mute.h"
+#include "commands/conference-mute.h"
+#include "commands/call-resume.h"
+#include "commands/video.h"
 #include "commands/call-transfer.h"
-#include "commands/call.h"
-#include "commands/cn.h"
 #include "commands/conference.h"
-#include "commands/configcommand.h"
 #include "commands/contact.h"
 #include "commands/dtmf.h"
 #include "commands/echo.h"
 #include "commands/firewall-policy.h"
 #include "commands/help.h"
 #include "commands/ipv6.h"
-#include "commands/jitterbuffer.h"
 #include "commands/media-encryption.h"
-#include "commands/message.h"
 #include "commands/msfilter-add-fmtp.h"
-#include "commands/netsim.h"
 #include "commands/play-wav.h"
-#include "commands/play.h"
 #include "commands/pop-event.h"
 #include "commands/port.h"
 #include "commands/ptime.h"
-#include "commands/quit.h"
+#include "commands/register.h"
 #include "commands/register-info.h"
 #include "commands/register-status.h"
-#include "commands/register.h"
 #include "commands/terminate.h"
 #include "commands/unregister.h"
+#include "commands/quit.h"
+#include "commands/configcommand.h"
+#include "commands/netsim.h"
+#include "commands/cn.h"
 #include "commands/version.h"
-#include "commands/video.h"
-#include "daemon.h"
+#include "commands/play.h"
+#include "commands/message.h"
+#include "commands/soundcards.h"
+#include "commands/volume.h"
+#include "commands/set-sound-card.h"
+#include "commands/get-sound-card.h"
+#include "commands/maxCall.h"
+#include "commands/friends.h"
 
 #include "private.h"
 
@@ -130,89 +138,302 @@ void *Daemon::iterateThread(void *arg) {
 	return 0;
 }
 
-CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
-	LinphoneCallLog *callLog = linphone_call_get_call_log(call);
-	const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
-	char *fromStr = linphone_address_as_string(fromAddr);
-
-	ostringstream ostr;
-	ostr << "Event: " << linphone_call_state_to_string(state) << "\n";
-	ostr << "From: " << fromStr << "\n";
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
-	setBody(ostr.str());
-
-	bctbx_free(fromStr);
+float Daemon::linearToDb(float volume) {
+    return static_cast<float>(round(volume / 100));
 }
 
+
+std::string Daemon::replaceAll(std::string str, const std::string &from, const std::string &to) {
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+    }
+    return str;
+}
+
+std::string Daemon::replaceEscapeChar(std::string replaceStr) {
+    std::string returnStr;
+    returnStr = replaceAll(replaceStr, "\\", "\\\\");
+    returnStr = replaceAll(returnStr, "\"", "\\\"");
+    return returnStr;
+}
+
+std::string Daemon::getJsonForConferenceParticipant(LinphoneParticipant *linphoneParticipant) {
+    string linphoneAddress;
+    const LinphoneAddress *lLinphoneAddress = linphone_participant_get_address(linphoneParticipant);
+    LinphoneCall *call = linphone_core_get_call_by_remote_address2(this->getCore(), lLinphoneAddress);
+    linphoneAddress += "{ \"address\": \"";
+    linphoneAddress += linphone_address_as_string(lLinphoneAddress);
+    linphoneAddress += "\", \"callId\": ";
+    linphoneAddress += std::to_string(updateCallId(call));
+    linphoneAddress += " }";
+    return linphoneAddress;
+}
+
+std::string Daemon::getJsonForConference(LinphoneConference *conference) {
+    float outputVolumeFloat = -1;
+    float inputVolumeFloat = -1;
+    std::string output_Device_Str = "";
+    std::string input_Device_Str = "";
+
+    LinphoneConferenceState conferenceState = LinphoneConferenceStateInstantiated;
+    conferenceState = linphone_conference_get_state(conference);
+
+    const LinphoneAudioDevice *output_device = nullptr;
+    const LinphoneAudioDevice *input_device = nullptr;
+
+    string micMutedStrForConference = "";
+    string speakerMutedStrForConference = "";
+
+    if(conferenceState != LinphoneConferenceState::LinphoneConferenceStateCreated) {
+        micMutedStrForConference = "\"\"";
+        speakerMutedStrForConference = "\"\"";
+    }
+    else {
+        output_device = linphone_conference_get_output_audio_device(conference);
+        input_device = linphone_conference_get_input_audio_device(conference);
+
+        outputVolumeFloat = linphone_conference_get_output_volume_gain(conference);
+        inputVolumeFloat = linphone_conference_get_input_volume_gain(conference);
+
+        micMutedStrForConference = linphone_conference_microphone_is_muted(conference) ? "true" : "false";
+        speakerMutedStrForConference = linphone_conference_speaker_is_muted(conference) ? "true" : "false";
+    }
+
+    if( output_device == nullptr ) {
+        output_Device_Str = "\"\"";
+    }
+    else  {
+        output_Device_Str = getJsonForAudioDevice(output_device);
+    }
+    if( input_device == nullptr ) {
+        input_Device_Str = "\"\"";
+    }
+    else  {
+        input_Device_Str = getJsonForAudioDevice(input_device);
+    }
+    if(micMutedStrForConference.empty()) {
+        micMutedStrForConference = "{ }";
+    }
+    if(speakerMutedStrForConference.empty()) {
+        speakerMutedStrForConference = "{ }";
+    }
+
+    string participants_string;
+    const bctbx_list_t *elem;
+    elem = linphone_conference_get_participant_list(conference);
+    for (int index = 0; index < (int)bctbx_list_size(elem); index++) {
+        LinphoneParticipant* lLinphoneParticipant = (LinphoneParticipant*) bctbx_list_nth_data(elem,index);
+        participants_string += this->getJsonForConferenceParticipant(lLinphoneParticipant);
+        if(index < (int)bctbx_list_size(elem)-1) {
+            participants_string += ",";
+        }
+    }
+
+    ostringstream ost;
+    ost << "{ \"conference\": { \"muted\": { " << "\"input\": " << micMutedStrForConference << ", \"output\": " << speakerMutedStrForConference << " }" <<
+    ", \"participants\": [ " << participants_string << " ] " <<
+    ", \"state\": " << "\"" << linphone_conference_state_to_string(conferenceState) << "\"" <<
+    ", \"soundcards\": { \"output\": " << output_Device_Str << ", \"input\": " << input_Device_Str << " }" <<
+    ", \"volumes\": { \"output\": " << outputVolumeFloat << ", \"input\": " << inputVolumeFloat << " } } }";
+    return ost.str();
+}
+
+std::string Daemon::getJsonForCall(LinphoneCall *call) {
+    LinphoneCallState call_state = LinphoneCallIdle;
+    call_state = linphone_call_get_state(call);
+
+    LinphoneCallLog *callLog = linphone_call_get_call_log(call);
+    const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
+    const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
+    std::string toStr = "";
+    std::string fromStr = "";
+    toStr = linphone_address_as_string(toAddr);
+    fromStr = linphone_address_as_string(fromAddr);
+    toStr = replaceEscapeChar(toStr);
+    fromStr = replaceEscapeChar(fromStr);
+
+    const char *errorMessage;
+    if (call_state != LinphoneCallState::LinphoneCallStateError) {
+        errorMessage = "";
+    } else {
+        errorMessage = linphone_reason_to_string(linphone_call_get_reason(call));
+    }
+    replaceEscapeChar(errorMessage);
+
+    const char *flag;
+    bool_t in_conference;
+    in_conference = (linphone_call_get_conference(call) != NULL);
+    flag = in_conference ? "true" : "false";
+    string direction = ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in");
+    float outputVolumeFloat = -1;
+    float inputVolumeFloat = -1;
+    std::string output_Device_Str = "";
+    std::string input_Device_Str = "";
+    const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
+    if( output_device == nullptr ) {
+        output_Device_Str = "\"\"";
+    }
+    else  {
+        output_Device_Str = getJsonForAudioDevice(output_device);
+    }
+    const LinphoneAudioDevice *input_device = linphone_call_get_input_audio_device(call);
+    if( input_device == nullptr ) {
+        input_Device_Str = "\"\"";
+    }
+    else  {
+        input_Device_Str = getJsonForAudioDevice(input_device);
+    }
+    if (call_state == LinphoneCallState::LinphoneCallStateStreamsRunning) {
+        outputVolumeFloat = linphone_call_get_speaker_volume_gain(call);
+        inputVolumeFloat = linphone_call_get_microphone_volume_gain(call);
+    }
+    string micMutedStrForCall = linphone_call_get_microphone_muted(call) ? "true" : "false";
+    string speakerMutedStrForCall = linphone_call_get_speaker_muted(call) ? "true" : "false";
+
+    ostringstream ost;
+    ost << "{ \"id\": " << updateCallId(call) << ", \"state\": " << "\"" << linphone_call_state_to_string(call_state)
+        << "\"" << ", \"addressFrom\": " << "\"" << fromStr.c_str() << "\"" << ", \"addressTo\": " << "\""
+        << toStr.c_str() << "\"" << ", \"direction\": " << "\"" << direction << "\""
+        << ", \"duration\":" << linphone_call_get_duration(call) << ", \"inConference\": " << flag
+        << ", \"muted\": { " << "\"input\": " << micMutedStrForCall << ", \"output\": " << speakerMutedStrForCall << " }"
+        << ", \"errorMessage\": " << "\"" << errorMessage << "\"" <<
+        ", \"volumes\": { \"output\": " << outputVolumeFloat << ", \"input\": " << inputVolumeFloat << " }"
+        << ", \"soundcards\": { \"output\": " << output_Device_Str << ", \"input\": " << input_Device_Str << " } }";
+    return ost.str();
+}
+
+CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
+    if(state == LinphoneCallState::LinphoneCallStateEnd || state == LinphoneCallState::LinphoneCallStateError || state == LinphoneCallState::LinphoneCallStateReleased) {
+        bool_t in_conference;
+        in_conference = (linphone_call_get_conference(call) != NULL);
+        if(in_conference) {
+            linphone_core_remove_from_conference(daemon->getCore(), call);
+        }
+    }
+    string callStr;
+    callStr = "{ \"calls\": [ ";
+    callStr += daemon->getJsonForCall(call);
+    callStr += " ] }";
+    setBody(callStr);
+}
+#ifndef _MSC_VER
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif // _MSC_VER
+ConferenceEvent::ConferenceEvent(Daemon *daemon, LinphoneConference *conference, LinphoneConferenceState state) : Event("conference-state-changed") {
+    setBody(daemon->getJsonForConference(conference));
+}
+#ifndef _MSC_VER
+#pragma GCC diagnostic pop
+#endif // _MSC_VER
+
 DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("receiving-tone") {
-	ostringstream ostr;
-	char *remote = linphone_call_get_remote_address_as_string(call);
-	ostr << "Tone: " << (char)dtmf << "\n";
-	ostr << "From: " << remote << "\n";
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
-	setBody(ostr.str());
-	ms_free(remote);
+    ostringstream ostr;
+    const LinphoneAddress *address = linphone_call_get_remote_address(call);
+    char *remote = linphone_address_as_string(address);
+    ostr << "CallId: " << daemon->updateCallId(call) << "\n";
+    ostr << "Tone: " << (char) dtmf << "\n";
+    ostr << "From: " << remote;
+    setBody(ostr.str());
+    ms_free(remote);
+}
+
+#ifndef _MSC_VER
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif // _MSC_VER
+ProxyRegistrationChangedEvent::ProxyRegistrationChangedEvent(Daemon *daemon, LinphoneProxyConfig *cfg,
+                                                             LinphoneRegistrationState cstate, const char *message)
+        : Event("proxy-registration-state-changed") {
+    string proxysStr;
+    proxysStr = "{ \"proxies\": [ ";
+    proxysStr += daemon->getJsonForProxys(cfg);
+    proxysStr += " ] }";
+
+    setBody(proxysStr);
+    if (linphone_proxy_config_get_state(cfg) == LinphoneRegistrationCleared) {
+        linphone_core_clear_all_auth_info(daemon->getCore());
+    }
+}
+#ifndef _MSC_VER
+#pragma GCC diagnostic pop
+#endif // _MSC_VER
+
+FriendPresenceStateChangedEvent::FriendPresenceStateChangedEvent(Daemon *daemon, LinphoneFriend *_friend)
+                                                             : Event("friend-presence-state-changed") {
+    if( !daemon->getJsonForFriend(_friend).empty()) {
+        string friendStr;
+        friendStr = "{ \"friend\": ";
+        friendStr += daemon->getJsonForFriend(_friend);
+        friendStr += " }";
+
+        setBody(friendStr);
+    }
 }
 
 static ostream &printCallStatsHelper(ostream &ostr, const LinphoneCallStats *stats, const string &prefix) {
-	ostr << prefix << "ICE state: " << ice_state_str[linphone_call_stats_get_ice_state(stats)] << "\n";
-	ostr << prefix << "RoundTripDelay: " << linphone_call_stats_get_round_trip_delay(stats) << "\n";
-	//	ostr << prefix << "Jitter: " << stats->jitter_stats.jitter << "\n";
-	//	ostr << prefix << "MaxJitter: " << stats->jitter_stats.max_jitter << "\n";
-	//	ostr << prefix << "SumJitter: " << stats->jitter_stats.sum_jitter << "\n";
-	//	ostr << prefix << "MaxJitterTs: " << stats->jitter_stats.max_jitter_ts << "\n";
-	ostr << prefix << "JitterBufferSizeMs: " << linphone_call_stats_get_jitter_buffer_size_ms(stats) << "\n";
+    ostr << prefix << "ICE state: " << ice_state_str[linphone_call_stats_get_ice_state(stats)] << "\n";
+    ostr << prefix << "RoundTripDelay: " << linphone_call_stats_get_round_trip_delay(stats) << "\n";
+    //	ostr << prefix << "Jitter: " << stats->jitter_stats.jitter << "\n";
+    //	ostr << prefix << "MaxJitter: " << stats->jitter_stats.max_jitter << "\n";
+    //	ostr << prefix << "SumJitter: " << stats->jitter_stats.sum_jitter << "\n";
+    //	ostr << prefix << "MaxJitterTs: " << stats->jitter_stats.max_jitter_ts << "\n";
+    ostr << prefix << "JitterBufferSizeMs: " << linphone_call_stats_get_jitter_buffer_size_ms(stats) << "\n";
 
-	ostr << prefix << "Received-InterarrivalJitter: " << linphone_call_stats_get_receiver_interarrival_jitter(stats)
-	     << "\n";
-	ostr << prefix << "Received-FractionLost: " << linphone_call_stats_get_receiver_loss_rate(stats) << "\n";
+    ostr << prefix << "Received-InterarrivalJitter: " << linphone_call_stats_get_receiver_interarrival_jitter(stats)
+         << "\n";
+    ostr << prefix << "Received-FractionLost: " << linphone_call_stats_get_receiver_loss_rate(stats) << "\n";
 
-	ostr << prefix << "Sent-InterarrivalJitter: " << linphone_call_stats_get_sender_interarrival_jitter(stats) << "\n";
-	ostr << prefix << "Sent-FractionLost: " << linphone_call_stats_get_sender_loss_rate(stats) << "\n";
-	return ostr;
+    ostr << prefix << "Sent-InterarrivalJitter: " << linphone_call_stats_get_sender_interarrival_jitter(stats) << "\n";
+    ostr << prefix << "Sent-FractionLost: " << linphone_call_stats_get_sender_loss_rate(stats) << "\n";
+    return ostr;
 }
 
-CallStatsEvent::CallStatsEvent(Daemon *daemon, LinphoneCall *call, const LinphoneCallStats *stats)
-    : Event("call-stats") {
-	const LinphoneCallParams *callParams = linphone_call_get_current_params(call);
-	const char *prefix = "";
+CallStatsEvent::CallStatsEvent(Daemon *daemon, LinphoneCall *call, const LinphoneCallStats *stats) : Event(
+        "call-stats") {
+    const LinphoneCallParams *callParams = linphone_call_get_current_params(call);
+    const char *prefix = "";
 
-	ostringstream ostr;
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
-	ostr << "Type: ";
-	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
-		ostr << "Audio";
-	} else {
-		ostr << "Video";
-	}
-	ostr << "\n";
+    ostringstream ostr;
+    ostr << "CallId: " << daemon->updateCallId(call) << "\n";
+    ostr << "Type: ";
+    if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
+        ostr << "Audio";
+    } else {
+        ostr << "Video";
+    }
+    ostr << "\n";
 
-	printCallStatsHelper(ostr, stats, prefix);
 
-	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
-		const PayloadType *audioCodec = linphone_call_params_get_used_audio_codec(callParams);
-		ostr << PayloadTypeResponse(linphone_call_get_core(call), audioCodec, -1, prefix, false).getBody() << "\n";
-	} else {
-		const PayloadType *videoCodec = linphone_call_params_get_used_video_codec(callParams);
-		ostr << PayloadTypeResponse(linphone_call_get_core(call), videoCodec, -1, prefix, false).getBody() << "\n";
-	}
+    printCallStatsHelper(ostr, stats, prefix);
 
-	setBody(ostr.str());
+    if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
+        const PayloadType *audioCodec = linphone_call_params_get_used_audio_codec(callParams);
+        ostr << PayloadTypeResponse(linphone_call_get_core(call), audioCodec, -1, prefix, false).getBody();
+    } else {
+        const PayloadType *videoCodec = linphone_call_params_get_used_video_codec(callParams);
+        ostr << PayloadTypeResponse(linphone_call_get_core(call), videoCodec, -1, prefix, false).getBody();
+    }
+
+    setBody(ostr.str());
 }
 
-AudioStreamStatsEvent::AudioStreamStatsEvent(Daemon *daemon, AudioStream *stream, const LinphoneCallStats *stats)
-    : Event("audio-stream-stats") {
-	const char *prefix = "";
 
-	ostringstream ostr;
-	ostr << "Id: " << daemon->updateAudioStreamId(stream) << "\n";
-	ostr << "Type: ";
-	if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
-		ostr << "Audio";
-	} else {
-		ostr << "Video";
-	}
-	ostr << "\n";
+AudioStreamStatsEvent::AudioStreamStatsEvent(Daemon *daemon, AudioStream *stream,
+                                             const LinphoneCallStats *stats) : Event("audio-stream-stats") {
+    const char *prefix = "";
+
+    ostringstream ostr;
+    ostr << "AudioStreamId: " << daemon->updateAudioStreamId(stream) << "\n";
+    ostr << "Type: ";
+    if (linphone_call_stats_get_type(stats) == LINPHONE_CALL_STATS_AUDIO) {
+        ostr << "Audio";
+    } else {
+        ostr << "Video";
+    }
+    ostr << "\n";
 
 	printCallStatsHelper(ostr, stats, prefix);
 
@@ -306,52 +527,52 @@ bool DaemonCommand::matches(const string &name) const {
 	return mName.compare(name) == 0;
 }
 
-Daemon::Daemon(const char *config_path,
-               const char *factory_config_path,
-               const char *log_file,
-               const char *pipe_path,
-               bool display_video,
-               bool capture_video)
-    : mLSD(0), mLogFile(NULL), mAutoVideo(0), mCallIds(0), mProxyIds(0), mAudioStreamIds(0) {
-	ms_mutex_init(&mMutex, NULL);
-	mServerFd = (bctbx_pipe_t)-1;
-	mChildFd = (bctbx_pipe_t)-1;
-	if (pipe_path == NULL) {
+Daemon::Daemon(const char *config_path, const char *factory_config_path, const char *log_file, const char *pipe_name,
+               bool display_video, bool capture_video) :
+        mLSD(0), mLogFile(NULL), mAutoVideo(0), mCallIds(0), mProxyIds(0), mAudioStreamIds(0) {
+    ms_mutex_init(&mMutex, NULL);
+    mServerFd = (bctbx_pipe_t) - 1;
+    mChildFd = (bctbx_pipe_t) - 1;
+    if (pipe_name == NULL) {
 #ifdef HAVE_READLINE
-		const char *homedir = getenv("HOME");
-		rl_readline_name = (char *)"daemon";
-		if (homedir == NULL) homedir = ".";
-		mHistfile = string(homedir) + string("/.linphone_history");
-		read_history(mHistfile.c_str());
-		setlinebuf(stdout);
+        const char *homedir = getenv("HOME");
+        rl_readline_name = (char*)"daemon";
+        if (homedir == NULL)
+            homedir = ".";
+        mHistfile = string(homedir) + string("/.linphone_history");
+        read_history(mHistfile.c_str());
+        setlinebuf(stdout);
 #endif
-	} else {
-		mServerFd = bctbx_server_pipe_create_by_path(pipe_path);
+    } else {
+        mServerFd = ortp_server_pipe_create(pipe_name);
 #ifndef _WIN32
-		listen(mServerFd, 2);
-		fprintf(stdout, "Server unix socket created, path=%s fd=%i\n", pipe_path, (int)mServerFd);
+        listen(mServerFd, 2);
+        fprintf(stdout, "Server unix socket created, name=%s fd=%i\n", pipe_name, (int) mServerFd);
 #else
-		fprintf(stdout, "Named pipe  created, path=%s fd=%p\n", pipe_path, mServerFd);
+        fprintf(stdout, "Named pipe  created, name=%s fd=%p\n", pipe_name, mServerFd);
 #endif
-	}
+    }
 
-	if (log_file != NULL) {
-		mLogFile = fopen(log_file, "a+");
-		linphone_core_enable_logs(mLogFile);
-	} else {
-		linphone_core_disable_logs();
-	}
+    if (log_file != NULL) {
+        mLogFile = fopen(log_file, "a+");
+        linphone_core_enable_logs(mLogFile);
+    } else {
+        linphone_core_disable_logs();
+    }
 
-	LinphoneCoreVTable vtable;
-	memset(&vtable, 0, sizeof(vtable));
-	vtable.call_state_changed = callStateChanged;
-	vtable.call_stats_updated = callStatsUpdated;
-	vtable.dtmf_received = dtmfReceived;
-	vtable.message_received = messageReceived;
-	mLc = linphone_core_new(&vtable, config_path, factory_config_path, this);
-	linphone_core_set_user_data(mLc, this);
-	linphone_core_enable_video_capture(mLc, capture_video);
-	linphone_core_enable_video_display(mLc, display_video);
+    LinphoneCoreVTable vtable;
+    memset(&vtable, 0, sizeof(vtable));
+    vtable.registration_state_changed = proxyRegistrationChanged;
+    vtable.call_state_changed = callStateChanged;
+    //vtable.call_stats_updated = callStatsUpdated;
+    vtable.dtmf_received = dtmfReceived;
+    vtable.message_received = messageReceived;
+    vtable.notify_presence_received = friendPresenceStateChanged;
+    vtable.conference_state_changed = conference_state_changed;
+    mLc = linphone_core_new(&vtable, config_path, factory_config_path, this);
+    linphone_core_set_user_data(mLc, this);
+    linphone_core_enable_video_capture(mLc, capture_video);
+    linphone_core_enable_video_display(mLc, display_video);
 
 	for (const bctbx_list_t *proxy = linphone_core_get_proxy_config_list(mLc); proxy != NULL;
 	     proxy = bctbx_list_next(proxy)) {
@@ -381,6 +602,205 @@ int Daemon::updateCallId(LinphoneCall *call) {
 		return mCallIds;
 	}
 	return val;
+}
+
+LinphoneAudioDevice *Daemon::findAudioDevice(std::string idString) {
+    bctbx_list_t * deviceList = linphone_core_get_extended_audio_devices(getCore());
+    LinphoneAudioDevice *pDevice = NULL;
+    while (deviceList != NULL) {
+        pDevice = (LinphoneAudioDevice *) deviceList->data;
+        if (linphone_audio_device_get_id(pDevice) == idString) {
+            bctbx_list_free_with_data(deviceList, (void (*)(void *))linphone_audio_device_unref);
+            return pDevice;
+        }
+
+        deviceList = deviceList->next;
+    }
+    bctbx_list_free_with_data(deviceList, (void (*)(void *))linphone_audio_device_unref);
+    return pDevice;
+}
+
+std::string Daemon::linphoneAudioDeviceTypeToString(LinphoneAudioDeviceType linphoneAudioDeviceType) const {
+    std::string type;
+    switch (linphoneAudioDeviceType) {
+        case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeMicrophone:
+            type = "Microphone";
+            break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeEarpiece:
+                type = "Earpiece";
+            break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeSpeaker:
+                type = "Speaker";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeBluetooth:
+                type = "Bluetooth";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeBluetoothA2DP:
+                type = "BluetoothA2DP";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeTelephony:
+                type = "Telephony";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeAuxLine:
+                type = "AuxLine";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeGenericUsb:
+                type = "Generic USB";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeHeadset:
+                type = "Headset";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeHeadphones:
+                type = "Headphones";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeUnknown:
+                default:
+                type = "Unknown";
+                break;
+    }
+    return type;
+}
+
+std::string Daemon::getJsonForPresenceActivities(const LinphonePresenceModel* model) {
+    const char *activityStr = "";
+    std::string vectorStr = "";
+    vector <std::string> v;
+
+    unsigned int nbActivities = linphone_presence_model_get_nb_activities(model);
+    for (unsigned int i = 0; i < nbActivities; i++) {
+        LinphonePresenceActivity *activity = linphone_presence_model_get_nth_activity(model, i);
+        if (activity == NULL) {
+            activityStr = linphone_presence_activity_to_string(activity);
+            vectorStr = activityStr;
+            v.push_back(vectorStr);
+        }
+    }
+
+    ostringstream ost;
+    std::string activities = this->join(v, ", ");
+    if(activities.empty()) {
+        activities = " ";
+    }
+
+    ost << "\"activities\": [" << activities.c_str() << "] ";
+
+    return ost.str();
+}
+
+std::string Daemon::getJsonForPresenceService(const LinphonePresenceModel* model) {
+    vector <std::string> v;
+
+    unsigned int nbServices = linphone_presence_model_get_nb_services(model);
+    for (unsigned int i = 0; i < nbServices; i++) {
+        LinphonePresenceService *service = linphone_presence_model_get_nth_service(model, i);
+        if (!service) continue;
+
+        bctbx_list_t *services_descriptions = linphone_presence_service_get_service_descriptions(service);
+        while (services_descriptions) {
+            char *description = (char *)bctbx_list_get_data(services_descriptions);
+            std::string vectorStr = "";
+            vectorStr = description;
+            v.push_back(vectorStr);
+        }
+    }
+    ostringstream ost;
+    std::string descriptions = this->join(v, ", ");
+    if(descriptions.empty()) {
+        descriptions = " ";
+    }
+
+    ost << "\"descriptions\": [" << descriptions.c_str() << "] ";
+
+    return ost.str();
+}
+
+std::string Daemon::getJsonForFriend(LinphoneFriend *_friend) {
+    ostringstream ost;
+
+    const LinphoneAddress * address = linphone_friend_get_address(_friend);
+    char *friendAddress = linphone_address_as_string(address);
+    const LinphonePresenceModel* model = linphone_friend_get_presence_model(_friend);
+
+    ost << "{ \"address\": " << "\"" << friendAddress << "\", \"presenceModel\": { ";
+
+    if(model == NULL) {
+        return NULL;
+    }
+    else if (model != NULL) {
+        const char *note_content = "";
+        const char *isOnlineStr = "";
+
+        // Notes
+        LinphonePresenceNote *note = linphone_presence_model_get_note(model, NULL);
+        if (note) {
+            note_content = linphone_presence_note_get_content(note);
+        }
+
+        // IsOnline
+        switch (linphone_presence_model_is_online(model)) {
+            case true:
+                isOnlineStr = "true";
+                break;
+            case false:
+                isOnlineStr = "false";
+                break;
+        }
+
+        ost << "\"note\": " << "\"" << note_content << "\"" << ", " << this->getJsonForPresenceActivities(model) << ", " << this->getJsonForPresenceService(model) << ", \"isOnline\": " << isOnlineStr;
+    }
+
+    ost << " } }";
+
+    return ost.str();
+}
+
+std::string Daemon::getJsonForAudioDevice(const LinphoneAudioDevice *device) {
+    ostringstream ost;
+    std::string deviceId(linphone_audio_device_get_id(device));
+    std::string deviceType(linphoneAudioDeviceTypeToString(linphone_audio_device_get_type(device)));
+    std::string deviceName(linphone_audio_device_get_device_name(device));
+    std::string driverName(linphone_audio_device_get_driver_name(device));
+    std::string canPlay;
+    std::string canRecord;
+    /*std::string isDefaultOutputString;
+    std::string isDefaultInputString;
+    std::string isDefaultRingerString;*/
+
+    bool isDefaultOutput = false;
+    bool isDefaultInput = false;
+    bool isDefaultRinger = false;
+
+    const LinphoneAudioDevice *output_device = linphone_core_get_default_output_audio_device(getCore());
+    isDefaultOutput = device == output_device;
+
+    const LinphoneAudioDevice *input_device = linphone_core_get_default_input_audio_device(getCore());
+    isDefaultInput = device == input_device;
+
+    const LinphoneAudioDevice *ringer_device;
+    const std::string& ringer_Device_Str = linphone_core_get_ringer_device(getCore());
+    ringer_device = findAudioDevice(ringer_Device_Str);
+    isDefaultRinger = device == ringer_device;
+
+    switch (linphone_audio_device_get_capabilities(device)) {
+        case LinphoneAudioDeviceCapabilityAll:
+            canPlay = "true";
+            canRecord = "true";
+            break;
+        case LinphoneAudioDeviceCapabilityPlay:
+            canPlay = "true";
+            canRecord = "false";
+            break;
+        case LinphoneAudioDeviceCapabilityRecord:
+            canPlay = "false";
+            canRecord = "true";
+            break;
+    }
+    std::string canPlayStrTrue = "true";
+    ost << "{ \"id\": " << "\"" << deviceId << "\"" << ", \"driver\": " << "\"" << driverName.c_str() << "\"" << ", \"type\": " << "\""
+    << deviceType << "\"" << ", \"name\": " << "\"" << deviceName.c_str() << "\""
+    << ", \"canRecord\": " << canRecord << ", \"canPlay\": " << canPlay
+    << ", \"isDefaultOutput\": " <<  (isDefaultOutput ? "true" : "false") << ", \"isDefaultInput\": " << (isDefaultInput ? "true" : "false") << ", \"isDefaultRinger\": " << (isDefaultRinger ? "true" : "false") << " }";
+    return ost.str();
 }
 
 LinphoneCall *Daemon::findCall(int id) {
@@ -457,94 +877,102 @@ static bool compareCommands(const DaemonCommand *command1, const DaemonCommand *
 }
 
 void Daemon::initCommands() {
-	mCommands.push_back(new RegisterCommand());
-	mCommands.push_back(new ContactCommand());
-	mCommands.push_back(new RegisterStatusCommand());
-	mCommands.push_back(new RegisterInfoCommand());
-	mCommands.push_back(new UnregisterCommand());
-	mCommands.push_back(new AuthInfosClearCommand());
-	mCommands.push_back(new CallCommand());
-	mCommands.push_back(new TerminateCommand());
-	mCommands.push_back(new DtmfCommand());
-	mCommands.push_back(new PlayWavCommand());
-	mCommands.push_back(new PopEventCommand());
-	mCommands.push_back(new AnswerCommand());
-	mCommands.push_back(new CallStatusCommand());
-	mCommands.push_back(new CallStatsCommand());
-	mCommands.push_back(new CallPauseCommand());
-	mCommands.push_back(new CallMuteCommand());
-	mCommands.push_back(new CallResumeCommand());
-	mCommands.push_back(new CallTransferCommand());
-	mCommands.push_back(new Video());
-	mCommands.push_back(new Video::Preview());
-	mCommands.push_back(new VideoSource());
-	mCommands.push_back(new VideoSourceGet());
-	mCommands.push_back(new VideoSourceList());
-	mCommands.push_back(new VideoSourceSet());
-	mCommands.push_back(new VideoSourceReload());
-	mCommands.push_back(new VideoDisplayGet());
-	mCommands.push_back(new VideoDisplaySet());
-	mCommands.push_back(new AutoVideo());
-	mCommands.push_back(new ConferenceCommand());
-	mCommands.push_back(new AudioCodecGetCommand());
-	mCommands.push_back(new AudioCodecEnableCommand());
-	mCommands.push_back(new AudioCodecDisableCommand());
-	mCommands.push_back(new AudioCodecMoveCommand());
-	mCommands.push_back(new AudioCodecSetCommand());
-	mCommands.push_back(new AudioStreamStartCommand());
-	mCommands.push_back(new AudioStreamStopCommand());
-	mCommands.push_back(new AudioStreamStatsCommand());
-	mCommands.push_back(new MSFilterAddFmtpCommand());
-	mCommands.push_back(new PtimeCommand());
-	mCommands.push_back(new IPv6Command());
-	mCommands.push_back(new FirewallPolicyCommand());
-	mCommands.push_back(new MediaEncryptionCommand());
-	mCommands.push_back(new PortCommand());
-	mCommands.push_back(new AdaptiveBufferCompensationCommand());
-	mCommands.push_back(new JitterBufferCommand());
-	mCommands.push_back(new JitterBufferResetCommand());
-	mCommands.push_back(new VersionCommand());
-	mCommands.push_back(new QuitCommand());
-	mCommands.push_back(new HelpCommand());
-	mCommands.push_back(new ConfigGetCommand());
-	mCommands.push_back(new ConfigSetCommand());
-	mCommands.push_back(new NetsimCommand());
-	mCommands.push_back(new CNCommand());
-	mCommands.push_back(new IncallPlayerStartCommand());
-	mCommands.push_back(new IncallPlayerStopCommand());
-	mCommands.push_back(new IncallPlayerPauseCommand());
-	mCommands.push_back(new IncallPlayerResumeCommand());
-	mCommands.push_back(new MessageCommand());
-	mCommands.push_back(new EchoCalibrationCommand());
-	mCommands.sort(compareCommands);
+    mCommands.push_back(new RegisterCommand());
+    mCommands.push_back(new ContactCommand());
+    mCommands.push_back(new RegisterStatusCommand());
+    mCommands.push_back(new RegisterInfoCommand());
+    mCommands.push_back(new UnregisterCommand());
+    mCommands.push_back(new AuthInfosClearCommand());
+    mCommands.push_back(new CallCommand());
+    mCommands.push_back(new TerminateCommand());
+    mCommands.push_back(new DtmfCommand());
+    mCommands.push_back(new PlayWavCommand());
+    mCommands.push_back(new PopEventCommand());
+    mCommands.push_back(new AnswerCommand());
+    mCommands.push_back(new SoundcardCommand());
+    mCommands.push_back(new GetSoundCard());
+    mCommands.push_back(new SetSoundCard());
+    mCommands.push_back(new VolumeCommand());
+    mCommands.push_back(new MaxCallsCommand());
+    mCommands.push_back(new Friends());
+    mCommands.push_back(new CallStatusCommand());
+    mCommands.push_back(new CallStatsCommand());
+    mCommands.push_back(new CallPauseCommand());
+    mCommands.push_back(new CallMuteCommand());
+    mCommands.push_back(new CallResumeCommand());
+    mCommands.push_back(new CallTransferCommand());
+    mCommands.push_back(new ConferenceMuteCommand());
+    mCommands.push_back(new Video());
+    mCommands.push_back(new Video::Preview());
+    mCommands.push_back(new VideoSource());
+    mCommands.push_back(new VideoSourceGet());
+    mCommands.push_back(new VideoSourceList());
+    mCommands.push_back(new VideoSourceSet());
+    mCommands.push_back(new VideoSourceReload());
+    mCommands.push_back(new VideoDisplayGet());
+    mCommands.push_back(new VideoDisplaySet());
+    mCommands.push_back(new AutoVideo());
+    mCommands.push_back(new ConferenceCommand());
+    mCommands.push_back(new AudioCodecGetCommand());
+    mCommands.push_back(new AudioCodecEnableCommand());
+    mCommands.push_back(new AudioCodecDisableCommand());
+    mCommands.push_back(new AudioCodecMoveCommand());
+    mCommands.push_back(new AudioCodecSetCommand());
+    mCommands.push_back(new AudioStreamStartCommand());
+    mCommands.push_back(new AudioStreamStopCommand());
+    mCommands.push_back(new AudioStreamStatsCommand());
+    mCommands.push_back(new MSFilterAddFmtpCommand());
+    mCommands.push_back(new PtimeCommand());
+    mCommands.push_back(new IPv6Command());
+    mCommands.push_back(new FirewallPolicyCommand());
+    mCommands.push_back(new MediaEncryptionCommand());
+    mCommands.push_back(new PortCommand());
+    mCommands.push_back(new AdaptiveBufferCompensationCommand());
+    mCommands.push_back(new JitterBufferCommand());
+    mCommands.push_back(new JitterBufferResetCommand());
+    mCommands.push_back(new VersionCommand());
+    mCommands.push_back(new QuitCommand());
+    mCommands.push_back(new HelpCommand());
+    mCommands.push_back(new ConfigGetCommand());
+    mCommands.push_back(new ConfigSetCommand());
+    mCommands.push_back(new NetsimCommand());
+    mCommands.push_back(new CNCommand());
+    mCommands.push_back(new IncallPlayerStartCommand());
+    mCommands.push_back(new IncallPlayerStopCommand());
+    mCommands.push_back(new IncallPlayerPauseCommand());
+    mCommands.push_back(new IncallPlayerResumeCommand());
+    mCommands.push_back(new EchoCalibrationCommand());
+    mCommands.push_back(new MessageCommand());
+    mCommands.sort(compareCommands);
 }
 
 void Daemon::uninitCommands() {
-	while (!mCommands.empty()) {
-		delete mCommands.front();
-		mCommands.pop_front();
-	}
+    while (!mCommands.empty()) {
+        delete mCommands.front();
+        mCommands.pop_front();
+    }
 }
 
 bool Daemon::pullEvent() {
-	bool status = false;
-	ostringstream ostr;
-	size_t size = mEventQueue.size();
+    bool status = false;
+    ostringstream ostr;
+    size_t size = mEventQueue.size();
 
-	if (size != 0) size--;
+    if (size != 0) size--;
 
-	ostr << "Size: " << size << "\n"; // size is the number items remaining in the queue after popping the event.
+    ostr << "Size: " << size
+         << "\n"; //size is the number items remaininCallEventg in the queue after popping the event.
 
-	if (!mEventQueue.empty()) {
-		Event *e = mEventQueue.front();
-		mEventQueue.pop();
-		ostr << e->toBuf() << "\n";
-		delete e;
-		status = true;
-	}
+    if (!mEventQueue.empty()) {
+        Event *e = mEventQueue.front();
+        mEventQueue.pop();
+        ostr << e->toBuf() << "\n";
+        delete e;
+        status = true;
+    }
 
-	sendResponse(Response(ostr.str().c_str(), Response::Ok));
-	return status;
+    sendResponse(Response(COMMANDNAME_POP_EVENT, ostr.str().c_str(), Response::Ok));
+    return status;
 }
 
 void Daemon::callStateChanged(LinphoneCall *call, LinphoneCallState state, BCTBX_UNUSED(const char *msg)) {
@@ -553,6 +981,10 @@ void Daemon::callStateChanged(LinphoneCall *call, LinphoneCallState state, BCTBX
 	if (state == LinphoneCallIncomingReceived && mAutoAnswer) {
 		linphone_call_accept(call);
 	}
+}
+
+void Daemon::conference_state_changed(LinphoneConference *conference, LinphoneConferenceState state) {
+    queueEvent(new ConferenceEvent(this, conference, state));
 }
 
 void Daemon::messageReceived(BCTBX_UNUSED(LinphoneChatRoom *cr), LinphoneChatMessage *msg) {
@@ -576,10 +1008,25 @@ void Daemon::dtmfReceived(LinphoneCall *call, int dtmf) {
 	queueEvent(new DtmfEvent(this, call, dtmf));
 }
 
+void Daemon::proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) {
+    queueEvent(new ProxyRegistrationChangedEvent(this, cfg, cstate, message));
+}
+
+void Daemon::friendPresenceStateChanged(LinphoneFriend *_friend) {
+    queueEvent(new FriendPresenceStateChangedEvent(this, _friend));
+}
+
+
 void Daemon::callStateChanged(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState state, const char *msg) {
 	Daemon *app = (Daemon *)linphone_core_get_user_data(lc);
 	app->callStateChanged(call, state, msg);
 }
+
+void Daemon::conference_state_changed(LinphoneCore *lc, LinphoneConference *conference, LinphoneConferenceState state) {
+    Daemon *app = (Daemon *) linphone_core_get_user_data(lc);
+    app->conference_state_changed(conference, state);
+}
+
 void Daemon::callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const LinphoneCallStats *stats) {
 	Daemon *app = (Daemon *)linphone_core_get_user_data(lc);
 	app->callStatsUpdated(call, stats);
@@ -587,6 +1034,17 @@ void Daemon::callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const Linpho
 void Daemon::dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf) {
 	Daemon *app = (Daemon *)linphone_core_get_user_data(lc);
 	app->dtmfReceived(call, dtmf);
+}
+
+void Daemon::proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate,
+                                      const char *message) {
+    Daemon *app = (Daemon *) linphone_core_get_user_data(lc);
+    app->proxyRegistrationChanged(cfg, cstate, message);
+}
+
+void Daemon::friendPresenceStateChanged(LinphoneCore *lc, LinphoneFriend *_friend) {
+    Daemon *app = (Daemon *) linphone_core_get_user_data(lc);
+    app->friendPresenceStateChanged(_friend);
 }
 
 void Daemon::messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg) {
@@ -620,26 +1078,53 @@ void Daemon::iterate() {
 			fflush(stdout);
 			delete r;
 		}
-	}
+	} else {
+        if (!mEventQueue.empty()) {
+            Event *r = mEventQueue.front();
+            mEventQueue.pop();
+            string buf = r->toBuf();
+            if (mChildFd != (ortp_pipe_t) - 1) {
+                if (ortp_pipe_write(mChildFd, (uint8_t *) buf.c_str(), (int) buf.size()) == -1) {
+                    ms_error("Fail to write to pipe: %s", strerror(errno));
+                }
+            } else {
+                cout << buf << flush;
+            }
+            fflush(stdout);
+            delete r;
+        }
+    }
 }
 
 void Daemon::execCommand(const string &command) {
-	istringstream ist(command);
-	string name;
-	ist >> name;
-	stringbuf argsbuf;
-	ist.get(argsbuf);
-	string args = argsbuf.str();
-	if (!args.empty() && (args[0] == ' ')) args.erase(0, 1);
-	list<DaemonCommand *>::iterator it =
-	    find_if(mCommands.begin(), mCommands.end(), [&name](const DaemonCommand *dc) { return dc->matches(name); });
-	if (it != mCommands.end()) {
-		ms_mutex_lock(&mMutex);
-		(*it)->exec(this, args);
-		ms_mutex_unlock(&mMutex);
-	} else {
-		sendResponse(Response("Unknown command."));
-	}
+    size_t findpos = 0;
+    size_t strleng = 0;
+    string execCommand;
+    string ergCommand;
+    execCommand = command.substr(0, command.length());
+    while (strleng <= execCommand.length()) {
+        findpos = execCommand.find("\n", 0);
+        ergCommand = execCommand.substr(0, findpos + 1);
+        execCommand = execCommand.substr(ergCommand.length(), execCommand.length());
+        strleng++;
+        //stringstream ist(execCommand);
+        istringstream ist(ergCommand);
+        string name;
+        ist >> name;
+        stringbuf argsbuf;
+        ist.get(argsbuf);
+        string args = argsbuf.str();
+        if (!args.empty() && (args[0] == ' ')) args.erase(0, 1);
+        list<DaemonCommand *>::iterator it =
+                find_if(mCommands.begin(), mCommands.end(), [&name](const DaemonCommand *dc) { return dc->matches(name); });
+        if (it != mCommands.end()) {
+            ms_mutex_lock(&mMutex);
+            (*it)->exec(this, args);
+            ms_mutex_unlock(&mMutex);
+        } else {
+            sendResponse(Response(name, "Unknown command.", Response::Error));
+        }
+    }
 }
 
 void Daemon::sendResponse(const Response &resp) {
@@ -651,6 +1136,40 @@ void Daemon::sendResponse(const Response &resp) {
 	} else {
 		cout << buf << flush;
 	}
+}
+
+std::string Daemon::join(const vector <string> &values, string delimiter) {
+    string result;
+
+    for (vector<string>::const_iterator value = values.begin();
+         value != values.end(); ++value) {
+        result += *value;
+        if (value != values.end() - 1)
+            result += delimiter;
+    }
+    return result;
+}
+
+std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg) {
+    ostringstream ost;
+    std::string serverAddr = linphone_proxy_config_get_server_addr(cfg);
+    std::string identity = linphone_proxy_config_get_identity(cfg);
+
+    const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
+
+    ost << "{ \"id\": " << updateProxyId(cfg) << ", \"address\": " << "\"" << serverAddr.c_str() << "\""
+        << ", \"identity\": " << "\"" << identity.c_str() << "\"" << ", \"state\": " << "\""
+        << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\""
+        << ", \"errorMessage\": ";
+
+    if (errorMessage != nullptr) {
+        ost << "\"" << errorMessage << "\"";
+    } else {
+        ost << "\"\"";
+    }
+
+    ost << " }";;
+    return ost.str();
 }
 
 void Daemon::queueEvent(Event *ev) {
@@ -749,8 +1268,8 @@ void Daemon::dumpCommandsHelp() {
 }
 
 static string htmlEscape(const string &orig) {
-	string ret = orig;
-	size_t pos;
+    string ret = orig;
+    size_t pos;
 
 	while (1) {
 		pos = ret.find('<');
@@ -820,25 +1339,26 @@ static void printHelp() {
 	     <<
 #endif
 
-	    "where options are :" << endl
-	     << "\t--help                     Print this notice." << endl
-	     << "\t--dump-commands-help       Dump the help of every available commands." << endl
-	     << "\t--dump-commands-html-help  Dump the help of every available commands." << endl
-	     << "\t--pipe <pipepath>          Create an unix server socket in the specified path to receive commands from. "
-	        "For Windows just use a name instead of a path."
-	     << endl
-	     << "\t--log <path>               Supply a file where the log will be saved." << endl
-	     << "\t--factory-config <path>    Supply a readonly linphonerc style config file to start with." << endl
-	     << "\t--config <path>            Supply a linphonerc style config file to start with." << endl
-	     << "\t--disable-stats-events     Do not automatically raise RTP statistics events." << endl
-	     << "\t--enable-lsd               Use the linphone sound daemon." << endl
-	     << "\t-C                         Enable video capture." << endl
-	     << "\t-D                         Enable video display." << endl
-	     << "\t--auto-answer              Automatically answer incoming calls." << endl;
+         "where options are :" << endl <<
+         "\t--help                     Print this notice." << endl <<
+         "\t--dump-commands-help       Dump the help of every available commands." << endl <<
+         "\t--dump-commands-html-help  Dump the help of every available commands." << endl <<
+         "\t--pipe <pipename>          Create an unix server socket in /tmp to receive commands from." << endl <<
+         "\t--log <path>               Supply a file where the log will be saved." << endl <<
+         "\t--factory-config <path>    Supply a readonly linphonerc style config file to start with." << endl <<
+         "\t--config <path>            Supply a linphonerc style config file to start with." << endl <<
+         "\t--disable-stats-events     Do not automatically raise RTP statistics events." << endl <<
+         "\t--enable-lsd               Use the linphone sound daemon." << endl <<
+         "\t-C                         Enable video capture." << endl <<
+         "\t-D                         Enable video display." << endl <<
+         "\t--auto-answer              Automatically answer incoming calls." << endl <<
+         "\t--list-soundcards          List all soundcards" << endl <<
+         "\t--version                  Prints the daemon version number" << endl <<
+         "\t--api-version              Prints the api version number" << endl;
 }
 
 void Daemon::startThread() {
-	ms_thread_create(&this->mThread, NULL, Daemon::iterateThread, this);
+    ms_thread_create(&this->mThread, NULL, Daemon::iterateThread, this);
 }
 
 #ifdef max
@@ -864,32 +1384,44 @@ string Daemon::readLine(const string &prompt, bool *eof) {
 }
 
 int Daemon::run() {
-	const string prompt("daemon-linphone>");
-	mRunning = true;
-	startThread();
-	while (mRunning) {
-		string line;
-		bool eof = false;
-		if (mServerFd == (bctbx_pipe_t)-1) {
-			line = readLine(prompt, &eof);
-			if (!line.empty()) {
+    const string prompt("daemon-linphone>");
+    mRunning = true;
+    startThread();
+    while (mRunning) {
+        bool eof = false;
+        if (mServerFd == (bctbx_pipe_t) - 1) {
+            // Read from console
+            string line = readLine(prompt, &eof);
+            if (!line.empty()) {
 #ifdef HAVE_READLINE
 				add_history(line.c_str());
 #endif
-			}
-		} else {
-			line = readPipe();
-		}
-		if (!line.empty()) {
-			execCommand(line);
-		}
-		if (eof && mRunning) {
-			mRunning = false; // ctrl+d
-			cout << "Quitting..." << endl;
-		}
-	}
-	stopThread();
-	return 0;
+                execCommand(line + "\n");
+            }
+        } else {
+            // Read from pipe and split lines on \n
+            string lines = readPipe();
+            if (!lines.empty()) {
+                lines = replaceAll(lines, "\r\n", "\n");
+
+                size_t pos = 0;
+                string delimiter = "\n";
+                while ((pos = lines.find(delimiter)) != std::string::npos) {
+                    string line = lines.substr(0, pos);
+                    lines.erase(0, pos + delimiter.length());
+
+                    execCommand(line + "\n");
+                }
+            }
+        }
+
+        if (eof && mRunning) {
+            mRunning = false; // ctrl+d
+            cout << "Quitting..." << endl;
+        }
+    }
+    stopThread();
+    return 0;
 }
 
 void Daemon::stopThread() {
@@ -954,77 +1486,111 @@ static void sighandler(BCTBX_UNUSED(int signum)) {
 		the_app = NULL;
 	}
 }
+
+static void listSoundcards() {
+    const char **devices;
+    size_t ndev;
+    const char *msplugins_dir;
+    const char *image_resources_dir;
+
+    LinphoneFactory *lfactory = linphone_factory_get();
+    msplugins_dir = linphone_factory_get_msplugins_dir(lfactory);
+    image_resources_dir = linphone_factory_get_image_resources_dir(lfactory);
+    MSFactory *factory = ms_factory_new_with_voip_and_directories(msplugins_dir, image_resources_dir);
+
+    const bctbx_list_t *elem = ms_snd_card_manager_get_list(ms_factory_get_snd_card_manager(factory));
+    ndev = bctbx_list_size(elem);
+    devices = reinterpret_cast<const char **>(ms_malloc((ndev + 1) * sizeof(const char *)));
+    for (int i = 0; elem != NULL; elem = elem->next, i++) {
+        devices[i] = ms_snd_card_get_string_id((MSSndCard *) elem->data);
+    }
+    devices[ndev] = NULL;
+
+    for (int i = 0; devices[i] != NULL; ++i) {
+        cout << devices[i] << "\n";
+    }
+}
+
 #if defined(__APPLE__)
 extern "C" int apple_main(int argc, char **argv) {
 #else
 int main(int argc, char *argv[]) {
 #endif
-	const char *config_path = NULL;
-	const char *factory_config_path = NULL;
-	const char *pipe_path = NULL;
-	const char *log_file = NULL;
-	bool capture_video = false;
-	bool display_video = false;
-	bool stats_enabled = true;
-	bool lsd_enabled = false;
-	bool auto_answer = false;
-	int i;
+    const char *config_path = NULL;
+    const char *factory_config_path = NULL;
+    const char *pipe_name = NULL;
+    const char *log_file = NULL;
+    bool capture_video = false;
+    bool display_video = false;
+    bool stats_enabled = true;
+    bool lsd_enabled = false;
+    bool auto_answer = false;
+    int i;
 
-	for (i = 1; i < argc; ++i) {
-		if (strcmp(argv[i], "--help") == 0) {
-			printHelp();
-			return 0;
-		} else if (strcmp(argv[i], "--dump-commands-help") == 0) {
-			Daemon app(NULL, NULL, NULL, NULL, false, false);
-			app.dumpCommandsHelp();
-			return 0;
-		} else if (strcmp(argv[i], "--dump-commands-html-help") == 0) {
-			Daemon app(NULL, NULL, NULL, NULL, false, false);
-			app.dumpCommandsHelpHtml();
-			return 0;
-		} else if (strcmp(argv[i], "--pipe") == 0) {
-			if (i + 1 >= argc) {
-				fprintf(stderr, "no pipe path specified after --pipe\n");
-				return -1;
-			}
-			pipe_path = argv[++i];
-			stats_enabled = false;
-		} else if (strcmp(argv[i], "--factory-config") == 0) {
-			if (i + 1 >= argc) {
-				fprintf(stderr, "no file specify after --factory-config\n");
-				return -1;
-			}
-			factory_config_path = argv[i + 1];
-			i++;
-		} else if (strcmp(argv[i], "--config") == 0) {
-			if (i + 1 >= argc) {
-				fprintf(stderr, "no file specify after --config\n");
-				return -1;
-			}
-			config_path = argv[i + 1];
-			i++;
-		} else if (strcmp(argv[i], "--log") == 0) {
-			if (i + 1 >= argc) {
-				fprintf(stderr, "no file specify after --log\n");
-				return -1;
-			}
-			log_file = argv[i + 1];
-			i++;
-		} else if (strcmp(argv[i], "-C") == 0) {
-			capture_video = true;
-		} else if (strcmp(argv[i], "-D") == 0) {
-			display_video = true;
-		} else if (strcmp(argv[i], "--disable-stats-events") == 0) {
-			stats_enabled = false;
-		} else if (strcmp(argv[i], "--enable-lsd") == 0) {
-			lsd_enabled = true;
-		} else if (strcmp(argv[i], "--auto-answer") == 0) {
-			auto_answer = true;
-		} else {
-			fprintf(stderr, "Unrecognized option : %s", argv[i]);
-		}
-	}
-	Daemon app(config_path, factory_config_path, log_file, pipe_path, display_video, capture_video);
+    for (i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--help") == 0) {
+            printHelp();
+            return 0;
+        } else if (strcmp(argv[i], "--dump-commands-help") == 0) {
+            Daemon app(NULL, NULL, NULL, NULL, false, false);
+            app.dumpCommandsHelp();
+            return 0;
+        } else if (strcmp(argv[i], "--dump-commands-html-help") == 0) {
+            Daemon app(NULL, NULL, NULL, NULL, false, false);
+            app.dumpCommandsHelpHtml();
+            return 0;
+        } else if (strcmp(argv[i], "--pipe") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "no pipe name specify after --pipe\n");
+                return -1;
+            }
+            pipe_name = argv[++i];
+            stats_enabled = false;
+        } else if (strcmp(argv[i], "--factory-config") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "no file specify after --factory-config\n");
+                return -1;
+            }
+            factory_config_path = argv[i + 1];
+            i++;
+        } else if (strcmp(argv[i], "--config") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "no file specify after --config\n");
+                return -1;
+            }
+            config_path = argv[i + 1];
+            i++;
+        } else if (strcmp(argv[i], "--log") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "no file specify after --log\n");
+                return -1;
+            }
+            log_file = argv[i + 1];
+            i++;
+        } else if (strcmp(argv[i], "-C") == 0) {
+            capture_video = true;
+        } else if (strcmp(argv[i], "-D") == 0) {
+            display_video = true;
+        } else if (strcmp(argv[i], "--disable-stats-events") == 0) {
+            stats_enabled = false;
+        } else if (strcmp(argv[i], "--enable-lsd") == 0) {
+            lsd_enabled = true;
+        } else if (strcmp(argv[i], "--auto-answer") == 0) {
+            auto_answer = true;
+        } else if (strcmp(argv[i], "--list-soundcards") == 0) {
+            listSoundcards();
+            return 0;
+        } else if (strcmp(argv[i], "--version") == 0) {
+            printf("Version: %s", linphone_core_get_version());
+            return 0;
+        } else if (strcmp(argv[i], "--api-version") == 0) {
+            printf("ApiVersion: %d", API_VERSION);
+            return 0;
+        } else {
+            fprintf(stderr, "Unrecognized option : %s", argv[i]);
+        }
+    }
+    Daemon app(config_path, factory_config_path, log_file, pipe_name, display_video, capture_video);
 
 	the_app = &app;
 	signal(SIGINT, sighandler);

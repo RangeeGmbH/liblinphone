@@ -23,6 +23,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_ADAPTIVE_JITTER_COMPENSATION "adaptive-jitter-compensation"
+
+
 class AdaptiveBufferCompensationCommand : public DaemonCommand {
 public:
 	AdaptiveBufferCompensationCommand();

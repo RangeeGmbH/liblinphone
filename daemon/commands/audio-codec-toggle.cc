@@ -31,14 +31,14 @@ void AudioCodecToggleCommand::exec(Daemon *app, const string &args) {
 	istringstream ist(args);
 
 	if (ist.peek() == EOF) {
-		app->sendResponse(Response("Missing parameter.", Response::Error));
+		app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_TOGGLE, "Missing parameter.", Response::Error));
 	} else {
 		string mime_type;
 		PayloadType *pt = NULL;
 		ist >> mime_type;
 		PayloadTypeParser parser(app->getCore(), mime_type, true);
 		if (!parser.successful()) {
-			app->sendResponse(Response("Incorrect mime type format.", Response::Error));
+			app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_TOGGLE, "Incorrect mime type format.", Response::Error));
 			return;
 		}
 		if (!parser.all()) pt = parser.getPayloadType();
@@ -62,7 +62,7 @@ void AudioCodecToggleCommand::exec(Daemon *app, const string &args) {
 			AudioCodecGetCommand getCommand;
 			getCommand.exec(app, "");
 		} else {
-			app->sendResponse(Response("Audio codec not found.", Response::Error));
+			app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_TOGGLE, "Audio codec not found.", Response::Error));
 		}
 	}
 }

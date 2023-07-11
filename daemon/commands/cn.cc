@@ -20,23 +20,16 @@
 
 #include "cn.h"
 
-using namespace std;
-
-class CNResponse : public Response {
-public:
-	CNResponse(LinphoneCore *core);
-};
-
-CNResponse::CNResponse(LinphoneCore *core) : Response() {
-	ostringstream ost;
-	bool cn_enabled = linphone_core_generic_comfort_noise_enabled(core) == TRUE ? true : false;
-	ost << "State: ";
-	if (cn_enabled) {
-		ost << "enabled\n";
-	} else {
-		ost << "disabled\n";
-	}
-	setBody(ost.str());
+string CNCommand::getCnResponseStr(LinphoneCore *core) {
+    ostringstream ost;
+    bool cn_enabled = linphone_core_generic_comfort_noise_enabled(core) == TRUE ? true : false;
+    ost << "State: ";
+    if (cn_enabled) {
+        ost << "enabled\n";
+    } else {
+        ost << "disabled\n";
+    }
+    return ost.str();
 }
 
 CNCommand::CNCommand()
@@ -57,7 +50,7 @@ void CNCommand::exec(Daemon *app, const string &args) {
 	istringstream ist(args);
 	ist >> status;
 	if (ist.fail()) {
-		app->sendResponse(CNResponse(app->getCore()));
+	    app->sendResponse(Response(COMMANDNAME_CN, getCnResponseStr(app->getCore()), Response::Ok));
 		return;
 	}
 
@@ -66,8 +59,8 @@ void CNCommand::exec(Daemon *app, const string &args) {
 	} else if (status.compare("disable") == 0) {
 		linphone_core_enable_generic_comfort_noise(app->getCore(), FALSE);
 	} else {
-		app->sendResponse(Response("Incorrect parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_CN, "Incorrect parameter.", Response::Error));
 		return;
 	}
-	app->sendResponse(CNResponse(app->getCore()));
+	app->sendResponse(Response(COMMANDNAME_CN, getCnResponseStr(app->getCore()),Response::Ok));
 }

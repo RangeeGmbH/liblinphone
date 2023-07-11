@@ -690,7 +690,16 @@ AudioStream *linphone_conference_get_audio_stream(LinphoneConference *conference
 
 LINPHONE_PUBLIC int linphone_conference_mute_microphone(LinphoneConference *conference, bool_t val);
 LINPHONE_PUBLIC bool_t linphone_conference_microphone_is_muted(const LinphoneConference *conference);
-float linphone_conference_get_input_volume(const LinphoneConference *conference);
+
+LINPHONE_PUBLIC int linphone_conference_mute_speaker(LinphoneConference *conference, bool_t val);
+LINPHONE_PUBLIC bool_t linphone_conference_speaker_is_muted(const LinphoneConference *conference);
+
+LINPHONE_PUBLIC void linphone_conference_set_input_volume_gain(const LinphoneConference *conference, float value);
+LINPHONE_PUBLIC float linphone_conference_get_input_volume_gain(const LinphoneConference *conference);
+
+LINPHONE_PUBLIC float linphone_conference_get_output_volume_gain (const LinphoneConference *conference);
+LINPHONE_PUBLIC void linphone_conference_set_output_volume_gain(const LinphoneConference *conference, float value);
+
 
 void linphone_conference_on_call_terminating(LinphoneConference *conference, LinphoneCall *call);
 

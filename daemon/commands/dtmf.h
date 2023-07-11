@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_DTMF "dtmf"
+
 class DtmfCommand : public DaemonCommand {
 public:
 	DtmfCommand();

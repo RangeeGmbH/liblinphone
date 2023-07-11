@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_PORT "port"
+
 class PortCommand : public DaemonCommand {
 public:
 	PortCommand();

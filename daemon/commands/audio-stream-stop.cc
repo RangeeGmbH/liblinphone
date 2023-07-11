@@ -34,18 +34,18 @@ void AudioStreamStopCommand::exec(Daemon *app, const string &args) {
 	istringstream ist(args);
 	ist >> id;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing/Incorrect parameter(s)."));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_STREAM_STOP, "Missing/Incorrect parameter(s).", Response::Error));
 		return;
 	}
 
 	AudioStream *stream = app->findAudioStream(id);
 	if (stream == NULL) {
-		app->sendResponse(Response("No Audio Stream with such id."));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_STREAM_STOP, "No Audio Stream with such id.", Response::Error));
 		return;
 	}
 	app->removeAudioStream(id);
 	RtpProfile *prof = rtp_session_get_profile(stream->ms.sessions.rtp_session);
 	audio_stream_stop(stream);
 	rtp_profile_destroy(prof);
-	app->sendResponse(Response());
+	app->sendResponse(Response(COMMANDNAME_AUDIO_STREAM_STOP, "", Response::Ok));
 }

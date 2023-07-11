@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_NETSIM "netsim"
+
 class NetsimCommand : public DaemonCommand {
 public:
 	NetsimCommand();
