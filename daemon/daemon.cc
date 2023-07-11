@@ -171,6 +171,13 @@ std::string Daemon::getJsonForConferenceParticipant(LinphoneParticipant *linphon
     return linphoneAddress;
 }
 
+
+
+char * Daemon::linphone_conference_state_to_string(LinphoneConferenceState state) {
+    return ms_strdup(toString((LinphonePrivate::ConferenceInterface::State) state).c_str());
+}
+
+
 std::string Daemon::getJsonForConference(LinphoneConference *conference) {
     float outputVolumeFloat = -1;
     float inputVolumeFloat = -1;
