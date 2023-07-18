@@ -202,6 +202,7 @@ std::string Daemon::linphone_conference_state_to_string(LinphoneConferenceState 
             return "LinphoneConferenceStateDeleted";
             break;
     }
+    return "";
 }
 
 
