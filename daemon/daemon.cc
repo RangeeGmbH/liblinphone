@@ -172,9 +172,36 @@ std::string Daemon::getJsonForConferenceParticipant(LinphoneParticipant *linphon
 }
 
 
-
-char * Daemon::linphone_conference_state_to_string(LinphoneConferenceState state) {
-    return ms_strdup(toString((LinphonePrivate::ConferenceInterface::State) state).c_str());
+std::string Daemon::linphone_conference_state_to_string(LinphoneConferenceState state) {
+    switch (state) {
+        case LinphoneConferenceStateNone:
+            return "LinphoneConferenceStateNone";
+            break;
+        case LinphoneConferenceStateInstantiated:
+            return "LinphoneConferenceStateInstantiated";
+            break;
+        case LinphoneConferenceStateCreationPending:
+            return "LinphoneConferenceStateCreationPending";
+            break;
+        case LinphoneConferenceStateCreated:
+            return "LinphoneConferenceStateCreated";
+            break;
+        case LinphoneConferenceStateCreationFailed:
+            return "LinphoneConferenceStateCreationFailed";
+            break;
+        case LinphoneConferenceStateTerminationPending:
+            return "LinphoneConferenceStateTerminationPending";
+            break;
+        case LinphoneConferenceStateTerminated:
+            return "LinphoneConferenceStateTerminated";
+            break;
+        case LinphoneConferenceStateTerminationFailed:
+            return "LinphoneConferenceStateTerminationFailed";
+            break;
+        case LinphoneConferenceStateDeleted:
+            return "LinphoneConferenceStateDeleted";
+            break;
+    }
 }
 
 
