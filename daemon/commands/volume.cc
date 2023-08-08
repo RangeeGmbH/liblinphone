@@ -65,8 +65,8 @@ void VolumeCommand::exec(Daemon *app, const string &args) {
     if(param == "set") {
         ist >> param;
         if(param == "default") {
-            ist >> inputVolume;
             ist >> outputVolume;
+            ist >> inputVolume;
             ist >> ringerVolume;
             if (outputVolume > 1.0f) {
                 outputVolume = 1.0f;

@@ -72,8 +72,11 @@ void RegisterInfoCommand::exec(Daemon *app, const string& args) {
                 }
                 ost << "State: " << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << endl;
             }
+            else {
+                app->sendResponse(Response(COMMANDNAME_REGISTER_INFO, "Invalid ID.", Response::Error));
+            }
         }
-        app->sendResponse(Response(COMMANDNAME_REGISTER_INFO, "Invalid ID.", Response::Error));
+        app->sendResponse(Response(COMMANDNAME_REGISTER_INFO, ost.str(), Response::Ok));
     } else {
         int id;
         try {

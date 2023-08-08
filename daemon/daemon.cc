@@ -579,7 +579,7 @@ Daemon::Daemon(const char *config_path, const char *factory_config_path, const c
         setlinebuf(stdout);
 #endif
     } else {
-        mServerFd = ortp_server_pipe_create(pipe_name);
+        mServerFd = bctbx_server_pipe_create(pipe_name);
 #ifndef _WIN32
         listen(mServerFd, 2);
         fprintf(stdout, "Server unix socket created, name=%s fd=%i\n", pipe_name, (int) mServerFd);
@@ -1118,8 +1118,8 @@ void Daemon::iterate() {
             Event *r = mEventQueue.front();
             mEventQueue.pop();
             string buf = r->toBuf();
-            if (mChildFd != (ortp_pipe_t) - 1) {
-                if (ortp_pipe_write(mChildFd, (uint8_t *) buf.c_str(), (int) buf.size()) == -1) {
+            if (mChildFd != (bctbx_pipe_t) - 1) {
+                if (bctbx_pipe_write(mChildFd, (uint8_t *) buf.c_str(), (int) buf.size()) == -1) {
                     ms_error("Fail to write to pipe: %s", strerror(errno));
                 }
             } else {
