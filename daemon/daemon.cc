@@ -33,6 +33,7 @@
 #include <sstream>
 #include <vector>
 #include <math.h>
+//#include "core/core.h"
 
 #ifdef HAVE_READLINE
 #include <readline/history.h>
@@ -96,6 +97,7 @@
 #include "commands/get-sound-card.h"
 #include "commands/maxCall.h"
 #include "commands/friends.h"
+#include "commands/ping.h"
 
 #include "private.h"
 
@@ -930,6 +932,7 @@ void Daemon::initCommands() {
     mCommands.push_back(new VolumeCommand());
     mCommands.push_back(new MaxCallsCommand());
     mCommands.push_back(new Friends());
+    mCommands.push_back(new PingCommand());
     mCommands.push_back(new CallStatusCommand());
     mCommands.push_back(new CallStatsCommand());
     mCommands.push_back(new CallPauseCommand());
@@ -1418,16 +1421,34 @@ string Daemon::readLine(const string &prompt, bool *eof) {
 #endif
 }
 
+int Daemon::onTimerEvent(void *data, BCTBX_UNUSED(unsigned int interval)) {
+    Daemon *daemon = (Daemon*) data;
+    linphone_core_clear_proxy_config(daemon->getCore());
+    printf("\r\nTEST %d", interval);
+    return 1;
+}
+
+void Daemon::resetTimer(){
+    if(mTimer != NULL)
+        this->getCore()->sal->cancelTimer(mTimer);
+
+    mTimer = this->getCore()->sal->createTimer(this->onTimerEvent, this, 10000, "idle timeout");
+}
+
 int Daemon::run() {
     const string prompt("daemon-linphone>");
     mRunning = true;
     startThread();
+
+    this->resetTimer();
+
     while (mRunning) {
         bool eof = false;
         if (mServerFd == (bctbx_pipe_t) - 1) {
             // Read from console
             string line = readLine(prompt, &eof);
             if (!line.empty()) {
+                this->resetTimer();
 #ifdef HAVE_READLINE
 				add_history(line.c_str());
 #endif
@@ -1437,6 +1458,7 @@ int Daemon::run() {
             // Read from pipe and split lines on \n
             string lines = readPipe();
             if (!lines.empty()) {
+                this->resetTimer();
                 lines = replaceAll(lines, "\r\n", "\n");
 
                 size_t pos = 0;
@@ -1456,6 +1478,8 @@ int Daemon::run() {
         }
     }
     stopThread();
+    // stop timer
+    this->getCore()->sal->cancelTimer(mTimer);
     return 0;
 }
 

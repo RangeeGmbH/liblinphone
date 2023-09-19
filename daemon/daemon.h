@@ -27,6 +27,7 @@
 #include <mediastreamer2/mediastream.h>
 #include <mediastreamer2/mscommon.h>
 
+
 #include <string>
 #include "conference_private.h"
 
@@ -358,6 +359,8 @@ private:
 	void stopThread();
 	void initCommands();
 	void uninitCommands();
+    static int onTimerEvent(void *data, unsigned int interval);
+    void resetTimer();
 	LinphoneCore *mLc;
 	LinphoneSoundDaemon *mLSD;
 	std::list<DaemonCommand *> mCommands;
@@ -375,6 +378,7 @@ private:
 	int mAudioStreamIds;
 	ms_thread_t mThread;
 	ms_mutex_t mMutex;
+    belle_sip_source *mTimer = NULL;
 	std::map<int, AudioStreamAndOther *> mAudioStreams;
 };
 

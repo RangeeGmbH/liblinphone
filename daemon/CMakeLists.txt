@@ -123,6 +123,8 @@ set(DAEMON_SOURCE_FILES
 	commands/maxCall.h
 	commands/friends.cc
 	commands/friends.h
+	commands/ping.cc
+	commands/ping.h
 	daemon.cc
 	daemon.h
 )
