@@ -1424,7 +1424,6 @@ string Daemon::readLine(const string &prompt, bool *eof) {
 int Daemon::onTimerEvent(void *data, BCTBX_UNUSED(unsigned int interval)) {
     Daemon *daemon = (Daemon*) data;
     linphone_core_clear_proxy_config(daemon->getCore());
-    printf("\r\nTEST %d", interval);
     return 1;
 }
 
@@ -1478,7 +1477,6 @@ int Daemon::run() {
         }
     }
     stopThread();
-    // stop timer
     this->getCore()->sal->cancelTimer(mTimer);
     return 0;
 }
