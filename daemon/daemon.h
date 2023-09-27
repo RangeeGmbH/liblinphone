@@ -58,7 +58,7 @@
 #endif
 #endif
 
-#define API_VERSION 5
+#define API_VERSION 6
 
 #define COMMANDNAME_POP_EVENT "pop-event"
 
