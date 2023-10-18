@@ -36,6 +36,7 @@
 #include <queue>
 #include <sstream>
 #include <string>
+#include <timer.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -359,7 +360,7 @@ private:
 	void stopThread();
 	void initCommands();
 	void uninitCommands();
-    static int onTimerEvent(void *data, unsigned int interval);
+    static void onTimerEvent(void* data);
     void resetTimer();
 	LinphoneCore *mLc;
 	LinphoneSoundDaemon *mLSD;
@@ -378,7 +379,7 @@ private:
 	int mAudioStreamIds;
 	ms_thread_t mThread;
 	ms_mutex_t mMutex;
-    belle_sip_source *mTimer = NULL;
+    Timer *mTimer = NULL;
 	std::map<int, AudioStreamAndOther *> mAudioStreams;
 };
 

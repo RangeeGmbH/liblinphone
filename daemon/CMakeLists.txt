@@ -127,6 +127,7 @@ set(DAEMON_SOURCE_FILES
 	commands/ping.h
 	daemon.cc
 	daemon.h
+	timer.h
 )
 
 set(DAEMON_PIPETEST_SOURCE_FILES

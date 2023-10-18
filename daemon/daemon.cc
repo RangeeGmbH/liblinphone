@@ -120,6 +120,8 @@ void usleep(int waitTime) {
 #define LICENCE_COMMERCIAL
 #endif
 
+Timer* Timer::timer_instance = nullptr;
+
 const char *const ice_state_str[] = {
     "Not activated",        /* LinphoneIceStateNotActivated */
     "Failed",               /* LinphoneIceStateFailed */
@@ -1421,17 +1423,18 @@ string Daemon::readLine(const string &prompt, bool *eof) {
 #endif
 }
 
-int Daemon::onTimerEvent(void *data, BCTBX_UNUSED(unsigned int interval)) {
+
+void Daemon::onTimerEvent(void* data) {
     Daemon *daemon = (Daemon*) data;
     linphone_core_clear_proxy_config(daemon->getCore());
-    return 1;
 }
 
 void Daemon::resetTimer(){
-    if(mTimer != NULL)
-        this->getCore()->sal->cancelTimer(mTimer);
-
-    mTimer = this->getCore()->sal->createTimer(this->onTimerEvent, this, 10000, "idle timeout");
+    if(mTimer != NULL){
+        mTimer->Stop();
+    }
+    mTimer->SetCallback(onTimerEvent, this);
+    mTimer->Start(10000);
 }
 
 int Daemon::run() {
@@ -1439,6 +1442,7 @@ int Daemon::run() {
     mRunning = true;
     startThread();
 
+    mTimer = new Timer();
     this->resetTimer();
 
     while (mRunning) {
@@ -1477,7 +1481,7 @@ int Daemon::run() {
         }
     }
     stopThread();
-    this->getCore()->sal->cancelTimer(mTimer);
+    this->mTimer->Stop();
     return 0;
 }
 
