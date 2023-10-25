@@ -770,11 +770,10 @@ void MS2AudioStream::enableMicOnAudioStream(AudioStream *as, LinphoneCore *lc, b
 
 void MS2AudioStream::postConfigureAudioStream(AudioStream *as, LinphoneCore *lc, bool muted) {
 	/* Set soft gains */
-	audio_stream_set_mic_gain_db(as, lc->sound_conf.soft_mic_lev);
-	audio_stream_set_spk_gain_db(as, lc->sound_conf.soft_play_lev);
+    audio_stream_set_sound_card_input_gain(as, lc->sound_conf.soft_mic_lev);
+    audio_stream_set_sound_card_output_gain(as, lc->sound_conf.soft_play_lev);
 	/* Set microphone enablement */
 	enableMicOnAudioStream(as, lc, !muted);
-
 	LinphoneConfig *config = linphone_core_get_config(lc);
 	float ngThres = linphone_config_get_float(config, "sound", "ng_thres", 0.05f);
 	float ngFloorGain = linphone_config_get_float(config, "sound", "ng_floorgain", 0);
