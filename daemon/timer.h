@@ -74,18 +74,14 @@ Timer() : timer_queue(nullptr), timer(nullptr), callback(nullptr), user_data(nul
     void Stop() {
 #ifdef __linux__
         if (!is_running) {
-            std::cerr << "Timer is not running." << std::endl;
             return;
         }
 
         struct itimerval timer_spec;
         memset(&timer_spec, 0, sizeof(timer_spec));
-
-        if (timer_settime(timer_id, 0, reinterpret_cast<const itimerspec *>(&timer_spec), nullptr) == -1) {
+        if (setitimer(ITIMER_REAL, reinterpret_cast<const itimerval *>(&timer_spec), nullptr) == -1) {
             std::cerr << "Failed to stop timer." << std::endl;
         }
-
-        timer_delete(timer_id);
 #elif _WIN32
         if (timer_queue != nullptr) {
             // Delete the timer and the timer queue
@@ -110,8 +106,6 @@ private:
     UINT_PTR timer_id;
     HANDLE timer_queue;
     HANDLE timer;
-#else
-    timer_t timer_id;
 #endif
     bool is_running;
     std::function<void(void*)> callback;
