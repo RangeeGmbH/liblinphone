@@ -120,7 +120,9 @@ void usleep(int waitTime) {
 #define LICENCE_COMMERCIAL
 #endif
 
+#ifdef __linux__
 Timer* Timer::timer_instance = nullptr;
+#endif
 
 const char *const ice_state_str[] = {
     "Not activated",        /* LinphoneIceStateNotActivated */
