@@ -22,9 +22,6 @@
  */
 
 #include "set-sound-card.h"
-#include <fcntl.h>
-#include <regex>
-//#include <alsa/asoundlib.h>
 #include <math.h>
 #include "private.h"
 

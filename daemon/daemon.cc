@@ -120,7 +120,9 @@ void usleep(int waitTime) {
 #define LICENCE_COMMERCIAL
 #endif
 
+#ifdef __linux__
 Timer* Timer::timer_instance = nullptr;
+#endif
 
 bool idleTimeout = false;
 
