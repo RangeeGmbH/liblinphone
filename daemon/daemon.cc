@@ -122,6 +122,8 @@ void usleep(int waitTime) {
 
 Timer* Timer::timer_instance = nullptr;
 
+bool idleTimeout = false;
+
 const char *const ice_state_str[] = {
     "Not activated",        /* LinphoneIceStateNotActivated */
     "Failed",               /* LinphoneIceStateFailed */
@@ -1430,11 +1432,13 @@ void Daemon::onTimerEvent(void* data) {
 }
 
 void Daemon::resetTimer(){
-    if(mTimer != NULL){
-        mTimer->Stop();
+    if(!idleTimeout){
+        if(mTimer != NULL){
+            mTimer->Stop();
+        }
+        mTimer->SetCallback(onTimerEvent, this);
+        mTimer->Start(10000);
     }
-    mTimer->SetCallback(onTimerEvent, this);
-    mTimer->Start(10000);
 }
 
 int Daemon::run() {
@@ -1641,6 +1645,8 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "--list-soundcards") == 0) {
             listSoundcards();
             return 0;
+        } else if (strcmp(argv[i], "--disable-idle-timeout") == 0) {
+            idleTimeout = true;
         } else if (strcmp(argv[i], "--version") == 0) {
             printf("Version: %s", linphone_core_get_version());
             return 0;
