@@ -125,6 +125,8 @@ set(DAEMON_SOURCE_FILES
 	commands/friends.h
 	commands/ping.cc
 	commands/ping.h
+	commands/defaultProxy.cc
+	commands/defaultProxy.h
 	daemon.cc
 	daemon.h
 	timer.h

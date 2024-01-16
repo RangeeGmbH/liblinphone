@@ -98,6 +98,7 @@
 #include "commands/maxCall.h"
 #include "commands/friends.h"
 #include "commands/ping.h"
+#include "commands/defaultProxy.h"
 
 #include "private.h"
 
@@ -935,6 +936,7 @@ void Daemon::initCommands() {
     mCommands.push_back(new SoundcardCommand());
     mCommands.push_back(new GetSoundCard());
     mCommands.push_back(new SetSoundCard());
+    mCommands.push_back(new DefaultProxy());
     mCommands.push_back(new VolumeCommand());
     mCommands.push_back(new MaxCallsCommand());
     mCommands.push_back(new Friends());
@@ -1198,12 +1200,20 @@ std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg) {
     ostringstream ost;
     std::string serverAddr = linphone_proxy_config_get_server_addr(cfg);
     std::string identity = linphone_proxy_config_get_identity(cfg);
+    bool isDefaulProxy = false;
 
     const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
 
+    if(cfg == linphone_core_get_default_proxy_config(this->getCore())) {
+        isDefaulProxy = true;
+    } else {
+        isDefaulProxy = false;
+    }
+
     ost << "{ \"id\": " << updateProxyId(cfg) << ", \"address\": " << "\"" << serverAddr.c_str() << "\""
         << ", \"identity\": " << "\"" << identity.c_str() << "\"" << ", \"state\": " << "\""
-        << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg)) << "\""
+        << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg))  << "\""
+        << ", \"defaultProxy\": " << "\"" << (isDefaulProxy ? "true" : "false") << "\""
         << ", \"errorMessage\": ";
 
     if (errorMessage != nullptr) {
