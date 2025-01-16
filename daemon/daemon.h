@@ -26,10 +26,7 @@
 #include <linphone/core_utils.h>
 #include <mediastreamer2/mediastream.h>
 #include <mediastreamer2/mscommon.h>
-
-
-#include <string>
-#include "conference_private.h"
+#include <conference_private.h>
 
 #include <list>
 #include <map>
@@ -64,6 +61,12 @@
 #define COMMANDNAME_POP_EVENT "pop-event"
 
 class Daemon;
+
+#ifdef HAVE_JABRA
+#include "jabra/JabraSdk.h"
+
+class JabraSdk;
+#endif
 
 class DaemonCommandExample {
 public:
@@ -381,6 +384,10 @@ private:
 	ms_mutex_t mMutex;
     Timer *mTimer = NULL;
 	std::map<int, AudioStreamAndOther *> mAudioStreams;
+
+#ifdef HAVE_JABRA
+    JabraSdk *jabra = nullptr;
+#endif
 };
 
 #endif // DAEMON_H_

@@ -625,6 +625,10 @@ Daemon::Daemon(const char *config_path, const char *factory_config_path, const c
 
 	initCommands();
 	mUseStatsEvents = true;
+
+#ifdef HAVE_JABRA
+    jabra = new JabraSdk(this);
+#endif
 }
 
 const list<DaemonCommand *> &Daemon::getCommandList() const {
@@ -948,7 +952,6 @@ void Daemon::initCommands() {
     mCommands.push_back(new CallResumeCommand());
     mCommands.push_back(new CallTransferCommand());
     mCommands.push_back(new ConferenceMuteCommand());
-    mCommands.push_back(new Video());
     mCommands.push_back(new Video::Preview());
     mCommands.push_back(new VideoSource());
     mCommands.push_back(new VideoSourceGet());
@@ -1027,6 +1030,10 @@ void Daemon::callStateChanged(LinphoneCall *call, LinphoneCallState state, BCTBX
 	if (state == LinphoneCallIncomingReceived && mAutoAnswer) {
 		linphone_call_accept(call);
 	}
+
+#ifdef HAVE_JABRA
+    if (jabra) { jabra->OnCallStateChanged(call, state); }
+#endif
 }
 
 void Daemon::conference_state_changed(LinphoneConference *conference, LinphoneConferenceState state) {
@@ -1529,6 +1536,10 @@ void Daemon::enableLSD(bool enabled) {
 
 Daemon::~Daemon() {
 	uninitCommands();
+
+#ifdef HAVE_JABRA
+    if (jabra) { delete jabra; }
+#endif
 
 	for (map<int, AudioStreamAndOther *>::iterator it = mAudioStreams.begin(); it != mAudioStreams.end(); ++it) {
 		audio_stream_stop(it->second->stream);
