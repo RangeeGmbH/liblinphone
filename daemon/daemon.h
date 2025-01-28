@@ -22,18 +22,24 @@
 #define DAEMON_H_
 
 #include <bctoolbox/list.h>
-
+#include <linphone/core.h>
+#include <linphone/core_utils.h>
 #include <mediastreamer2/mediastream.h>
 #include <mediastreamer2/mscommon.h>
 
 #include <linphone/core.h>
 #include <linphone/core_utils.h>
 
+
+#include <string>
+#include "conference_private.h"
+
 #include <list>
 #include <map>
 #include <queue>
 #include <sstream>
 #include <string>
+#include <timer.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -55,6 +61,10 @@
 #include <readline/history.h>
 #endif
 #endif
+
+#define API_VERSION 7
+
+#define COMMANDNAME_POP_EVENT "pop-event"
 
 class Daemon;
 
@@ -109,12 +119,17 @@ public:
 	}
 	Response() : mStatus(Ok) {
 	}
-	Response(const std::string &msg, Status status = Error) : mStatus(status) {
-		if (status == Ok) {
-			mBody = msg;
-		} else {
-			mReason = msg;
-		}
+	Response(const std::string& commandName, const std::string& msg, Status status = Error):
+	    mStatus(status) {
+	    if( status == Ok) {
+	        this->commandName = commandName;
+	        mBody = msg;
+	        mReason = "";
+	    } else {
+	        this->commandName = commandName;
+	        mBody = "{ }";
+	        mReason = msg;
+	    }
 	}
 
 	void setStatus(Status st) {
@@ -129,23 +144,24 @@ public:
 	const std::string &getBody() const {
 		return mBody;
 	}
+
 	virtual std::string toBuf() const {
-		std::ostringstream buf;
-		std::string status = (mStatus == Ok) ? "Ok" : "Error";
-		buf << "Status: " << status << "\n";
-		if (!mReason.empty()) {
-			buf << "Reason: " << mReason << "\n";
-		}
-		if (!mBody.empty()) {
-			buf << "\n" << mBody << "\n";
-		}
-		return buf.str();
+	    std::ostringstream stringStream;
+	    std::string status = (mStatus == Ok) ? "true" : "false";
+	    //QString testFromJSON = "{"
+        //                       "\"command\": { "
+        //                       "\"description\": \"Version\""
+        //                       "}"
+        //                       "}";
+        stringStream << "{ \"type\": \"command\", \"name\":" << "\"" << this->commandName.c_str() << "\"" << ", \"data\":" <<  this->mBody.c_str() << ", \"success\":" << status.c_str() << ", \"message\":" << "\"" << this->mReason.c_str() << "\"" << " } \n";
+	    return stringStream.str();
 	}
 
 private:
 	Status mStatus;
 	std::string mReason;
 	std::string mBody;
+	std::string commandName;
 };
 
 /*Base class for all kind of event poping out of the linphonecore. They are posted to the Daemon's event queue with
@@ -163,12 +179,14 @@ public:
 	virtual ~Event() {
 	}
 	virtual std::string toBuf() const {
+	    std::string ost;
 		std::ostringstream buf;
+		buf << "{ \"type\": \"event\", \"name\": " << "\"" << this->mEventType.c_str() << "\"" << ", \"data\": " << this->mBody.c_str() << " }\n";
 
-		buf << "Event-type: " << mEventType << "\n";
+		/*buf << "Event-type: " << mEventType;
 		if (!mBody.empty()) {
 			buf << "\n" << mBody << "\n";
-		}
+		}*/
 		return buf.str();
 	}
 
@@ -180,6 +198,11 @@ protected:
 class CallEvent : public Event {
 public:
 	CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state);
+};
+
+class ConferenceEvent : public Event {
+public:
+    ConferenceEvent(Daemon *daemon, LinphoneConference *conference, LinphoneConferenceState state);
 };
 
 class CallStatsEvent : public Event {
@@ -200,6 +223,16 @@ public:
 class AudioStreamStatsEvent : public Event {
 public:
 	AudioStreamStatsEvent(Daemon *daemon, AudioStream *stream, const LinphoneCallStats *stats);
+};
+
+class ProxyRegistrationChangedEvent: public Event {
+public:
+    ProxyRegistrationChangedEvent(Daemon *daemon, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
+};
+
+class FriendPresenceStateChangedEvent: public Event {
+public:
+    FriendPresenceStateChangedEvent(Daemon *daemon, LinphoneFriend *_friend);
 };
 
 class PayloadTypeResponse : public Response {
@@ -259,26 +292,41 @@ public:
 	Daemon(const char *config_path,
 	       const char *factory_config_path,
 	       const char *log_file,
-	       const char *pipe_path,
+	       const char *pipe_name,
 	       bool display_video,
 	       bool capture_video);
 	~Daemon();
 	int run();
 	void quit();
 	void sendResponse(const Response &resp);
+	std::string join(const std::vector<std::string>& values, std::string delimiter);
+	std::string getJsonForCall(LinphoneCall *call);
+	std::string getJsonForConference(LinphoneConference *conference);
+	std::string getJsonForConferenceParticipant(LinphoneParticipant *linphoneParticipant);
+	std::string getJsonForProxys(LinphoneProxyConfig *cfg);
+	std::string getJsonForAudioDevice(const LinphoneAudioDevice* device);
+	std::string getJsonForFriend(LinphoneFriend *_friend);
+	std::string getJsonForPresenceService(const LinphonePresenceModel* model);
+	std::string getJsonForPresenceActivities(const LinphonePresenceModel* model);
+	std::string replaceAll(std::string str, const std::string& from, const std::string& to);
+	std::string replaceEscapeChar(std::string replaceStr);
+    std::string linphone_conference_state_to_string(LinphoneConferenceState state);
+    float linearToDb(float volume);
+	LinphoneAudioDevice * findAudioDevice(std::string idString);
+	std::string linphoneAudioDeviceTypeToString(LinphoneAudioDeviceType linphoneAudioDeviceType) const;
 	void queueEvent(Event *resp);
 	LinphoneCore *getCore();
 	LinphoneSoundDaemon *getLSD();
 	const std::list<DaemonCommand *> &getCommandList() const;
 	LinphoneCall *findCall(int id);
-	LinphoneAccount *findProxy(int id);
+	LinphoneProxyConfig *findProxy(int id);
 	LinphoneAuthInfo *findAuthInfo(int id);
 	AudioStream *findAudioStream(int id);
 	AudioStreamAndOther *findAudioStreamAndOther(int id);
 	void removeAudioStream(int id);
 	bool pullEvent();
 	int updateCallId(LinphoneCall *call);
-	int updateProxyId(LinphoneAccount *account);
+	int updateProxyId(LinphoneProxyConfig *proxy);
 	inline int maxProxyId() {
 		return mProxyIds;
 	}
@@ -303,13 +351,18 @@ private:
 	static void *iterateThread(void *arg);
 	static void callStateChanged(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState state, const char *msg);
 	static void callStatsUpdated(LinphoneCore *lc, LinphoneCall *call, const LinphoneCallStats *stats);
+	static void conference_state_changed(LinphoneCore *lc, LinphoneConference *conference, LinphoneConferenceState state);
 	static void dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf);
 	static void messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg);
+	static void proxyRegistrationChanged(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
+	static void friendPresenceStateChanged(LinphoneCore *lc, LinphoneFriend *_friend);
 	void callStateChanged(LinphoneCall *call, LinphoneCallState state, const char *msg);
+	void conference_state_changed(LinphoneConference *conference, LinphoneConferenceState state);
 	void callStatsUpdated(LinphoneCall *call, const LinphoneCallStats *stats);
 	void dtmfReceived(LinphoneCall *call, int dtmf);
 	void messageReceived(LinphoneChatRoom *cr, LinphoneChatMessage *msg);
-
+	void proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
+	void friendPresenceStateChanged(LinphoneFriend *_friend);
 	void execCommand(const std::string &command);
 	std::string readLine(const std::string &, bool *);
 	std::string readPipe();
@@ -319,6 +372,8 @@ private:
 	void stopThread();
 	void initCommands();
 	void uninitCommands();
+    static void onTimerEvent(void* data);
+    void resetTimer();
 	LinphoneCore *mLc;
 	LinphoneSoundDaemon *mLSD;
 	std::list<DaemonCommand *> mCommands;
@@ -336,6 +391,7 @@ private:
 	int mAudioStreamIds;
 	ms_thread_t mThread;
 	ms_mutex_t mMutex;
+    Timer *mTimer = NULL;
 	std::map<int, AudioStreamAndOther *> mAudioStreams;
 };
 

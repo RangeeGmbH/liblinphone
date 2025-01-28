@@ -23,6 +23,18 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_VIDEO "video"
+#define COMMANDNAME_VIDEOSOURCE "videosource"
+#define COMMANDNAME_AUTOVIDEO "autovideo"
+#define COMMANDNAME_VIDEOSOURCE_GET "videosource-get"
+#define COMMANDNAME_VIDEOSOURCE_LIST "videosource-list"
+#define COMMANDNAME_VIDEOSOURCE_SET "videosource-set"
+#define COMMANDNAME_VIDEOSOURCE_RELOAD "videosource-reload"
+#define COMMANDNAME_VIDEODISPLAY_GET "videodisplay-get"
+#define COMMANDNAME_VIDEODISPLAY_SET "videodisplay-set"
+#define COMMANDNAME_VIDEOPREVIEW "videopreview"
+
+
 class Video : public DaemonCommand {
 public:
 	Video();

@@ -22,38 +22,90 @@
 
 using namespace std;
 
-CallMuteCommand::CallMuteCommand()
-    : DaemonCommand("call-mute",
-                    "call-mute 0|1",
-                    "Mute/unmute the microphone (1 to mute, 0 to unmute). No argument means MUTE.") {
-	addExample(make_unique<DaemonCommandExample>("call-mute 1", "Status: Ok\n\n"
-	                                                            "Microphone Muted"));
-	addExample(make_unique<DaemonCommandExample>("call-mute", "Status: Ok\n\n"
-	                                                          "Microphone Muted"));
-	addExample(make_unique<DaemonCommandExample>("call-mute 0", "Status: Ok\n\n"
-	                                                            "Microphone Unmuted"));
-	addExample(make_unique<DaemonCommandExample>("call-mute 1", "Status: Error\n\n"
-	                                                            "Reason: No call in progress. Can't mute."));
+CallMuteCommand::CallMuteCommand() :
+    DaemonCommand("call-mute", "call-mute [CALLID] [get|set] [input|output] ([0|1])", "Mute/unmute the microphone or speaker for call with CallID.")
+{
+	addExample(make_unique<DaemonCommandExample>("call-mute set input 1 1",
+										"Status: Ok\n\n"
+										"Microphone Muted"));
+	addExample(make_unique<DaemonCommandExample>("call-mute set output 1 1",
+                                        "Status: Ok\n\n"
+                                        "Microphone Muted"));
+	addExample(make_unique<DaemonCommandExample>("call-mute get 1",
+										"Status: Ok\n\n"
+										"Microphone Muted"));
+	addExample(make_unique<DaemonCommandExample>("call-mute set input 1 0",
+										"Status: Ok\n\n"
+										"Microphone Unmuted"));
+	addExample(make_unique<DaemonCommandExample>("call-mute set output 1 0",
+                                        "Status: Ok\n\n"
+                                        "Microphone Unmuted"));
+	addExample(make_unique<DaemonCommandExample>("call-mute set input 1 1",
+										"Status: Error\n\n"
+                                        "Reason: No call with such id."));
 }
 
-void CallMuteCommand::exec(Daemon *app, const string &args) {
-	LinphoneCore *lc = app->getCore();
-	int muted;
-	LinphoneCall *call = linphone_core_get_current_call(lc);
+void CallMuteCommand::exec(Daemon* app, const string& args)
+{
+    int callId;
+    int muted;
+    bool findCall;
+    ostringstream ost;
+    istringstream ist(args);
+    string param;
+    ist >> param;
+    LinphoneCall *call;
 
-	if (call == NULL) {
-		app->sendResponse(Response("No call in progress. Can't mute."));
-		return;
-	}
-
-	istringstream ist(args);
-	ist >> muted;
-	if (ist.fail() || (muted != 0)) {
-		muted = TRUE;
-	} else {
-		muted = FALSE;
-	}
-	linphone_core_enable_mic(lc, !muted);
-
-	app->sendResponse(Response(muted ? "Microphone Muted" : "Microphone Unmuted", Response::Ok));
+    if (ist.fail()) {
+        app->sendResponse(Response(COMMANDNAME_CALL_MUTE, "Missing parameter", Response::Error));
+    }
+    if (param == "set") {
+        ist >> param;
+        ist >> callId;
+        ist >> muted;
+        call = app->findCall(callId);
+        if (call == NULL) {
+            findCall = false;
+        }
+        else {
+            findCall = true;
+            if (param == "input") {
+                ////set
+                linphone_call_set_microphone_muted(call, (bool_t)muted);
+            }
+            if (param == "output") {
+                ////set
+                linphone_call_set_speaker_muted(call, (bool_t)muted);
+            }
+        }
+        if(findCall) {
+            ////get
+            std::string callStr;
+            callStr = "{ \"call\": ";
+            callStr += app->getJsonForCall(call);
+            callStr += " }";
+            app->sendResponse(Response(COMMANDNAME_CALL_MUTE, callStr, Response::Ok));
+        }
+        else {
+            ost << "No call with such id.";
+            app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Error));
+            return;
+        }
+    }
+    if (param == "get") {
+        ist >> callId;
+        call = app->findCall(callId);
+        if (call == NULL) {
+            ost << "No call with such id.";
+            app->sendResponse(Response(COMMANDNAME_CALL_MUTE, ost.str(), Response::Error));
+            return;
+        }
+        else {
+            std::string callStr;
+            callStr = "{ \"call\": ";
+            callStr += app->getJsonForCall(call);
+            callStr += " }";
+            app->sendResponse(Response(COMMANDNAME_CALL_MUTE, callStr, Response::Ok));
+        }
+    }
 }

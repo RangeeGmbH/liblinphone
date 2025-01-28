@@ -145,6 +145,7 @@ struct sound_config {
 	int latency;         /* latency in samples of the current used sound device */
 	float soft_play_lev; /*playback gain in db.*/
 	float soft_mic_lev;  /*mic gain in db.*/
+    float soft_ring_lev; /*ring gain in db.*/
 	char rec_lev;
 	char play_lev;
 	char ring_lev;

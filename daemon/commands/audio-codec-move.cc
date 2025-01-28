@@ -53,33 +53,33 @@ void AudioCodecMoveCommand::exec(Daemon *app, const string &args) {
 	istringstream ist(args);
 
 	if (ist.peek() == EOF) {
-		app->sendResponse(Response("Missing parameters.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_MOVE, "Missing parameters.", Response::Error));
 		return;
 	}
 
 	string mime_type;
 	ist >> mime_type;
 	if (ist.peek() == EOF) {
-		app->sendResponse(Response("Missing index parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_MOVE, "Missing index parameter.", Response::Error));
 		return;
 	}
 	PayloadTypeParser parser(app->getCore(), mime_type);
 	if (!parser.successful()) {
-		app->sendResponse(Response("Incorrect mime type format.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_MOVE, "Incorrect mime type format.", Response::Error));
 		return;
 	}
 	LinphonePayloadType *selected_payload = NULL;
 	selected_payload = parser.getPayloadType();
 
 	if (selected_payload == NULL) {
-		app->sendResponse(Response("Audio codec not found.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_MOVE, "Audio codec not found.", Response::Error));
 		return;
 	}
 
 	int index;
 	ist >> index;
 	if (ist.fail() || (index < 0)) {
-		app->sendResponse(Response("Incorrect index parameter.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_MOVE, "Incorrect index parameter.", Response::Error));
 		return;
 	}
 
@@ -105,5 +105,5 @@ void AudioCodecMoveCommand::exec(Daemon *app, const string &args) {
 	bctbx_list_free_with_data(orig_list, (bctbx_list_free_func)linphone_payload_type_unref);
 	bctbx_list_free_with_data(new_list, (bctbx_list_free_func)linphone_payload_type_unref);
 
-	app->sendResponse(PayloadTypeResponse(app->getCore(), selected_payload, index));
+	app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_MOVE, PayloadTypeResponse(app->getCore(), selected_payload, index).getBody(), Response::Ok));
 }

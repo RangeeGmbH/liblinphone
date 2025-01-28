@@ -40,25 +40,32 @@ void CallResumeCommand::exec(Daemon *app, const string &args) {
 	LinphoneCall *call = NULL;
 	bool current = false;
 	istringstream ist(args);
+	ostringstream ost;
 	ist >> cid;
 	if (ist.fail()) {
 		call = linphone_core_get_current_call(lc);
 		current = true;
 		if (call == NULL) {
-			app->sendResponse(Response("No current call available."));
+		    ost << "\"No current call available.\"";
+		    app->sendResponse(Response(COMMANDNAME_CALL_RESUME, ost.str(), Response::Error));
 			return;
 		}
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+		    ost << "\"No call with such id.\"";
+		    app->sendResponse(Response(COMMANDNAME_CALL_RESUME, ost.str(), Response::Error));
 			return;
 		}
 	}
 
 	if (linphone_call_resume(call) == 0) {
-		app->sendResponse(Response(current ? "Current call was resumed" : "Call was resumed", Response::Ok));
+	    string currentStr = current ? "Current call was resumed" : "Call was resumed";
+        ost << "\"" << currentStr << "\"";
+
+	    app->sendResponse(Response(COMMANDNAME_CALL_RESUME, ost.str(), Response::Ok));
 	} else {
-		app->sendResponse(Response("Error pausing call"));
+	    ost << "\"Error pausing call\"";
+	    app->sendResponse(Response(COMMANDNAME_CALL_RESUME, ost.str(), Response::Error));
 	}
 }

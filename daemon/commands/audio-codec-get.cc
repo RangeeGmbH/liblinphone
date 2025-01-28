@@ -65,7 +65,7 @@ void AudioCodecGetCommand::exec(Daemon *app, const string &args) {
 		ist >> mime_type;
 		PayloadTypeParser parser(app->getCore(), mime_type);
 		if (!parser.successful()) {
-			app->sendResponse(Response("Incorrect mime type format.", Response::Error));
+		    app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_GET, "Incorrect mime type format.", Response::Error));
 			return;
 		}
 		if (parser.getPayloadType()) pt = linphone_payload_type_ref(parser.getPayloadType());
@@ -87,9 +87,9 @@ void AudioCodecGetCommand::exec(Daemon *app, const string &args) {
 	bctbx_list_free_with_data(payloadTypes, (bctbx_list_free_func)linphone_payload_type_unref);
 
 	if (!found) {
-		app->sendResponse(Response("Audio codec not found.", Response::Error));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_GET, "Audio codec not found.", Response::Error));
 	} else {
-		app->sendResponse(Response(ost.str(), Response::Ok));
+	    app->sendResponse(Response(COMMANDNAME_AUDIO_CODEC_GET, ost.str(), Response::Ok));
 	}
 	if (pt) linphone_payload_type_unref(pt);
 }

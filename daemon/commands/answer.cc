@@ -39,13 +39,18 @@ void AnswerCommand::exec(Daemon *app, const string &args) {
 	LinphoneCall *call;
 	istringstream ist(args);
 	ist >> cid;
+	std::ostringstream stringStream;
 	if (ist.fail()) {
 		for (const MSList *elem = linphone_core_get_calls(lc); elem != NULL; elem = elem->next) {
 			call = (LinphoneCall *)elem->data;
 			LinphoneCallState cstate = linphone_call_get_state(call);
 			if (cstate == LinphoneCallIncomingReceived || cstate == LinphoneCallIncomingEarlyMedia) {
 				if (linphone_call_accept(call) == 0) {
-					app->sendResponse(Response());
+				    string callString;
+				    callString += "{ \"isAll\": false, \"calls\": [ ";
+				    callString += app->getJsonForCall(call);
+				    callString += " ] }";
+				    app->sendResponse(Response(COMMANDNAME_ANSWER, callString, Response::Ok));
 					return;
 				}
 			}
@@ -53,20 +58,25 @@ void AnswerCommand::exec(Daemon *app, const string &args) {
 	} else {
 		call = app->findCall(cid);
 		if (call == NULL) {
-			app->sendResponse(Response("No call with such id."));
+		    stringStream << "\"No call with such id\"";
+		    app->sendResponse(Response(COMMANDNAME_ANSWER, stringStream.str(), Response::Error));
 			return;
 		}
 
 		LinphoneCallState cstate = linphone_call_get_state(call);
 		if (cstate == LinphoneCallIncomingReceived || cstate == LinphoneCallIncomingEarlyMedia) {
 			if (linphone_call_accept(call) == 0) {
-				app->sendResponse(Response());
+			    string callString;
+			    callString += "{ \"isAll\": false, \"calls\": [ ";
+			    callString += app->getJsonForCall(call);
+			    callString += " ] }";
+			    app->sendResponse(Response(COMMANDNAME_ANSWER, callString, Response::Ok));
 				return;
 			}
 		}
-		app->sendResponse(Response("Can't accept this call."));
+		app->sendResponse(Response(COMMANDNAME_ANSWER, "Can't accept this call.", Response::Error));
 		return;
 	}
 
-	app->sendResponse(Response("No call to accept."));
+	app->sendResponse(Response(COMMANDNAME_ANSWER, "No call to accept.", Response::Error));
 }

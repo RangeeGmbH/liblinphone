@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_REGISTER_STATUS "register-status"
+
 class RegisterStatusCommand : public DaemonCommand {
 public:
 	RegisterStatusCommand();

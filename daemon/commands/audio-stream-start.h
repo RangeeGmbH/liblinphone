@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_AUDIO_STREAM_START "audio-stream-start"
+
 class AudioStreamStartCommand : public DaemonCommand {
 public:
 	AudioStreamStartCommand();

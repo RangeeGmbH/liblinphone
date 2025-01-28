@@ -230,18 +230,34 @@ float MS2AudioMixer::getRecordVolume() {
 	return LINPHONE_VOLUME_DB_LOWEST;
 }
 
-float MS2AudioMixer::getMicGain() {
-	return 0.0;
+float MS2AudioMixer::getMicGain(){
+    AudioStream *st = mLocalParticipantStream;
+    if(st == NULL){
+        return 0.0;
+    }
+    else {
+        return audio_stream_get_sound_card_input_gain(st);
+    }
 }
 
-void MS2AudioMixer::setMicGain(BCTBX_UNUSED(float value)) {
+void MS2AudioMixer::setMicGain(float value){
+    AudioStream *st = mLocalParticipantStream;
+    audio_stream_set_sound_card_input_gain(st, value);
 }
 
-float MS2AudioMixer::getSpeakerGain() {
-	return 0.0;
+float MS2AudioMixer::getSpeakerGain(){
+    AudioStream *st = mLocalParticipantStream;
+    if(st == NULL){
+        return 0.0;
+    }
+    else {
+        return audio_stream_get_sound_card_output_gain(st);
+    }
 }
 
-void MS2AudioMixer::setSpeakerGain(BCTBX_UNUSED(float value)) {
+void MS2AudioMixer::setSpeakerGain(float value){
+    AudioStream *st = mLocalParticipantStream;
+    audio_stream_set_sound_card_output_gain(st, value);
 }
 
 bool MS2AudioMixer::supportsTelephoneEvents() {

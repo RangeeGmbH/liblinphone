@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_MSFILTER_ADD_FMTP "msfilter-add-fmtp"
+
 class MSFilterAddFmtpCommand : public DaemonCommand {
 public:
 	MSFilterAddFmtpCommand();

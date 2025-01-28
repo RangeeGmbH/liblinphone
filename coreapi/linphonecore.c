@@ -5005,8 +5005,6 @@ LinphoneCall *linphone_core_invite_address_with_params_2(LinphoneCore *lc,
 		}
 	}
 
-	if (!L_GET_PRIVATE_FROM_C_OBJECT(lc)->canWeAddCall()) return NULL;
-
 	// ============= ACCOUNT ====================
 	// Try to retrieve the account from the call params
 	account = linphone_call_params_get_account(params);
@@ -5662,7 +5660,27 @@ void linphone_core_set_mic_gain_db(LinphoneCore *lc, float gaindb) {
 		ms_message("linphone_core_set_mic_gain_db(): no active call.");
 		return;
 	}
-	audio_stream_set_mic_gain_db(st, gain);
+	linphone_call_set_microphone_volume_gain(call,gain);
+}
+
+void linphone_core_set_ringer_gain_db (LinphoneCore *lc, float gaindb) {
+	RingStream *st;
+	LinphoneRingtonePlayer *linphoneRingtonePlayer;
+	linphoneRingtonePlayer = linphone_core_get_ringtoneplayer(lc);
+
+	lc->sound_conf.soft_ring_lev=gaindb;
+	if (linphone_core_ready(lc)){
+		linphone_config_set_float(lc->config,"sound","ring_gain_db",lc->sound_conf.soft_ring_lev);
+	}
+
+	st = linphone_ringtoneplayer_get_stream(linphoneRingtonePlayer);
+	if (st == NULL) {
+		ms_message("linphone_core_set_ring_gain_db: LinphoneRingtonePlayer Stream");
+		return;
+	}
+	else {
+		ring_stream_set_output_volume(st,gaindb);
+	}
 }
 
 bool_t linphone_core_get_disable_record_on_mute(LinphoneCore *lc) {
@@ -5685,18 +5703,17 @@ void linphone_core_set_playback_gain_db(LinphoneCore *lc, float gaindb) {
 	CoreLogContextualizer logContextualizer(lc);
 	float gain = gaindb;
 	LinphoneCall *call = linphone_core_get_current_call(lc);
-	AudioStream *st;
 
 	lc->sound_conf.soft_play_lev = gaindb;
 	if (linphone_core_ready(lc)) {
 		linphone_config_set_float(lc->config, "sound", "playback_gain_db", lc->sound_conf.soft_play_lev);
 	}
 
-	if (!call || !(st = reinterpret_cast<AudioStream *>(linphone_call_get_stream(call, LinphoneStreamTypeAudio)))) {
+	if (!call) {
 		ms_message("linphone_core_set_playback_gain_db(): no active call.");
 		return;
 	}
-	set_playback_gain_db(st, gain);
+	linphone_call_set_speaker_volume_gain(call, gain);
 }
 
 float linphone_core_get_playback_gain_db(LinphoneCore *lc) {
@@ -9560,7 +9577,7 @@ int linphone_core_get_conference_size(LinphoneCore *lc) {
 }
 
 float linphone_core_get_conference_local_input_volume(LinphoneCore *lc) {
-	if (lc->conf_ctx) return linphone_conference_get_input_volume(lc->conf_ctx);
+	if (lc->conf_ctx) return linphone_conference_get_input_volume_gain(lc->conf_ctx);
 	else return -1.0;
 }
 

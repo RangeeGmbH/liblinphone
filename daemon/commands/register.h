@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_REGISTER "register"
+
 class RegisterCommand : public DaemonCommand {
 public:
 	RegisterCommand();

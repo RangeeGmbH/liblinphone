@@ -23,6 +23,9 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_ANSWER "answer"
+
+
 class AnswerCommand : public DaemonCommand {
 public:
 	AnswerCommand();

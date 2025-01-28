@@ -41,6 +41,10 @@ VersionCommand::VersionCommand() : DaemonCommand("version", "version", "Get the 
 	                                             "Version: 3.5.99.0_6c2f4b9312fd4717b2f8ae0a7d7c97b752768c7c"));
 }
 
-void VersionCommand::exec(Daemon *app, BCTBX_UNUSED(const string &argc)) {
-	app->sendResponse(VersionResponse(app->getCore()));
+void VersionCommand::exec(Daemon *app, BCTBX_UNUSED(const string& args)) {
+    char hostname[1024];
+    gethostname(hostname, 1024);
+    std::ostringstream stringStream;
+    stringStream << "{ \"Version\":" << "\"" << linphone_core_get_version() << "\"" << ", \"ApiVersion\":" << "\"" << to_string(API_VERSION).c_str() << "\"" << ", \"hostname\":"  << "\"" << hostname <<  "\" }";
+    app->sendResponse(Response(COMMANDNAME_VERSION, stringStream.str(), Response::Ok));
 }

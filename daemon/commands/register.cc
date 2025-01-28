@@ -41,7 +41,7 @@ RegisterCommand::RegisterCommand()
 }
 void RegisterCommand::exec(Daemon *app, const string &args) {
 	LinphoneCore *lc = app->getCore();
-	ostringstream ostr;
+	ostringstream ost;
 	string identity;
 	string proxy;
 	string password;
@@ -55,6 +55,7 @@ void RegisterCommand::exec(Daemon *app, const string &args) {
 	const char *cuserid = NULL;
 	const char *crealm = NULL;
 	const char *cparameter = NULL;
+	string proxysStr;
 
 	ist >> identity;
 	ist >> proxy;
@@ -63,7 +64,8 @@ void RegisterCommand::exec(Daemon *app, const string &args) {
 	ist >> realm;
 	ist >> parameter;
 	if (proxy.empty()) {
-		app->sendResponse(Response("Missing/Incorrect parameter(s)."));
+	    ost << "\"Missing/Incorrect parameter(s).\"";
+	    app->sendResponse(Response(COMMANDNAME_REGISTER, ost.str(), Response::Error));
 		return;
 	}
 	cidentity = identity.c_str();
@@ -88,8 +90,13 @@ void RegisterCommand::exec(Daemon *app, const string &args) {
 	linphone_account_params_enable_register(params, TRUE);
 	linphone_account_params_set_contact_parameters(params, cparameter);
 	LinphoneAccount *account = linphone_core_create_account(lc, params);
-	ostr << "Id: " << app->updateProxyId(account) << "\n";
 	linphone_core_add_account(lc, account);
+
+	cfg = app->findProxy(app->updateProxyId(cfg));
+	proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
+	proxysStr += app->getJsonForAccountParams(params, account);
+	proxysStr += " ]  }";
+
 	linphone_account_params_unref(params);
-	app->sendResponse(Response(ostr.str(), Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_REGISTER, proxysStr, Response::Ok));
 }

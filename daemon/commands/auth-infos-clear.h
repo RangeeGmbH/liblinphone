@@ -23,6 +23,8 @@
 
 #include "daemon.h"
 
+#define COMMANDNAME_AUTH_INFOS_CLEAR "auth-infos-clear"
+
 class AuthInfosClearCommand : public DaemonCommand {
 public:
 	AuthInfosClearCommand();

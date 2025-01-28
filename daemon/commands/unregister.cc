@@ -36,34 +36,53 @@ void UnregisterCommand::exec(Daemon *app, const string &args) {
 	LinphoneAccount *account = NULL;
 	string param;
 	int pid;
+    ostringstream ost;
+    string proxysStr;
 
 	istringstream ist(args);
 	ist >> param;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", Response::Error));
+		ost << "\"Missing parameter\"";
+		app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Error));
 		return;
 	}
 	if (param.compare("ALL") == 0) {
+		//Erase all proxies from config
+		proxysStr += "{ \"isAll\": true, \"proxies\": [ ";
 		for (int i = 1; i <= app->maxProxyId(); i++) {
 			account = app->findProxy(i);
 			if (account != NULL) {
 				linphone_core_remove_account(app->getCore(), account);
+				proxysStr += app->getJsonForProxys(cfg);
+				if (i< app->maxProxyId()-1) {
+					proxysStr += ",";
+				}
 			}
 		}
+		proxysStr += " ] }";
+		linphone_core_clear_proxy_config(app->getCore());
+		app->sendResponse(Response(COMMANDNAME_UNREGISTER, proxysStr, Response::Ok));
 	} else {
 		ist.clear();
 		ist.str(param);
 		ist >> pid;
 		if (ist.fail()) {
-			app->sendResponse(Response("Incorrect parameter.", Response::Error));
+			ost << "\"Incorrect parameter\"";
+			app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Error));
 			return;
 		}
 		account = app->findProxy(pid);
 		if (account == NULL) {
-			app->sendResponse(Response("No register with such id.", Response::Error));
+			ost << "\"No registe with such id.\"";
+			app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Error));
 			return;
+		} else {
+			cfg = app->findProxy(pid);
+			proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
+			proxysStr += app->getJsonForProxys(cfg);
+			proxysStr += " ] }";
 		}
 		linphone_core_remove_account(app->getCore(), account);
+		app->sendResponse(Response(COMMANDNAME_UNREGISTER, proxysStr, Response::Ok));
 	}
-	app->sendResponse(Response());
 }
