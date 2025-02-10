@@ -31,6 +31,9 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <vector>
+#include <math.h>
+//#include "core/core.h"
 
 #ifdef HAVE_READLINE
 #include <readline/history.h>
@@ -120,6 +123,10 @@ void usleep(int waitTime) {
 #define LICENCE_COMMERCIAL
 #endif
 
+#ifdef __linux__
+Timer* Timer::timer_instance = nullptr;
+#endif
+
 bool idleTimeout = false;
 
 const char *const ice_state_str[] = {
@@ -142,28 +149,275 @@ void *Daemon::iterateThread(void *arg) {
 	return 0;
 }
 
-CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
+float Daemon::linearToDb(float volume) {
+    return static_cast<float>(round(volume / 100));
+}
+
+
+std::string Daemon::replaceAll(std::string str, const std::string &from, const std::string &to) {
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+    }
+    return str;
+}
+
+std::string Daemon::replaceEscapeChar(std::string replaceStr) {
+    std::string returnStr;
+    returnStr = replaceAll(replaceStr, "\\", "\\\\");
+    returnStr = replaceAll(returnStr, "\"", "\\\"");
+    return returnStr;
+}
+
+std::string Daemon::getJsonForConferenceParticipant(LinphoneParticipant *linphoneParticipant) {
+    string linphoneAddress;
+    const LinphoneAddress *lLinphoneAddress = linphone_participant_get_address(linphoneParticipant);
+    LinphoneCall *call = linphone_core_get_call_by_remote_address2(this->getCore(), lLinphoneAddress);
+    linphoneAddress += "{ \"address\": \"";
+    linphoneAddress += linphone_address_as_string(lLinphoneAddress);
+    linphoneAddress += "\", \"callId\": ";
+    linphoneAddress += std::to_string(updateCallId(call));
+    linphoneAddress += " }";
+    return linphoneAddress;
+}
+
+
+std::string Daemon::linphone_conference_state_to_string(LinphoneConferenceState state) {
+    switch (state) {
+        case LinphoneConferenceStateNone:
+            return "LinphoneConferenceStateNone";
+            break;
+        case LinphoneConferenceStateInstantiated:
+            return "LinphoneConferenceStateInstantiated";
+            break;
+        case LinphoneConferenceStateCreationPending:
+            return "LinphoneConferenceStateCreationPending";
+            break;
+        case LinphoneConferenceStateCreated:
+            return "LinphoneConferenceStateCreated";
+            break;
+        case LinphoneConferenceStateCreationFailed:
+            return "LinphoneConferenceStateCreationFailed";
+            break;
+        case LinphoneConferenceStateTerminationPending:
+            return "LinphoneConferenceStateTerminationPending";
+            break;
+        case LinphoneConferenceStateTerminated:
+            return "LinphoneConferenceStateTerminated";
+            break;
+        case LinphoneConferenceStateTerminationFailed:
+            return "LinphoneConferenceStateTerminationFailed";
+            break;
+        case LinphoneConferenceStateDeleted:
+            return "LinphoneConferenceStateDeleted";
+            break;
+    }
+    return "";
+}
+
+
+std::string Daemon::getJsonForConference(LinphoneConference *conference) {
+    float outputVolumeFloat = -1;
+    float inputVolumeFloat = -1;
+    std::string output_Device_Str = "";
+    std::string input_Device_Str = "";
+
+    LinphoneConferenceState conferenceState = LinphoneConferenceStateInstantiated;
+    conferenceState = linphone_conference_get_state(conference);
+
+    const LinphoneAudioDevice *output_device = nullptr;
+    const LinphoneAudioDevice *input_device = nullptr;
+
+    string micMutedStrForConference = "";
+    string speakerMutedStrForConference = "";
+
+    if(conferenceState != LinphoneConferenceState::LinphoneConferenceStateCreated) {
+        micMutedStrForConference = "\"\"";
+        speakerMutedStrForConference = "\"\"";
+    }
+    else {
+        output_device = linphone_conference_get_output_audio_device(conference);
+        input_device = linphone_conference_get_input_audio_device(conference);
+
+        outputVolumeFloat = linphone_conference_get_output_volume_gain(conference);
+        inputVolumeFloat = linphone_conference_get_input_volume_gain(conference);
+
+        micMutedStrForConference = linphone_conference_get_microphone_muted(conference) ? "true" : "false";
+        speakerMutedStrForConference = linphone_conference_get_speaker_muted(conference) ? "true" : "false";
+    }
+
+    if( output_device == nullptr ) {
+        output_Device_Str = "\"\"";
+    }
+    else  {
+        output_Device_Str = getJsonForAudioDevice(output_device);
+    }
+    if( input_device == nullptr ) {
+        input_Device_Str = "\"\"";
+    }
+    else  {
+        input_Device_Str = getJsonForAudioDevice(input_device);
+    }
+    if(micMutedStrForConference.empty()) {
+        micMutedStrForConference = "{ }";
+    }
+    if(speakerMutedStrForConference.empty()) {
+        speakerMutedStrForConference = "{ }";
+    }
+
+    string participants_string;
+    const bctbx_list_t *elem;
+    elem = linphone_conference_get_participant_list(conference);
+    for (int index = 0; index < (int)bctbx_list_size(elem); index++) {
+        LinphoneParticipant* lLinphoneParticipant = (LinphoneParticipant*) bctbx_list_nth_data(elem,index);
+        participants_string += this->getJsonForConferenceParticipant(lLinphoneParticipant);
+        if(index < (int)bctbx_list_size(elem)-1) {
+            participants_string += ",";
+        }
+    }
+
+    ostringstream ost;
+    ost << "{ \"conference\": { \"muted\": { " << "\"input\": " << micMutedStrForConference << ", \"output\": " << speakerMutedStrForConference << " }" <<
+    ", \"participants\": [ " << participants_string << " ] " <<
+    ", \"state\": " << "\"" << linphone_conference_state_to_string(conferenceState) << "\"" <<
+    ", \"soundcards\": { \"output\": " << output_Device_Str << ", \"input\": " << input_Device_Str << " }" <<
+    ", \"volumes\": { \"output\": " << outputVolumeFloat << ", \"input\": " << inputVolumeFloat << " } } }";
+    return ost.str();
+}
+
+std::string Daemon::getJsonForCall(LinphoneCall *call) {
+    LinphoneCallState call_state = LinphoneCallIdle;
+    call_state = linphone_call_get_state(call);
+
 	LinphoneCallLog *callLog = linphone_call_get_call_log(call);
 	const LinphoneAddress *fromAddr = linphone_call_log_get_from_address(callLog);
-	char *fromStr = linphone_address_as_string(fromAddr);
+    const LinphoneAddress *toAddr = linphone_call_log_get_to_address(callLog);
+    std::string toStr = "";
+    std::string fromStr = "";
+    toStr = linphone_address_as_string(toAddr);
+    fromStr = linphone_address_as_string(fromAddr);
+    toStr = replaceEscapeChar(toStr);
+    fromStr = replaceEscapeChar(fromStr);
 
-	ostringstream ostr;
-	ostr << "Event: " << linphone_call_state_to_string(state) << "\n";
-	ostr << "From: " << fromStr << "\n";
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
-	setBody(ostr.str());
+    const char *errorMessage;
+    if (call_state != LinphoneCallState::LinphoneCallStateError) {
+        errorMessage = "";
+    } else {
+        errorMessage = linphone_reason_to_string(linphone_call_get_reason(call));
+    }
+    replaceEscapeChar(errorMessage);
 
-	bctbx_free(fromStr);
+    const char *flag;
+    bool_t in_conference;
+    in_conference = (linphone_call_get_conference(call) != NULL);
+    flag = in_conference ? "true" : "false";
+    string direction = ((linphone_call_get_dir(call) == LinphoneCallOutgoing) ? "out" : "in");
+    float outputVolumeFloat = -1;
+    float inputVolumeFloat = -1;
+    std::string output_Device_Str = "";
+    std::string input_Device_Str = "";
+    const LinphoneAudioDevice *output_device = linphone_call_get_output_audio_device(call);
+    if( output_device == nullptr ) {
+        output_Device_Str = "\"\"";
+    }
+    else  {
+        output_Device_Str = getJsonForAudioDevice(output_device);
+    }
+    const LinphoneAudioDevice *input_device = linphone_call_get_input_audio_device(call);
+    if( input_device == nullptr ) {
+        input_Device_Str = "\"\"";
+    }
+    else  {
+        input_Device_Str = getJsonForAudioDevice(input_device);
+    }
+    if (call_state == LinphoneCallState::LinphoneCallStateStreamsRunning) {
+        outputVolumeFloat = linphone_call_get_speaker_volume_gain(call);
+        inputVolumeFloat = linphone_call_get_microphone_volume_gain(call);
+    }
+    string micMutedStrForCall = linphone_call_get_microphone_muted(call) ? "true" : "false";
+    string speakerMutedStrForCall = linphone_call_get_speaker_muted(call) ? "true" : "false";
+
+    ostringstream ost;
+    ost << "{ \"id\": " << updateCallId(call) << ", \"state\": " << "\"" << linphone_call_state_to_string(call_state)
+        << "\"" << ", \"addressFrom\": " << "\"" << fromStr.c_str() << "\"" << ", \"addressTo\": " << "\""
+        << toStr.c_str() << "\"" << ", \"direction\": " << "\"" << direction << "\""
+        << ", \"duration\":" << linphone_call_get_duration(call) << ", \"inConference\": " << flag
+        << ", \"muted\": { " << "\"input\": " << micMutedStrForCall << ", \"output\": " << speakerMutedStrForCall << " }"
+        << ", \"errorMessage\": " << "\"" << errorMessage << "\"" <<
+        ", \"volumes\": { \"output\": " << outputVolumeFloat << ", \"input\": " << inputVolumeFloat << " }"
+        << ", \"soundcards\": { \"output\": " << output_Device_Str << ", \"input\": " << input_Device_Str << " } }";
+    return ost.str();
 }
+
+CallEvent::CallEvent(Daemon *daemon, LinphoneCall *call, LinphoneCallState state) : Event("call-state-changed") {
+    if(state == LinphoneCallState::LinphoneCallStateEnd || state == LinphoneCallState::LinphoneCallStateError || state == LinphoneCallState::LinphoneCallStateReleased) {
+        bool_t in_conference;
+        in_conference = (linphone_call_get_conference(call) != NULL);
+        if(in_conference) {
+            linphone_core_remove_from_conference(daemon->getCore(), call);
+        }
+}
+    string callStr;
+    callStr = "{ \"calls\": [ ";
+    callStr += daemon->getJsonForCall(call);
+    callStr += " ] }";
+    setBody(callStr);
+}
+#ifndef _MSC_VER
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif // _MSC_VER
+ConferenceEvent::ConferenceEvent(Daemon *daemon, LinphoneConference *conference, LinphoneConferenceState state) : Event("conference-state-changed") {
+    setBody(daemon->getJsonForConference(conference));
+}
+#ifndef _MSC_VER
+#pragma GCC diagnostic pop
+#endif // _MSC_VER
 
 DtmfEvent::DtmfEvent(Daemon *daemon, LinphoneCall *call, int dtmf) : Event("receiving-tone") {
 	ostringstream ostr;
-	char *remote = linphone_call_get_remote_address_as_string(call);
+    const LinphoneAddress *address = linphone_call_get_remote_address(call);
+    char *remote = linphone_address_as_string(address);
+    ostr << "CallId: " << daemon->updateCallId(call) << "\n";
 	ostr << "Tone: " << (char)dtmf << "\n";
-	ostr << "From: " << remote << "\n";
-	ostr << "Id: " << daemon->updateCallId(call) << "\n";
+    ostr << "From: " << remote;
 	setBody(ostr.str());
 	ms_free(remote);
+}
+
+#ifndef _MSC_VER
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif // _MSC_VER
+AccountRegistrationChangedEvent::AccountRegistrationChangedEvent(Daemon *daemon, LinphoneAccount* account,
+                                                             LinphoneRegistrationState cstate, const char *message)
+        : Event("account-registration-state-changed") {
+    const LinphoneAccountParams *params = linphone_account_get_params(account);
+    string proxysStr;
+    proxysStr = "{ \"proxies\": [ ";
+    proxysStr += daemon->getJsonForAccountParams(params, account);
+    proxysStr += " ] }";
+
+    setBody(proxysStr);
+    if (linphone_account_get_state(account) == LinphoneRegistrationCleared) {
+        linphone_core_clear_all_auth_info(daemon->getCore());
+    }
+}
+#ifndef _MSC_VER
+#pragma GCC diagnostic pop
+#endif // _MSC_VER
+
+FriendPresenceStateChangedEvent::FriendPresenceStateChangedEvent(Daemon *daemon, LinphoneFriend *_friend)
+                                                             : Event("friend-presence-state-changed") {
+    if( !daemon->getJsonForFriend(_friend).empty()) {
+        string friendStr;
+        friendStr = "{ \"friend\": ";
+        friendStr += daemon->getJsonForFriend(_friend);
+        friendStr += " }";
+
+        setBody(friendStr);
+    }
 }
 
 static ostream &printCallStatsHelper(ostream &ostr, const LinphoneCallStats *stats, const string &prefix) {
@@ -372,7 +626,7 @@ Daemon::Daemon(const char *config_path,
 
 	LinphoneCoreVTable vtable;
 	memset(&vtable, 0, sizeof(vtable));
-	vtable.registration_state_changed = proxyRegistrationChanged;
+	vtable.account_registration_state_changed = accountRegistrationChanged;
 	vtable.call_state_changed = callStateChanged;
 	// vtable.call_stats_updated = callStatsUpdated;
 	vtable.dtmf_received = dtmfReceived;
@@ -391,6 +645,10 @@ Daemon::Daemon(const char *config_path,
 
 	initCommands();
 	mUseStatsEvents = true;
+
+#ifdef HAVE_JABRA
+    jabra = new JabraSdk(this);
+#endif
 }
 
 const list<DaemonCommand *> &Daemon::getCommandList() const {
@@ -412,6 +670,205 @@ int Daemon::updateCallId(LinphoneCall *call) {
 		return mCallIds;
 	}
 	return val;
+}
+
+LinphoneAudioDevice *Daemon::findAudioDevice(std::string idString) {
+    bctbx_list_t * deviceList = linphone_core_get_extended_audio_devices(getCore());
+    LinphoneAudioDevice *pDevice = NULL;
+    while (deviceList != NULL) {
+        pDevice = (LinphoneAudioDevice *) deviceList->data;
+        if (linphone_audio_device_get_id(pDevice) == idString) {
+            bctbx_list_free_with_data(deviceList, (void (*)(void *))linphone_audio_device_unref);
+            return pDevice;
+        }
+
+        deviceList = deviceList->next;
+    }
+    bctbx_list_free_with_data(deviceList, (void (*)(void *))linphone_audio_device_unref);
+    return pDevice;
+}
+
+std::string Daemon::linphoneAudioDeviceTypeToString(LinphoneAudioDeviceType linphoneAudioDeviceType) const {
+    std::string type;
+    switch (linphoneAudioDeviceType) {
+        case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeMicrophone:
+            type = "Microphone";
+            break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeEarpiece:
+                type = "Earpiece";
+            break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeSpeaker:
+                type = "Speaker";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeBluetooth:
+                type = "Bluetooth";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeBluetoothA2DP:
+                type = "BluetoothA2DP";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeTelephony:
+                type = "Telephony";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeAuxLine:
+                type = "AuxLine";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeGenericUsb:
+                type = "Generic USB";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeHeadset:
+                type = "Headset";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeHeadphones:
+                type = "Headphones";
+                break;
+            case LinphoneAudioDeviceType::LinphoneAudioDeviceTypeUnknown:
+                default:
+                type = "Unknown";
+                break;
+    }
+    return type;
+}
+
+std::string Daemon::getJsonForPresenceActivities(const LinphonePresenceModel* model) {
+    const char *activityStr = "";
+    std::string vectorStr = "";
+    vector <std::string> v;
+
+    unsigned int nbActivities = linphone_presence_model_get_nb_activities(model);
+    for (unsigned int i = 0; i < nbActivities; i++) {
+        LinphonePresenceActivity *activity = linphone_presence_model_get_nth_activity(model, i);
+        if (activity == NULL) {
+            activityStr = linphone_presence_activity_to_string(activity);
+            vectorStr = activityStr;
+            v.push_back(vectorStr);
+        }
+    }
+
+    ostringstream ost;
+    std::string activities = this->join(v, ", ");
+    if(activities.empty()) {
+        activities = " ";
+    }
+
+    ost << "\"activities\": [" << activities.c_str() << "] ";
+
+    return ost.str();
+}
+
+std::string Daemon::getJsonForPresenceService(const LinphonePresenceModel* model) {
+    vector <std::string> v;
+
+    unsigned int nbServices = linphone_presence_model_get_nb_services(model);
+    for (unsigned int i = 0; i < nbServices; i++) {
+        LinphonePresenceService *service = linphone_presence_model_get_nth_service(model, i);
+        if (!service) continue;
+
+        bctbx_list_t *services_descriptions = linphone_presence_service_get_service_descriptions(service);
+        while (services_descriptions) {
+            char *description = (char *)bctbx_list_get_data(services_descriptions);
+            std::string vectorStr = "";
+            vectorStr = description;
+            v.push_back(vectorStr);
+        }
+    }
+    ostringstream ost;
+    std::string descriptions = this->join(v, ", ");
+    if(descriptions.empty()) {
+        descriptions = " ";
+    }
+
+    ost << "\"descriptions\": [" << descriptions.c_str() << "] ";
+
+    return ost.str();
+}
+
+std::string Daemon::getJsonForFriend(LinphoneFriend *_friend) {
+    ostringstream ost;
+
+    const LinphoneAddress * address = linphone_friend_get_address(_friend);
+    char *friendAddress = linphone_address_as_string(address);
+    const LinphonePresenceModel* model = linphone_friend_get_presence_model(_friend);
+
+    ost << "{ \"address\": " << "\"" << friendAddress << "\", \"presenceModel\": { ";
+
+    if(model == NULL) {
+        return NULL;
+    }
+    else if (model != NULL) {
+        const char *note_content = "";
+        const char *isOnlineStr = "";
+
+        // Notes
+        LinphonePresenceNote *note = linphone_presence_model_get_note(model, NULL);
+        if (note) {
+            note_content = linphone_presence_note_get_content(note);
+        }
+
+        // IsOnline
+        switch (linphone_presence_model_is_online(model)) {
+            case true:
+                isOnlineStr = "true";
+                break;
+            case false:
+                isOnlineStr = "false";
+                break;
+        }
+
+        ost << "\"note\": " << "\"" << note_content << "\"" << ", " << this->getJsonForPresenceActivities(model) << ", " << this->getJsonForPresenceService(model) << ", \"isOnline\": " << isOnlineStr;
+    }
+
+    ost << " } }";
+
+    return ost.str();
+}
+
+std::string Daemon::getJsonForAudioDevice(const LinphoneAudioDevice *device) {
+    ostringstream ost;
+    std::string deviceId(linphone_audio_device_get_id(device));
+    std::string deviceType(linphoneAudioDeviceTypeToString(linphone_audio_device_get_type(device)));
+    std::string deviceName(linphone_audio_device_get_device_name(device));
+    std::string driverName(linphone_audio_device_get_driver_name(device));
+    std::string canPlay;
+    std::string canRecord;
+    /*std::string isDefaultOutputString;
+    std::string isDefaultInputString;
+    std::string isDefaultRingerString;*/
+
+    bool isDefaultOutput = false;
+    bool isDefaultInput = false;
+    bool isDefaultRinger = false;
+
+    const LinphoneAudioDevice *output_device = linphone_core_get_default_output_audio_device(getCore());
+    isDefaultOutput = device == output_device;
+
+    const LinphoneAudioDevice *input_device = linphone_core_get_default_input_audio_device(getCore());
+    isDefaultInput = device == input_device;
+
+    const LinphoneAudioDevice *ringer_device;
+    const std::string& ringer_Device_Str = linphone_core_get_ringer_device(getCore());
+    ringer_device = findAudioDevice(ringer_Device_Str);
+    isDefaultRinger = device == ringer_device;
+
+    switch (linphone_audio_device_get_capabilities(device)) {
+        case LinphoneAudioDeviceCapabilityAll:
+            canPlay = "true";
+            canRecord = "true";
+            break;
+        case LinphoneAudioDeviceCapabilityPlay:
+            canPlay = "true";
+            canRecord = "false";
+            break;
+        case LinphoneAudioDeviceCapabilityRecord:
+            canPlay = "false";
+            canRecord = "true";
+            break;
+    }
+    std::string canPlayStrTrue = "true";
+    ost << "{ \"id\": " << "\"" << deviceId << "\"" << ", \"driver\": " << "\"" << driverName.c_str() << "\"" << ", \"type\": " << "\""
+    << deviceType << "\"" << ", \"name\": " << "\"" << deviceName.c_str() << "\""
+    << ", \"canRecord\": " << canRecord << ", \"canPlay\": " << canPlay
+    << ", \"isDefaultOutput\": " <<  (isDefaultOutput ? "true" : "false") << ", \"isDefaultInput\": " << (isDefaultInput ? "true" : "false") << ", \"isDefaultRinger\": " << (isDefaultRinger ? "true" : "false") << " }";
+    return ost.str();
 }
 
 LinphoneCall *Daemon::findCall(int id) {
@@ -593,6 +1050,10 @@ void Daemon::callStateChanged(LinphoneCall *call, LinphoneCallState state, BCTBX
 	if (state == LinphoneCallIncomingReceived && mAutoAnswer) {
 		linphone_call_accept(call);
 	}
+
+#ifdef HAVE_JABRA
+    if (jabra) { jabra->OnCallStateChanged(call, state); }
+#endif
 }
 
 void Daemon::conference_state_changed(LinphoneConference *conference, LinphoneConferenceState state) {
@@ -620,8 +1081,8 @@ void Daemon::dtmfReceived(LinphoneCall *call, int dtmf) {
 	queueEvent(new DtmfEvent(this, call, dtmf));
 }
 
-void Daemon::proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) {
-	queueEvent(new ProxyRegistrationChangedEvent(this, cfg, cstate, message));
+void Daemon::accountRegistrationChanged(LinphoneAccount* account, LinphoneRegistrationState cstate, const char *message) {
+	queueEvent(new AccountRegistrationChangedEvent(this, account, cstate, message));
 }
 
 void Daemon::friendPresenceStateChanged(LinphoneFriend *_friend) {
@@ -647,12 +1108,12 @@ void Daemon::dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf) {
 	app->dtmfReceived(call, dtmf);
 }
 
-void Daemon::proxyRegistrationChanged(LinphoneCore *lc,
-                                      LinphoneProxyConfig *cfg,
-                                      LinphoneRegistrationState cstate,
-                                      const char *message) {
+void Daemon::accountRegistrationChanged(LinphoneCore *lc,
+                                        LinphoneAccount *account,
+                                        LinphoneRegistrationState cstate,
+                                        const char *message) {
 	Daemon *app = (Daemon *)linphone_core_get_user_data(lc);
-	app->proxyRegistrationChanged(cfg, cstate, message);
+    app->accountRegistrationChanged(account, cstate, message);
 }
 
 void Daemon::friendPresenceStateChanged(LinphoneCore *lc, LinphoneFriend *_friend) {
@@ -1128,6 +1589,10 @@ void Daemon::enableLSD(bool enabled) {
 
 Daemon::~Daemon() {
 	uninitCommands();
+
+#ifdef HAVE_JABRA
+    if (jabra) { delete jabra; }
+#endif
 
 	for (map<int, AudioStreamAndOther *>::iterator it = mAudioStreams.begin(); it != mAudioStreams.end(); ++it) {
 		audio_stream_stop(it->second->stream);

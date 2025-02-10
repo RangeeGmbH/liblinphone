@@ -228,12 +228,12 @@ public:
 	AudioStreamStatsEvent(Daemon *daemon, AudioStream *stream, const LinphoneCallStats *stats);
 };
 
-class ProxyRegistrationChangedEvent : public Event {
+class AccountRegistrationChangedEvent : public Event {
 public:
-	ProxyRegistrationChangedEvent(Daemon *daemon,
-	                              LinphoneProxyConfig *cfg,
-	                              LinphoneRegistrationState cstate,
-	                              const char *message);
+	AccountRegistrationChangedEvent(Daemon *daemon,
+                                    LinphoneAccount* account,
+                                    LinphoneRegistrationState cstate,
+                                    const char *message);
 };
 
 class FriendPresenceStateChangedEvent : public Event {
@@ -362,17 +362,17 @@ private:
 	conference_state_changed(LinphoneCore *lc, LinphoneConference *conference, LinphoneConferenceState state);
 	static void dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf);
 	static void messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg);
-	static void proxyRegistrationChanged(LinphoneCore *lc,
-	                                     LinphoneProxyConfig *cfg,
-	                                     LinphoneRegistrationState cstate,
-	                                     const char *message);
+	static void accountRegistrationChanged(LinphoneCore *lc,
+                                           LinphoneAccount *account,
+                                           LinphoneRegistrationState cstate,
+                                           const char *message);
 	static void friendPresenceStateChanged(LinphoneCore *lc, LinphoneFriend *_friend);
 	void callStateChanged(LinphoneCall *call, LinphoneCallState state, const char *msg);
 	void conference_state_changed(LinphoneConference *conference, LinphoneConferenceState state);
 	void callStatsUpdated(LinphoneCall *call, const LinphoneCallStats *stats);
 	void dtmfReceived(LinphoneCall *call, int dtmf);
 	void messageReceived(LinphoneChatRoom *cr, LinphoneChatMessage *msg);
-	void proxyRegistrationChanged(LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message);
+	void accountRegistrationChanged(LinphoneAccount *account, LinphoneRegistrationState cstate, const char *message);
 	void friendPresenceStateChanged(LinphoneFriend *_friend);
 	void execCommand(const std::string &command);
 	std::string readLine(const std::string &, bool *);

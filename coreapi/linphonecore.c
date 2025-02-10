@@ -5683,6 +5683,10 @@ void linphone_core_set_ringer_gain_db (LinphoneCore *lc, float gaindb) {
 	}
 }
 
+float linphone_core_get_ringer_gain_db(LinphoneCore *lc) {
+    return lc->sound_conf.soft_ring_lev;
+}
+
 bool_t linphone_core_get_disable_record_on_mute(LinphoneCore *lc) {
 	return lc->sound_conf.disable_record_on_mute;
 }

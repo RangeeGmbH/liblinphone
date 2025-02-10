@@ -454,7 +454,7 @@ LINPHONE_PUBLIC void linphone_conference_set_microphone_muted(LinphoneConference
  * @param conference A #LinphoneConference object @notnil
  * @return TRUE if the speaker is muted, FALSE otherwise
  */
-LINPHONE_PUBLIC bool_t linphone_conference_get_speaker_muted(LinphoneConference *conference, bool_t muted);
+LINPHONE_PUBLIC bool_t linphone_conference_get_speaker_muted(const LinphoneConference *conference);
 
 /**
  * Get speaker muted state.
