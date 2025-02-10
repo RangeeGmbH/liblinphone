@@ -231,9 +231,9 @@ public:
 class AccountRegistrationChangedEvent : public Event {
 public:
 	AccountRegistrationChangedEvent(Daemon *daemon,
-                                    LinphoneAccount* account,
-                                    LinphoneRegistrationState cstate,
-                                    const char *message);
+	                                LinphoneAccount *account,
+	                                LinphoneRegistrationState cstate,
+	                                const char *message);
 };
 
 class FriendPresenceStateChangedEvent : public Event {
@@ -363,9 +363,9 @@ private:
 	static void dtmfReceived(LinphoneCore *lc, LinphoneCall *call, int dtmf);
 	static void messageReceived(LinphoneCore *lc, LinphoneChatRoom *cr, LinphoneChatMessage *msg);
 	static void accountRegistrationChanged(LinphoneCore *lc,
-                                           LinphoneAccount *account,
-                                           LinphoneRegistrationState cstate,
-                                           const char *message);
+	                                       LinphoneAccount *account,
+	                                       LinphoneRegistrationState cstate,
+	                                       const char *message);
 	static void friendPresenceStateChanged(LinphoneCore *lc, LinphoneFriend *_friend);
 	void callStateChanged(LinphoneCall *call, LinphoneCallState state, const char *msg);
 	void conference_state_changed(LinphoneConference *conference, LinphoneConferenceState state);

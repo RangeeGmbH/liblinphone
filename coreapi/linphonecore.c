@@ -5660,31 +5660,30 @@ void linphone_core_set_mic_gain_db(LinphoneCore *lc, float gaindb) {
 		ms_message("linphone_core_set_mic_gain_db(): no active call.");
 		return;
 	}
-	linphone_call_set_microphone_volume_gain(call,gain);
+	linphone_call_set_microphone_volume_gain(call, gain);
 }
 
-void linphone_core_set_ringer_gain_db (LinphoneCore *lc, float gaindb) {
+void linphone_core_set_ringer_gain_db(LinphoneCore *lc, float gaindb) {
 	RingStream *st;
 	LinphoneRingtonePlayer *linphoneRingtonePlayer;
 	linphoneRingtonePlayer = linphone_core_get_ringtoneplayer(lc);
 
-	lc->sound_conf.soft_ring_lev=gaindb;
-	if (linphone_core_ready(lc)){
-		linphone_config_set_float(lc->config,"sound","ring_gain_db",lc->sound_conf.soft_ring_lev);
+	lc->sound_conf.soft_ring_lev = gaindb;
+	if (linphone_core_ready(lc)) {
+		linphone_config_set_float(lc->config, "sound", "ring_gain_db", lc->sound_conf.soft_ring_lev);
 	}
 
 	st = linphone_ringtoneplayer_get_stream(linphoneRingtonePlayer);
 	if (st == NULL) {
 		ms_message("linphone_core_set_ring_gain_db: LinphoneRingtonePlayer Stream");
 		return;
-	}
-	else {
-		ring_stream_set_output_volume(st,gaindb);
+	} else {
+		ring_stream_set_output_volume(st, gaindb);
 	}
 }
 
 float linphone_core_get_ringer_gain_db(LinphoneCore *lc) {
-    return lc->sound_conf.soft_ring_lev;
+	return lc->sound_conf.soft_ring_lev;
 }
 
 bool_t linphone_core_get_disable_record_on_mute(LinphoneCore *lc) {
