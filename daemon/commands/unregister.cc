@@ -36,8 +36,8 @@ void UnregisterCommand::exec(Daemon *app, const string &args) {
 	LinphoneAccount *account = NULL;
 	string param;
 	int pid;
-    ostringstream ost;
-    string proxysStr;
+	ostringstream ost;
+	string proxysStr;
 
 	istringstream ist(args);
 	ist >> param;
@@ -47,15 +47,15 @@ void UnregisterCommand::exec(Daemon *app, const string &args) {
 		return;
 	}
 	if (param.compare("ALL") == 0) {
-		//Erase all proxies from config
+		// Erase all proxies from config
 		proxysStr += "{ \"isAll\": true, \"proxies\": [ ";
 		for (int i = 1; i <= app->maxProxyId(); i++) {
 			account = app->findProxy(i);
 			if (account != NULL) {
-                const LinphoneAccountParams *params = linphone_account_get_params(account);
-                proxysStr += app->getJsonForAccountParams(params, account);
+				const LinphoneAccountParams *params = linphone_account_get_params(account);
+				proxysStr += app->getJsonForAccountParams(params, account);
 				linphone_core_remove_account(app->getCore(), account);
-				if (i< app->maxProxyId()-1) {
+				if (i < app->maxProxyId() - 1) {
 					proxysStr += ",";
 				}
 			}
@@ -78,9 +78,9 @@ void UnregisterCommand::exec(Daemon *app, const string &args) {
 			app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Error));
 			return;
 		} else {
-            const LinphoneAccountParams *params = linphone_account_get_params(account);
+			const LinphoneAccountParams *params = linphone_account_get_params(account);
 			proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
-            proxysStr += app->getJsonForAccountParams(params, account);
+			proxysStr += app->getJsonForAccountParams(params, account);
 			proxysStr += " ] }";
 		}
 		linphone_core_remove_account(app->getCore(), account);

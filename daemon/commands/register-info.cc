@@ -29,31 +29,27 @@
 
 using namespace std;
 
-RegisterInfoCommand::RegisterInfoCommand():
-        DaemonCommand("register-info", "register-info <register_id>|ALL",
-                      "Get informations about one or more registrations.")
-{
-    addExample(make_unique<DaemonCommandExample>("register-info 1",
-                                        "Status: Ok\n\n"
-                                        "Id: 1\n"
-                                        "Identity: sip:toto@sip.linphone.org\n"
-                                        "Proxy: <sip:sip.linphone.org;transport=tls>\n"
-                                        "Route: <sip:sip.linphone.org;transport=tls>\n"
-                                        "State: LinphoneRegistrationOk"));
-    addExample(make_unique<DaemonCommandExample>("register-info ALL",
-                                        "Status: Ok\n\n"
-                                        "Id: 1\n"
-                                        "Identity: sip:toto@sip.linphone.org\n"
-                                        "Proxy: <sip:sip.linphone.org;transport=tls>\n"
-                                        "Route: <sip:sip.linphone.org;transport=tls>\n"
-                                        "State: LinphoneRegistrationOk\n\n"
-                                        "Id: 2\n"
-                                        "Identity: sip:toto2@sip.linphone.org\n"
-                                        "Proxy: <sip:sip.linphone.org;transport=udp>\n"
-                                        "State: LinphoneRegistrationFailed"));
-    addExample(make_unique<DaemonCommandExample>("register-info 3",
-                                        "Status: Error\n"
-                                        "Reason: No register with such id."));
+RegisterInfoCommand::RegisterInfoCommand()
+    : DaemonCommand(
+          "register-info", "register-info <register_id>|ALL", "Get informations about one or more registrations.") {
+	addExample(make_unique<DaemonCommandExample>("register-info 1", "Status: Ok\n\n"
+	                                                                "Id: 1\n"
+	                                                                "Identity: sip:toto@sip.linphone.org\n"
+	                                                                "Proxy: <sip:sip.linphone.org;transport=tls>\n"
+	                                                                "Route: <sip:sip.linphone.org;transport=tls>\n"
+	                                                                "State: LinphoneRegistrationOk"));
+	addExample(make_unique<DaemonCommandExample>("register-info ALL", "Status: Ok\n\n"
+	                                                                  "Id: 1\n"
+	                                                                  "Identity: sip:toto@sip.linphone.org\n"
+	                                                                  "Proxy: <sip:sip.linphone.org;transport=tls>\n"
+	                                                                  "Route: <sip:sip.linphone.org;transport=tls>\n"
+	                                                                  "State: LinphoneRegistrationOk\n\n"
+	                                                                  "Id: 2\n"
+	                                                                  "Identity: sip:toto2@sip.linphone.org\n"
+	                                                                  "Proxy: <sip:sip.linphone.org;transport=udp>\n"
+	                                                                  "State: LinphoneRegistrationFailed"));
+	addExample(make_unique<DaemonCommandExample>("register-info 3", "Status: Error\n"
+	                                                                "Reason: No register with such id."));
 }
 
 void RegisterInfoCommand::exec(Daemon *app, const string &args) {
@@ -80,8 +76,7 @@ void RegisterInfoCommand::exec(Daemon *app, const string &args) {
 					ost << "Route: " << route << endl;
 				}
 				ost << "State: " << linphone_registration_state_to_string(linphone_account_get_state(account)) << endl;
-			}
-			else {
+			} else {
 				app->sendResponse(Response(COMMANDNAME_REGISTER_INFO, "Invalid ID.", Response::Error));
 			}
 		}

@@ -64,8 +64,8 @@ void RegisterCommand::exec(Daemon *app, const string &args) {
 	ist >> realm;
 	ist >> parameter;
 	if (proxy.empty()) {
-	    ost << "\"Missing/Incorrect parameter(s).\"";
-	    app->sendResponse(Response(COMMANDNAME_REGISTER, ost.str(), Response::Error));
+		ost << "\"Missing/Incorrect parameter(s).\"";
+		app->sendResponse(Response(COMMANDNAME_REGISTER, ost.str(), Response::Error));
 		return;
 	}
 	cidentity = identity.c_str();
