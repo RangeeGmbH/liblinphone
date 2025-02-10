@@ -332,6 +332,12 @@ public:
 
 	bool getMicrophoneMuted() const;
 	void setMicrophoneMuted(bool muted);
+    bool getSpeakerMuted() const;
+    void setSpeakerMuted(bool muted);
+    float getMicrophoneGain() const;
+    void setMicrophoneGain(float gain);
+    float getSpeakerGain() const;
+    void setSpeakerGain(float gain);
 	float getRecordVolume() const;
 
 	virtual bool isSubscriptionUnderWay() const;

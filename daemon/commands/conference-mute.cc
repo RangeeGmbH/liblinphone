@@ -44,11 +44,11 @@ void ConferenceMuteCommand::exec(Daemon* app, const string& args)
             getConference = true;
             if (param == "input") {
                 ////set
-                linphone_conference_mute_microphone(conference, (bool_t)muted);;
+                linphone_conference_set_microphone_muted(conference, (bool_t)muted);
             }
             if (param == "output") {
                 ////set
-                linphone_conference_mute_speaker(conference, (bool_t)muted);
+                linphone_conference_set_speaker_muted(conference, (bool_t)muted);
             }
         }
         if(getConference) {

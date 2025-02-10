@@ -92,7 +92,6 @@ void RegisterCommand::exec(Daemon *app, const string &args) {
 	LinphoneAccount *account = linphone_core_create_account(lc, params);
 	linphone_core_add_account(lc, account);
 
-	cfg = app->findProxy(app->updateProxyId(cfg));
 	proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
 	proxysStr += app->getJsonForAccountParams(params, account);
 	proxysStr += " ]  }";

@@ -1866,6 +1866,64 @@ void Conference::setMicrophoneMuted(bool muted) {
 	}
 }
 
+bool Conference::getSpeakerMuted() const {
+    AudioControlInterface *aci = getAudioControlInterface();
+    if (aci) {
+        return !aci->speakerEnabled();
+    }
+    lError() << "Unable to get status of speaker because the audio control interface of conference "
+             << *getConferenceAddress() << " cannot be found";
+    return false;
+}
+
+void Conference::setSpeakerMuted(bool muted) {
+    AudioControlInterface *aci = getAudioControlInterface();
+    if (aci) {
+        aci->enableSpeaker(!muted);
+    }
+    lError() << "Unable to " << std::string(muted ? "disable" : "enable")
+             << " speaker because the audio control interface of conference " << *getConferenceAddress()
+             << " cannot be found";
+}
+
+float Conference::getMicrophoneGain() const {
+    AudioControlInterface *aci = getAudioControlInterface();
+    if (aci) {
+        return aci->getMicGain();
+    }
+    lError() << "Unable to get microphone gain because the audio control interface of conference "
+             << *getConferenceAddress() << " cannot be found";
+    return false;
+}
+
+void Conference::setMicrophoneGain(float gain) {
+    AudioControlInterface *aci = getAudioControlInterface();
+    if (aci) {
+        aci->setMicGain(gain);
+    }
+    lError() << "Unable to set microphone gain because the audio control interface of conference "
+             << *getConferenceAddress() << " cannot be found";
+}
+
+float Conference::getSpeakerGain() const {
+    AudioControlInterface *aci = getAudioControlInterface();
+    if (aci) {
+        return aci->getSpeakerGain();
+    }
+    lError() << "Unable to get speaker volume because the audio control interface of conference "
+             << *getConferenceAddress() << " cannot be found";
+    return 0.0;
+}
+
+void Conference::setSpeakerGain(float gain) {
+    AudioControlInterface *aci = getAudioControlInterface();
+    if (aci) {
+        aci->setSpeakerGain(gain);
+    }
+    lError() << "Unable to set speaker volume because the audio control interface of conference "
+             << *getConferenceAddress() << " cannot be found";
+}
+
 float Conference::getRecordVolume() const {
 	AudioControlInterface *aci = getAudioControlInterface();
 	if (aci) {

@@ -62,14 +62,14 @@ void RegisterInfoCommand::exec(Daemon *app, const string &args) {
 	ist >> param;
 	ostringstream ost;
 	if (ist.fail()) {
-		app->sendResponse(Response("Missing parameter.", Response::Error));
+		app->sendResponse(Response("", "Missing parameter.", Response::Error));
 		return;
 	}
 	if (param == "ALL") {
 		for (int i = 1; i <= app->maxProxyId(); i++) {
 			::LinphoneAccount *account = app->findProxy(i);
 			if (account != NULL) {
-				LinphoneAccountParams *params = linphone_account_get_params(account);
+				const LinphoneAccountParams *params = linphone_account_get_params(account);
 				ost << "ProyyId: " << i << endl;
 				ost << "ProxyAddress: " << linphone_account_params_get_server_addr(params) << endl;
 				ost << "ProxyIdentity: " << linphone_account_params_get_identity(params) << endl;
@@ -102,7 +102,7 @@ void RegisterInfoCommand::exec(Daemon *app, const string &args) {
 			app->sendResponse(Response(COMMANDNAME_REGISTER_INFO, "No register with such id.", Response::Error));
 			return;
 		}
-		LinphoneAccountParams *params = linphone_account_get_params(account);
+		const LinphoneAccountParams *params = linphone_account_get_params(account);
 		ost << "ProyyId: " << id << endl;
 		ost << "ProxyAddress: " << linphone_account_params_get_server_addr(params) << endl;
 		ost << "ProxyIdentity: " << linphone_account_params_get_identity(params) << endl;

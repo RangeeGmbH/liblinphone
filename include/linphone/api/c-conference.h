@@ -452,9 +452,53 @@ LINPHONE_PUBLIC void linphone_conference_set_microphone_muted(LinphoneConference
 /**
  * Retrieves the volume of a specific participant
  * @param conference A #LinphoneConference object @notnil
+ * @return TRUE if the speaker is muted, FALSE otherwise
+ */
+LINPHONE_PUBLIC bool_t linphone_conference_get_speaker_muted(LinphoneConference *conference, bool_t muted);
+
+/**
+ * Get speaker muted state.
+ * Note that the speaker may be disabled globally if FALSE was given to
+ * linphone_core_enable_speaker().
+ * @param conference A #LinphoneConference object @notnil
+ * @param muted The speaker muted state
+ **/
+LINPHONE_PUBLIC void linphone_conference_set_speaker_muted(LinphoneConference *conference, bool_t muted);
+
+/**
+ * Retrieves the volume of a specific participant
+ * @param conference A #LinphoneConference object @notnil
  * @return The volume of the participant expressed in dbm0.
  */
 LINPHONE_PUBLIC float linphone_conference_get_input_volume(const LinphoneConference *conference);
+
+/**
+ * Set the input volume of the conference.
+ * @param conference A #LinphoneConference object @notnil
+ * @param volume The volume to set. Must be between 0.0 and 1.0.
+ */
+LINPHONE_PUBLIC float linphone_conference_get_input_volume_gain(const LinphoneConference *conference);
+
+/**
+ * Set the input volume of the conference.
+ * @param conference A #LinphoneConference object @notnil
+ * @param volume The volume to set. Must be between 0.0 and 1.0.
+ */
+LINPHONE_PUBLIC void linphone_conference_set_input_volume_gain(LinphoneConference *conference, float volume);
+
+/**
+ * Retrieves the volume of a specific participant
+ * @param conference A #LinphoneConference object @notnil
+ * @return The volume of the participant expressed in dbm0.
+ */
+LINPHONE_PUBLIC float linphone_conference_get_output_volume_gain(const LinphoneConference *conference);
+
+/**
+ * Set the output volume of the conference.
+ * @param conference A #LinphoneConference object @notnil
+ * @param volume The volume to set. Must be between 0.0 and 1.0.
+ */
+LINPHONE_PUBLIC void linphone_conference_set_output_volume_gain(LinphoneConference *conference, float volume);
 
 /**
  * Add a listener in order to be notified of #LinphoneConference events. Once an event is received, registred

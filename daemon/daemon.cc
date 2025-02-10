@@ -96,6 +96,7 @@
 #include "commands/friends.h"
 #include "commands/ping.h"
 #include "commands/defaultProxy.h"
+#include "account/account.h"
 #include "daemon.h"
 
 #include "private.h"
@@ -118,6 +119,8 @@ void usleep(int waitTime) {
 #else
 #define LICENCE_COMMERCIAL
 #endif
+
+bool idleTimeout = false;
 
 const char *const ice_state_str[] = {
     "Not activated",        /* LinphoneIceStateNotActivated */
@@ -760,15 +763,15 @@ std::string Daemon::join(const vector <string> &values, string delimiter) {
     return result;
 }
 
-std::string Daemon::getJsonForAccountParams(LinphoneAccountParams *params, LinphoneAccount *account) {
+std::string Daemon::getJsonForAccountParams(const LinphoneAccountParams *params, LinphoneAccount *account) {
 	ostringstream ost;
 	std::string serverAddr = linphone_account_params_get_server_addr(params);
-	std::string identity = linphone_account_params_get_identity_address(params);
+	std::string identity = linphone_account_params_get_identity(params);
 	bool isDefaulProxy = false;
 
 	const char *errorMessage = linphone_error_info_get_phrase(linphone_account_get_error_info(account));
 
-	if(Account::toCpp(account)->getConfig() == linphone_core_get_default_proxy_config(this->getCore())) {
+	if(LinphonePrivate::Account::toCpp(account)->getConfig() == linphone_core_get_default_proxy_config(this->getCore())) {
 		isDefaulProxy = true;
 	} else {
 		isDefaulProxy = false;
@@ -790,7 +793,7 @@ std::string Daemon::getJsonForAccountParams(LinphoneAccountParams *params, Linph
 	return ost.str();
 }
 
-std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg) {
+/**std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg) {
     ostringstream ost;
     std::string serverAddr = linphone_proxy_config_get_server_addr(cfg);
     std::string identity = linphone_proxy_config_get_identity(cfg);
@@ -818,7 +821,7 @@ std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg) {
 
     ost << " }";;
     return ost.str();
-}
+}*/
 
 void Daemon::queueEvent(Event *ev) {
 	mEventQueue.push(ev);

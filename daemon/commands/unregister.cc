@@ -52,8 +52,9 @@ void UnregisterCommand::exec(Daemon *app, const string &args) {
 		for (int i = 1; i <= app->maxProxyId(); i++) {
 			account = app->findProxy(i);
 			if (account != NULL) {
+                const LinphoneAccountParams *params = linphone_account_get_params(account);
+                proxysStr += app->getJsonForAccountParams(params, account);
 				linphone_core_remove_account(app->getCore(), account);
-				proxysStr += app->getJsonForProxys(cfg);
 				if (i< app->maxProxyId()-1) {
 					proxysStr += ",";
 				}
@@ -77,9 +78,9 @@ void UnregisterCommand::exec(Daemon *app, const string &args) {
 			app->sendResponse(Response(COMMANDNAME_UNREGISTER, ost.str(), Response::Error));
 			return;
 		} else {
-			cfg = app->findProxy(pid);
+            const LinphoneAccountParams *params = linphone_account_get_params(account);
 			proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
-			proxysStr += app->getJsonForProxys(cfg);
+            proxysStr += app->getJsonForAccountParams(params, account);
 			proxysStr += " ] }";
 		}
 		linphone_core_remove_account(app->getCore(), account);

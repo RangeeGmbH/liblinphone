@@ -241,6 +241,26 @@ float linphone_conference_get_input_volume(const LinphoneConference *conference)
 	return Conference::toCpp(conference)->getRecordVolume();
 }
 
+float linphone_conference_get_input_volume_gain(const LinphoneConference *conference) {
+    ConferenceLogContextualizer logContextualizer(conference);
+    return Conference::toCpp(conference)->getMicrophoneGain();
+}
+
+void linphone_conference_set_input_volume_gain(LinphoneConference *conference, float gain) {
+    ConferenceLogContextualizer logContextualizer(conference);
+    Conference::toCpp(conference)->setMicrophoneGain(gain);
+}
+
+float linphone_conference_get_output_volume_gain(const LinphoneConference *conference) {
+    ConferenceLogContextualizer logContextualizer(conference);
+    return Conference::toCpp(conference)->getSpeakerGain();
+}
+
+void linphone_conference_set_output_volume_gain(LinphoneConference *conference, float gain) {
+    ConferenceLogContextualizer logContextualizer(conference);
+    Conference::toCpp(conference)->setSpeakerGain(gain);
+}
+
 bool_t linphone_conference_get_microphone_muted(const LinphoneConference *conference) {
 	ConferenceLogContextualizer logContextualizer(conference);
 	return Conference::toCpp(conference)->getMicrophoneMuted();
@@ -249,6 +269,16 @@ bool_t linphone_conference_get_microphone_muted(const LinphoneConference *confer
 void linphone_conference_set_microphone_muted(LinphoneConference *conference, bool_t muted) {
 	ConferenceLogContextualizer logContextualizer(conference);
 	Conference::toCpp(conference)->setMicrophoneMuted(!!muted);
+}
+
+bool_t linphone_conference_get_speaker_muted(const LinphoneConference *conference) {
+    ConferenceLogContextualizer logContextualizer(conference);
+    return Conference::toCpp(conference)->getSpeakerMuted();
+}
+
+void linphone_conference_set_speaker_muted(LinphoneConference *conference, bool_t muted) {
+    ConferenceLogContextualizer logContextualizer(conference);
+    Conference::toCpp(conference)->setSpeakerMuted(!!muted);
 }
 
 LinphoneParticipant *linphone_conference_get_screen_sharing_participant(const LinphoneConference *conference) {

@@ -15,7 +15,8 @@ DefaultProxy::DefaultProxy() :
 }
 
 void DefaultProxy::exec(Daemon *app, const string& args) {
-    LinphoneProxyConfig *cfg = NULL;
+    LinphoneAccount *account = NULL;
+    //LinphoneProxyConfig *cfg = NULL;
     string param;
     int pid;
     ostringstream ost;
@@ -25,15 +26,16 @@ void DefaultProxy::exec(Daemon *app, const string& args) {
     ist >> param;
     if (ist.fail()) {
         //get
-        cfg = linphone_core_get_default_proxy_config(app->getCore());
-        if (cfg == NULL) {
+        account = linphone_core_get_default_account(app->getCore());
+        if (account == NULL) {
             proxysStr = "No Default Proxy";
             app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, proxysStr, Response::Ok));
             return;
         }
         else {
+            const LinphoneAccountParams *params = linphone_account_get_params(account);
             proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
-            proxysStr += app->getJsonForProxys(cfg);
+            proxysStr += app->getJsonForAccountParams(params, account);
             proxysStr += " ] }";
             app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, proxysStr, Response::Ok));
         }
@@ -48,17 +50,17 @@ void DefaultProxy::exec(Daemon *app, const string& args) {
             app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, ost.str(), Response::Error));
             return;
         }
-        cfg = app->findProxy(pid);
-        if (cfg == NULL) {
+        account = app->findProxy(pid);
+        if (account == NULL) {
             ost << "\"Incorrect parameter\"";
             app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, ost.str(), Response::Error));
             return;
         } else {
             //set
-            cfg = app->findProxy(pid);
-            linphone_core_set_default_proxy_config(app->getCore(), cfg);
+            linphone_core_set_default_account(app->getCore(), account);
+            const LinphoneAccountParams *params = linphone_account_get_params(account);
             proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
-            proxysStr += app->getJsonForProxys(cfg);
+            proxysStr += app->getJsonForAccountParams(params, account);
             proxysStr += " ] }";
         }
         app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, proxysStr, Response::Ok));
