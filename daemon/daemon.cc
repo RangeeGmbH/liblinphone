@@ -396,14 +396,14 @@ AccountRegistrationChangedEvent::AccountRegistrationChangedEvent(Daemon *daemon,
                                                                  LinphoneAccount *account,
                                                                  LinphoneRegistrationState cstate,
                                                                  const char *message)
-    : Event("account-registration-state-changed") {
+    : Event("proxy-registration-state-changed") {
 	const LinphoneAccountParams *params = linphone_account_get_params(account);
-	string proxysStr;
-	proxysStr = "{ \"proxies\": [ ";
-	proxysStr += daemon->getJsonForAccountParams(params, account);
-	proxysStr += " ] }";
+	string accountStr;
+	accountStr = "{ \"proxies\": [ ";
+	accountStr += daemon->getJsonForAccountParams(params, account);
+	accountStr += " ] }";
 
-	setBody(proxysStr);
+	setBody(accountStr);
 	if (linphone_account_get_state(account) == LinphoneRegistrationCleared) {
 		linphone_core_clear_all_auth_info(daemon->getCore());
 	}
@@ -1275,36 +1275,6 @@ std::string Daemon::getJsonForAccountParams(const LinphoneAccountParams *params,
 	ost << " }";
 	return ost.str();
 }
-
-/**std::string Daemon::getJsonForProxys(LinphoneProxyConfig *cfg) {
-    ostringstream ost;
-    std::string serverAddr = linphone_proxy_config_get_server_addr(cfg);
-    std::string identity = linphone_proxy_config_get_identity(cfg);
-    bool isDefaulProxy = false;
-
-    const char *errorMessage = linphone_error_info_get_phrase(linphone_proxy_config_get_error_info(cfg));
-
-    if(cfg == linphone_core_get_default_proxy_config(this->getCore())) {
-        isDefaulProxy = true;
-    } else {
-        isDefaulProxy = false;
-    }
-
-    ost << "{ \"id\": " << updateProxyId(cfg) << ", \"address\": " << "\"" << serverAddr.c_str() << "\""
-        << ", \"identity\": " << "\"" << identity.c_str() << "\"" << ", \"state\": " << "\""
-        << linphone_registration_state_to_string(linphone_proxy_config_get_state(cfg))  << "\""
-        << ", \"defaultProxy\": " << "\"" << (isDefaulProxy ? "true" : "false") << "\""
-        << ", \"errorMessage\": ";
-
-    if (errorMessage != nullptr) {
-        ost << "\"" << errorMessage << "\"";
-    } else {
-        ost << "\"\"";
-    }
-
-    ost << " }";;
-    return ost.str();
-}*/
 
 void Daemon::queueEvent(Event *ev) {
 	mEventQueue.push(ev);

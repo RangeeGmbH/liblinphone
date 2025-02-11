@@ -14,11 +14,10 @@ DefaultProxy::DefaultProxy()
 
 void DefaultProxy::exec(Daemon *app, const string &args) {
 	LinphoneAccount *account = NULL;
-	// LinphoneProxyConfig *cfg = NULL;
 	string param;
 	int pid;
 	ostringstream ost;
-	string proxysStr;
+	string accountStr;
 
 	istringstream ist(args);
 	ist >> param;
@@ -26,15 +25,15 @@ void DefaultProxy::exec(Daemon *app, const string &args) {
 		// get
 		account = linphone_core_get_default_account(app->getCore());
 		if (account == NULL) {
-			proxysStr = "No Default Proxy";
-			app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, proxysStr, Response::Ok));
+			accountStr = "No Default Proxy";
+			app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, accountStr, Response::Ok));
 			return;
 		} else {
 			const LinphoneAccountParams *params = linphone_account_get_params(account);
-			proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
-			proxysStr += app->getJsonForAccountParams(params, account);
-			proxysStr += " ] }";
-			app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, proxysStr, Response::Ok));
+			accountStr += "{ \"isAll\": false, \"proxies\": [ ";
+			accountStr += app->getJsonForAccountParams(params, account);
+			accountStr += " ] }";
+			app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, accountStr, Response::Ok));
 		}
 		return;
 	} else {
@@ -55,10 +54,10 @@ void DefaultProxy::exec(Daemon *app, const string &args) {
 			// set
 			linphone_core_set_default_account(app->getCore(), account);
 			const LinphoneAccountParams *params = linphone_account_get_params(account);
-			proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
-			proxysStr += app->getJsonForAccountParams(params, account);
-			proxysStr += " ] }";
+			accountStr += "{ \"isAll\": false, \"proxies\": [ ";
+			accountStr += app->getJsonForAccountParams(params, account);
+			accountStr += " ] }";
 		}
-		app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, proxysStr, Response::Ok));
+		app->sendResponse(Response(COMMANDNAME_DEFAULTPROXY, accountStr, Response::Ok));
 	}
 }

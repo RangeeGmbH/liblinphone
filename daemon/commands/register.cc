@@ -55,7 +55,7 @@ void RegisterCommand::exec(Daemon *app, const string &args) {
 	const char *cuserid = NULL;
 	const char *crealm = NULL;
 	const char *cparameter = NULL;
-	string proxysStr;
+	string accountStr;
 
 	ist >> identity;
 	ist >> proxy;
@@ -92,10 +92,10 @@ void RegisterCommand::exec(Daemon *app, const string &args) {
 	LinphoneAccount *account = linphone_core_create_account(lc, params);
 	linphone_core_add_account(lc, account);
 
-	proxysStr += "{ \"isAll\": false, \"proxies\": [ ";
-	proxysStr += app->getJsonForAccountParams(params, account);
-	proxysStr += " ]  }";
+	accountStr += "{ \"isAll\": false, \"proxies\": [ ";
+	accountStr += app->getJsonForAccountParams(params, account);
+	accountStr += " ]  }";
 
 	linphone_account_params_unref(params);
-	app->sendResponse(Response(COMMANDNAME_REGISTER, proxysStr, Response::Ok));
+	app->sendResponse(Response(COMMANDNAME_REGISTER, accountStr, Response::Ok));
 }
