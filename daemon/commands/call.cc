@@ -43,7 +43,7 @@ void CallCommand::exec(Daemon *app, const string &args) {
 	istringstream ist(args);
 	ist >> address;
 	if (ist.fail()) {
-	    ostr << "\"Missing address parameter.\"";
+	    ostr << "Missing address parameter.";
 	    app->sendResponse(Response(COMMANDNAME_CALL, ostr.str(), Response::Error));
 		return;
 	}
@@ -60,7 +60,7 @@ void CallCommand::exec(Daemon *app, const string &args) {
 	}
 
 	if (call == NULL) {
-	    ostr << "\"Call creation failed.\"";
+	    ostr << "Call creation failed.";
 	    app->sendResponse(Response(COMMANDNAME_CALL, ostr.str(), Response::Error));
 		return;
 	}
