@@ -1452,6 +1452,7 @@ static void printHelp() {
 	     << "\t--factory-config <path>    Supply a readonly linphonerc style config file to start with." << endl
 	     << "\t--config <path>            Supply a linphonerc style config file to start with." << endl
 	     << "\t--disable-stats-events     Do not automatically raise RTP statistics events." << endl
+             << "\t--disable-idle-timeout     Do not automatically clear proxy config after 10 seconds of inactivity." << endl
 	     << "\t--enable-lsd               Use the linphone sound daemon." << endl
 	     << "\t-C                         Enable video capture." << endl
 	     << "\t-D                         Enable video display." << endl
